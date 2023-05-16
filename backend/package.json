@@ -7,7 +7,8 @@
     "start": "SET node index.js",
     "dev": "SET NODE_ENV=DEVELOPMENT& nodemon index.js",
     "prod": "SET NODE_ENV=PRODUCTION& nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm i"
   },
   "author": "HILIFE.AI",
   "license": "ISC",
