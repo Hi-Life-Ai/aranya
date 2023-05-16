@@ -19,10 +19,10 @@ function App() {
 
   const authContextData = useMemo(() => {
     return { auth, setAuth, forgotAuth, setForgotAuth, setngs, setSetngs,isSetngs, setIsSetngs}
-  })
+  },[])
   const applicationContextData = useMemo(() => {
     return {isUserRoleAccess, setIsUserRoleAccess, isUserRoleCompare, setIsUserRoleCompare}
-  })
+  },[])
 
   useEffect(()=> {
     isCheckUserLogin();
