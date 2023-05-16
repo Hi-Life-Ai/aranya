@@ -4,18 +4,12 @@ import { FavoriteSharp } from '@mui/icons-material';
 import React, { useEffect, useState, useContext } from 'react';
 import logo from '../assets/images/mainlogo.png';
 import { loginSignIn } from './Loginstyle';
-import google from '../assets/images/icons/google.png';
-import slack from '../assets/images/icons/slack.png';
-import yahoo from '../assets/images/icons/yahoo.png';
-import microsoft from '../assets/images/icons/microsoft.png';
-import { FaFacebookF, FaLinkedinIn, FaTwitter, FaLinkedin, FaFacebook, FaApple } from 'react-icons/fa';
 import './Signin.css';
 import { BsThreeDots } from 'react-icons/bs';
 import CarouselComponent from "./CarousalSignin";
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { GoogleLogin } from 'react-google-login';
 import { AuthContext } from '../context/Appcontext';
 import { AUTH } from '../services/Authservice';
 const Signin = () => {

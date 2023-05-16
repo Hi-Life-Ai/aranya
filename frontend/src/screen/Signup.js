@@ -95,6 +95,7 @@ const Signup = () => {
                     refNOINC = (refLstDigit);
                     newval = strings + refNOINC;
                 }
+                return newval
             }))}
 
         //business auto id
@@ -128,6 +129,7 @@ const Signup = () => {
                         refNOINC = (refLstDigit);
                         newvalbusiness = strings + refNOINC;
                     }
+                    return newvalbusiness
                 }))}
 
     const fetchAuth = async() =>{
@@ -526,19 +528,19 @@ const Signup = () => {
     // store signup data db
     const handleSubmit =(e) =>{
         e.preventDefault();
-        if(signup.companyname == "" && signup.staffname == "" && signup.email == "" && signup.phonenum == "" && signup.password == "" && signup.termscondition == false){
+        if(signup.companyname === "" && signup.staffname === "" && signup.email === "" && signup.phonenum === "" && signup.password === "" && signup.termscondition === false){
             toast.error("Please fill all fields!");
-        }else if(signup.companyname == ""){
+        }else if(signup.companyname === ""){
             toast.error("Please enter company name!");
-        }else if(signup.staffname == ""){
+        }else if(signup.staffname === ""){
             toast.error("Please enter Name!");
-        }else if(signup.email == ""){
+        }else if(signup.email === ""){
             toast.error("Please enter email!");
-        }else if(signup.phonenum == ""){
+        }else if(signup.phonenum === ""){
             toast.error("Please enter mobile number!");
-        }else if(signup.password == ""){
+        }else if(signup.password === ""){
             toast.error("Please enter password!");
-        }else if(signup.termscondition == false){
+        }else if(signup.termscondition === false){
             toast.error("Please select terms!");
         }else{
             fetchAuth();

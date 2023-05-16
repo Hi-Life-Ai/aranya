@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import Footer from '../components/footer/Footer';
 import { AuthContext } from '../context/Appcontext';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 
 const ForgotPwd = () => {
 

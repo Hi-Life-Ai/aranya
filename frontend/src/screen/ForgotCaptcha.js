@@ -12,7 +12,7 @@ import { AuthContext } from '../context/Appcontext';
 
 const ForgotCaptcha = () => {
 
-  const { forgotAuth, setForgotAuth } = useContext(AuthContext);
+  const { forgotAuth } = useContext(AuthContext);
 
   useEffect(
     () => {
