@@ -19,6 +19,28 @@ exports.getAllBusisetng = catchAsyncErrors(async (req, res, next) => {
     return res.status(200).json({busisetngs});
 })
 
+// get Login sigle settings => /api/busisetngs
+exports.getSingleAuthBusisetng = catchAsyncErrors(async (req, res, next) => {
+    let busisetngs;
+    let result;
+
+    try{
+        busisetngs = await Busisetng.find()
+
+        result = busisetngs.filter((data, index)=>{
+            return data.businessid == req.body.userloginbusinessid
+        })
+    }catch(err){
+        console.log(err.message);
+    }
+
+    if(!busisetngs){
+        return next(new ErrorHandler('Business setting not found!', 400));
+    }
+
+    return res.status(200).json({result});
+})
+
 // Create new Busisetng => /api/busisetng/new
 exports.addBusisetng = catchAsyncErrors(async (req, res, next) =>{
     let abusisetng = await Busisetng.create(req.body);

@@ -22,6 +22,29 @@ exports.getAllRoles = catchAsyncErrors(async (req, res, next) => {
     });
 })
 
+exports.getAllAuthRoles = catchAsyncErrors(async (req, res, next) => {
+    let roles;
+    let result;
+
+    try{
+        roles = await Role.find();
+        result = roles.filter((data,index)=>{
+            return data.assignbusinessid == req.body.userloginbusinessid && data.rolename == req.body.userrole
+        })
+    }catch(err){
+        console.log(err.message);
+    }
+
+    if(!roles){
+        return next(new ErrorHandler('Role not found!', 400));
+    }
+
+    return res.status(200).json({
+        // count: roles.length,
+        result
+    });
+})
+
 // Create new Role => /api/role/new
 exports.addRole = catchAsyncErrors(async (req, res, next) =>{
     

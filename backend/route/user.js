@@ -2,10 +2,11 @@ const express = require('express');
 const userRoute = express.Router();
 
 // connect role controller
-const { getAllRoles,addRole,updateRole,getSingleRole,deleteRole } = require('../controller/modules/user/role');
+const { getAllRoles,getAllAuthRoles,addRole,updateRole,getSingleRole,deleteRole } = require('../controller/modules/user/role');
 
 userRoute.route('/roles').get(getAllRoles);
 userRoute.route('/role/new').post(addRole);
+userRoute.route('/authrole').post(getAllAuthRoles);
 userRoute.route('/role/:id').get(getSingleRole).put(updateRole).delete(deleteRole);
 
 // connect role controller

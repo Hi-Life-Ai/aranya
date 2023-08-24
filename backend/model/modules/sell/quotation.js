@@ -235,6 +235,14 @@ const quotationSchema = new Schema({
         type: Number,
         required: false
     },
+    totalnettax:{
+        type:Number,
+        required:false
+    },
+    signature:{
+        type:String,
+        required:false
+    },
     createdAt: {
         type: Date,
         default: Date.now,

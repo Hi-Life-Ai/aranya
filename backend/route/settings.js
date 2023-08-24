@@ -2,10 +2,11 @@ const express = require('express');
 const settingRoute = express.Router();
 
 // connect business settings controller
-const { getAllBusisetng,addBusisetng,updateBusisetng,deleteBusisetng,getSingleBusisetng } = require('../controller/modules/settings/busisettings');
+const { getAllBusisetng,getSingleAuthBusisetng,addBusisetng,updateBusisetng,deleteBusisetng,getSingleBusisetng } = require('../controller/modules/settings/busisettings');
 
 settingRoute.route('/busisetngs').get(getAllBusisetng);
 settingRoute.route('/busisetng/new').post(addBusisetng);
+settingRoute.route('/authbusisetng').post(getSingleAuthBusisetng);
 settingRoute.route('/busisetng/:id').get(getSingleBusisetng).put(updateBusisetng).delete(deleteBusisetng);
 
 // connect business location controller
