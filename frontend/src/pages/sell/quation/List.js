@@ -58,8 +58,12 @@ const Quotationlisttable = () => {
             })
             setQuotations(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -79,8 +83,12 @@ const Quotationlisttable = () => {
             });
             setDeleteqot(res.data.squotation);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -96,8 +104,12 @@ const Quotationlisttable = () => {
             await fetchQuotation();
             handleClose();
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

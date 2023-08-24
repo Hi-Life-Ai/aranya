@@ -103,8 +103,12 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
 
 
@@ -126,8 +130,12 @@ function Producteditlist() {
             })
             setLocationData(result);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -155,8 +163,12 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -176,8 +188,12 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -200,8 +216,12 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -249,8 +269,12 @@ function Producteditlist() {
             })
             setProduct(res.data.sproduct);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
     // store product data
@@ -286,9 +310,14 @@ function Producteditlist() {
             toast.success(PRODUCT_REQ.data.message);
             backLPage('/product/product/list');
         } catch (err) {
-            const messages = err.response.data.message;
-            setShowAlert(messages);
-            handleClickOpenalert();
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                setShowAlert(messages);
+                handleClickOpenalert();
+            }else{
+                setShowAlert("Something went wrong!");
+                handleClickOpenalert();
+            }
         }
     };
 

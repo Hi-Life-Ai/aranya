@@ -15,7 +15,6 @@ import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
 import Headtitle from '../../../components/header/Headtitle';
 import CreatecateMod from './CreateCatemod';
-import 'react-quill/dist/quill.snow.css';
 
 function Productcreatelist() {
 
@@ -102,8 +101,12 @@ function Productcreatelist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -158,8 +161,12 @@ function Productcreatelist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -179,8 +186,12 @@ function Productcreatelist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -203,8 +214,12 @@ function Productcreatelist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -278,9 +293,14 @@ function Productcreatelist() {
             });
             backLPage('/product/product/list');
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             setShowAlert(messages);
             handleClickOpenalert();
+        }else{
+            setShowAlert("Something went wrong!");
+            handleClickOpenalert();
+        }
         }
     };
 
@@ -321,9 +341,14 @@ function Productcreatelist() {
             });
 
         } catch (err) {
-            const messages = err.response.data.message;
-            setShowAlert(messages);
-            handleClickOpenalert();
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                setShowAlert(messages);
+                handleClickOpenalert();
+            }else{
+                setShowAlert("Something went wrong!");
+                handleClickOpenalert();
+            }
         }
     };
 
@@ -346,8 +371,12 @@ function Productcreatelist() {
             setIsProducts(result);
             return result;
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 

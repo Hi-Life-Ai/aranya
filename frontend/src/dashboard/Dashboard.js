@@ -25,7 +25,7 @@ const Dashboardlayout = () => {
 
   const { isUserRoleAccess, isUserRoleCompare } = useContext(UserRoleAccessContext);
   const { auth, setngs } = useContext(AuthContext);
-  let resultpos =[]
+ 
   //  Datefield
   var today = new Date();
   var dd = String(today.getDate()).padStart(2, '0');
@@ -81,8 +81,12 @@ const Dashboardlayout = () => {
         })
       setPos(getDatawithFilter)
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.err(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 
@@ -144,8 +148,12 @@ const fetchExpense = async () => {
     })
     setExpenses(getDatawithFilter);
   } catch (err) {
-    const messages = err.response.data.message;
-    toast.err(messages);
+    const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
   }
 };
 
@@ -174,8 +182,12 @@ const fetchExpense = async () => {
         }
       )));
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.err(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 
@@ -186,7 +198,8 @@ const fetchExpense = async () => {
     () => {
      fetchLocation();
      fetchExpense();
-     fetchPos()
+     fetchPos();
+     
     },[]);
 
   return (

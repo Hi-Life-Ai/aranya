@@ -44,8 +44,12 @@ function CreateCatMod({ setSaveExpcate }) {
               setIsExcatCode(excode);
               setIsExcatName(exname);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -70,8 +74,12 @@ function CreateCatMod({ setSaveExpcate }) {
             });
             closeAdd();
         } catch (err) {
-            const messages = err.response.data.message;
-            setShowAlert(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

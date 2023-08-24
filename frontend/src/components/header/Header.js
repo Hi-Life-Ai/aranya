@@ -26,7 +26,7 @@ const Header = () => {
   const handleClose = () => { setAnchorEl(null); };
 
   const { auth, setAuth, setngs } = useContext(AuthContext);
-  const { isUserRoleAccess } = useContext(UserRoleAccessContext);
+  const { isUserRoleAccess,isUserRoleCompare } = useContext(UserRoleAccessContext);
 
   // Start model
   const [isAppstart, setIsAppstart] = useState(false);
@@ -92,8 +92,12 @@ const Header = () => {
       })
       setNotification(arr.length);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
  
@@ -112,8 +116,12 @@ const Header = () => {
       localStorage.clear();
       backLPage('/signin');
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
 
@@ -125,7 +133,8 @@ const Header = () => {
         </Grid>
         <Grid container sx={{ justifyContent: 'flex-end', paddingTop: "10px" }}>
         <Button onClick={handleAppstartOpen} sx={navbarStyle.navbarrightbtn}><QuestionMarkIcon /></Button>
-          <>
+          {isUserRoleCompare[0].allcurrentstocktransferlist && (
+            <>
             <Link to='/stockadjust/list'>
               <Badge badgeContent={Notification} color="error"
                 style={{ color: 'white', cursor: "pointer" }}  anchorOrigin={{ vertical: 'top', horizontal: 'left', }}>
@@ -133,6 +142,7 @@ const Header = () => {
               </Badge>
             </Link>
           </>
+          )}
           <>
             <Button
               id="demo-customized-button"
@@ -159,7 +169,9 @@ const Header = () => {
               </MenuItem>
             </Menu>
           </>
-          <Link to="/sell/pos/create"><Button sx={navbarStyle.navbarrightbtn}><CgMicrosoft />&ensp;POS</Button></Link>
+          {isUserRoleCompare[0].apos && (
+            <Link to="/sell/pos/create"><Button sx={navbarStyle.navbarrightbtn}><CgMicrosoft />&ensp;POS</Button></Link>
+          )}
           <Button onClick={logOut} sx={navbarStyle.navbarrightbtn}><Logout /></Button>
         </Grid>
       </Box>

@@ -59,8 +59,12 @@ function Poslisttable() {
             })
             setPos(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -80,8 +84,12 @@ function Poslisttable() {
             });
             setDeletePoss(res.data.spos);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -97,6 +105,12 @@ function Poslisttable() {
             await fetchPos();
             handleCloseMod();
         } catch (err) {
+            const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

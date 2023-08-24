@@ -162,8 +162,12 @@ const Draftedit = () => {
             setDraftEdit(res.data.sdraft);
             setTableData(res.data.sdraft.goods);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -195,8 +199,12 @@ const Draftedit = () => {
             })
             setMergeprod(result);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -213,8 +221,12 @@ const Draftedit = () => {
             })
             setTaxrates(taxRateData);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -231,8 +243,12 @@ const Draftedit = () => {
             })
             setProducts(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -253,9 +269,14 @@ const Draftedit = () => {
                 value: t.productname
             })))
         } catch (err) {
-            const messages = err.response.data.message;
-            setShowAlert(messages)
-            alertOpen();
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                setShowAlert(messages);
+                alertOpen();
+            }else{
+                setShowAlert("Something went wrong!");
+                alertOpen();
+            }
         }
     }
 
@@ -273,8 +294,12 @@ const Draftedit = () => {
             setCategory(result);
 
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -295,8 +320,12 @@ const Draftedit = () => {
             setSubCategory(reqdata);
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -324,8 +353,12 @@ const Draftedit = () => {
             })
             fetchtable(res.data.sproduct)
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -354,8 +387,12 @@ const Draftedit = () => {
             })))
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -381,8 +418,12 @@ const Draftedit = () => {
             })))
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -633,8 +674,12 @@ const Draftedit = () => {
             })
             setPos(result);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -722,12 +767,14 @@ const Draftedit = () => {
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
+                totalnettax:Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
                 grandtotal: Number(totalNetCostCalcSub()),
                 totalbillamt: Number(totalNetCostCalcSub()),
                 userbyadd: String(isUserRoleAccess.staffname),
+                signature: String(setngs.signature),
             });
             let res = await axios.delete(`${SERVICE.DRAFT_SINGLE}/${id}`, {
                 headers: {
@@ -738,9 +785,14 @@ const Draftedit = () => {
             handleSubmitclear();
             backLPage('/sell/pos/create');
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+           if(messages) {
             setShowAlert(messages);
             alertOpen();
+           }else{
+             setShowAlert("Something went wrong!");
+             alertOpen();
+           }
         }
     };
 
@@ -802,12 +854,14 @@ const Draftedit = () => {
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
+                totalnettax:Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
                 grandtotal: Number(totalNetCostCalcSub()),
                 totalbillamt: Number(totalNetCostCalcSub()),
                 userbyadd: String(isUserRoleAccess.staffname),
+                signature: String(setngs.signature),
             });
 
             toast.success(draftreq.data.message, {
@@ -816,8 +870,12 @@ const Draftedit = () => {
 
             backLPage('/sell/draft/list');
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

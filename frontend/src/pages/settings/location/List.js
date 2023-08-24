@@ -89,8 +89,12 @@ const Locationtable = () => {
             })
             setBusilocations(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -110,8 +114,12 @@ const Locationtable = () => {
             }).then(res => res.data);
             setIsActive("None");
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -127,8 +135,12 @@ const Locationtable = () => {
             })
             setBusilocationses(res.data.sbusilocation);//set function to get particular row
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -144,8 +156,12 @@ const Locationtable = () => {
             await fetchLocation();
             handleClose();
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

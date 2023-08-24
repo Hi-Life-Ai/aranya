@@ -31,8 +31,12 @@ const PosView = () => {
             setIsPos(res.data.spos);
             setTableData(res.data.spos.goods);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

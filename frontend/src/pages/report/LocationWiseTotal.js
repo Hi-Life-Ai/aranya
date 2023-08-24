@@ -65,8 +65,12 @@ function LocationProfitTotal() {
             })))
 
         } catch (err) {
-            const messages = err.data.response.messages
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -120,8 +124,12 @@ function LocationProfitTotal() {
 
 
         } catch (err) {
-            const messages = err.response.data.messages
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 

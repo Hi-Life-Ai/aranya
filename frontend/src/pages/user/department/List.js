@@ -64,8 +64,12 @@ function Departmentlisttable() {
       setdepartments(result);
       setIsDepartments(result);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+      if(messages) {
+          toast.error(messages);
+      }else{
+          toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -88,8 +92,12 @@ function Departmentlisttable() {
       })
       setDepartmentDel(res.data.sdepartment);//set function to get particular row
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
 
@@ -105,8 +113,12 @@ function Departmentlisttable() {
       await fetchDepartments();
       handleClose();
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 

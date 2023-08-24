@@ -412,8 +412,12 @@ function Roleeditlist() {
             })
             setRole(response.data.srole);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -804,8 +808,12 @@ function Roleeditlist() {
             backPage('/user/role/list');
         }
         catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 

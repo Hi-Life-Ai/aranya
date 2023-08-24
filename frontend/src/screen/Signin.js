@@ -5,12 +5,11 @@ import React, { useEffect, useState, useContext } from 'react';
 import logo from '../assets/images/mainlogo.png';
 import { loginSignIn } from './Loginstyle';
 import './Signin.css';
-import { BsThreeDots } from 'react-icons/bs';
 import CarouselComponent from "./CarousalSignin";
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import { AuthContext } from '../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../context/Appcontext';
 import { AUTH } from '../services/Authservice';
 const Signin = () => {
   useEffect(
@@ -33,25 +32,17 @@ const Signin = () => {
 
   };
 
-  const [hiddenCont, setHiddencont] = useState(true);
-  const handleMorelogo = () => {
-    setHiddencont(!hiddenCont);
-  };
-
   const [fade, setFade] = useState(true);
   const [hidden, setHiiden] = useState(true);
   const [signin, setSignin] = useState({ email: "", password: "", });
 
-  const { auth, setAuth } = useContext(AuthContext);
+  const { setIsUserRoleAccess, setIsUserRoleCompare } = useContext(UserRoleAccessContext);
+  const { auth, setSetngs, setAuth } = useContext(AuthContext);
 
   const triggerFade = () => {
     setFade(false);
     setHiiden(!hidden);
   };
-
-  const responseGoogle = (response) => {
-    return response
-  }
 
   const backPage = useNavigate();
 
@@ -66,10 +57,23 @@ const Signin = () => {
       localStorage.setItem('APIToken', response.data.token);
       localStorage.setItem('LoginUserId', response.data.user._id)
       localStorage.setItem('LoginUseruniqid', response.data.user.userid)
+      localStorage.setItem('LoginUserrole', response.data.user.role)
       localStorage.setItem('LoginUserlocation', response.data.user.businesslocation)
       localStorage.setItem('LoginUsersettings', response.data.user.assignbusinessid)
+      //Get single user
+      let loginuserdata = await axios.get(`${AUTH.GETUSER}/${response.data.user._id}`)
+      let userroles = await axios.post(AUTH.GETAUTHROLE,{
+        userloginbusinessid:String(response.data.user.assignbusinessid),
+        userrole:String(response.data.user.role)
+      })
+      let usersettings = await axios.post(AUTH.GETSINGLESETTINGS,{
+        userloginbusinessid:String(response.data.user.assignbusinessid)
+      })
+      setIsUserRoleCompare(userroles.data.result);
+      setIsUserRoleAccess(loginuserdata.data.suser);
+      setSetngs(usersettings.data.result[0])
       //change login state
-      setAuth({ ...auth, loginState: true, APIToken: response.data.token, loginuserid: response.data.user._id, loginuseruniqid: response.data.user.userid, loginuserlocation: response.data.user.businesslocation, loginusersettings: response.data.user.assignbusinessid});
+      setAuth({ ...auth, loginState: true, APIToken: response.data.token, loginuserid: response.data.user._id, loginuseruniqid: response.data.user.userid, loginuserlocation: response.data.user.businesslocation, loginusersettings: response.data.user.assignbusinessid, loginuserrole:response.data.user.role});
       backPage('/');
       setSignin(response);
       }else{
@@ -78,8 +82,12 @@ const Signin = () => {
       }
     }
     catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+      if(messages) {
+          toast.error(messages);
+      }else{
+          toast.error("Something went wrong!")
+      }
       backPage('/signin');
     }
   }

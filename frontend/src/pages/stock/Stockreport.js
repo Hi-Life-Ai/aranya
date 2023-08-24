@@ -42,8 +42,12 @@ function Stockreportall() {
             setProducts(res.data.products);
         }
         catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
     useEffect(() => {

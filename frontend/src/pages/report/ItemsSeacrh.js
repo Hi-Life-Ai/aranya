@@ -47,6 +47,14 @@ function Items() {
   let monthlysale = [];
   let yearlysale = [];
 
+
+  const previousWeekDates = [];
+
+  for (let i = 1; i <= 7; i++) {
+    const previousDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7 + i);
+    previousWeekDates.push(moment(previousDate).utc().format('DD-MM-YYYY'));
+
+  }
   // Acces
   const { isUserRoleCompare } = useContext(UserRoleAccessContext);
 
@@ -70,8 +78,12 @@ function Items() {
       })))
 
     } catch (err) {
-      const messages = err.data.response.messages
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
 
@@ -98,47 +110,53 @@ function Items() {
       let todaydata = req_data.data.pos1.filter((item) => {
         item.goods.forEach((data) => {
           if (data.productname == e.productname) {
-            let dateTrim = moment(item.date).utc().format('YYYY-MM-DD')
+            let dateTrim = moment(item.date).format('YYYY-MM-DD')
             if (dateTrim == startdate) {
               todaysales.push(data.subtotal)
-            } else {
+            } else if (dateTrim != startdate) {
               todaysales.push(0)
             }
           }
+
         })
       })
+
+
 
       let todaysum = todaysales.reduce((accumulator, currentValue) => {
         return accumulator + currentValue;
       });
+
+
 
       let yeardata = req_data.data.pos1.filter((item) => {
         item.goods.forEach((data) => {
           if (data.productname == e.productname) {
             if (new Date(item.date).getFullYear() == new Date().getFullYear()) {
               yearlysale.push(data.subtotal)
-            } else {
-              setSalesData([])
             }
           }
         })
       })
 
+
+
       let yearlysum = yearlysale.reduce((accumulator, currentValue) => {
         return accumulator + currentValue;
       });
+
+
 
       let monthdata = req_data.data.pos1.filter((item) => {
         item.goods.forEach((data) => {
           if (data.productname == e.productname) {
             if (new Date().getMonth() == new Date(item.date).getMonth()) {
               monthlysale.push(data.subtotal)
-            } else {
-              setSalesData([])
             }
           }
         })
       })
+
 
       let monthsum = monthlysale.reduce((accumulator, currentValue) => {
         return accumulator + currentValue;
@@ -190,10 +208,15 @@ function Items() {
         return r.set(key, items);
       }, new Map).values()];
 
+
       setSalesData(result);
     } catch (err) {
-      const messages = err.response.data.messages
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
 
   }
@@ -205,11 +228,11 @@ function Items() {
     let data = salesData.map(t => ({
       "Productname": t.productnames,
       "Location": t.locations,
-      "Mrp rate": t.mrprate.toFixed(2),
-      "Today Sales ": t.sales.toFixed(2),
-      "Weekly Sales": t.weeklysale.toFixed(2),
-      "Montly Sales": t.monthlysales.toFixed(2),
-      "Yearly Sales": t.yearlysales.toFixed(2)
+      "Mrp rate":Number(t.mrprate).toFixed(2),
+      "Today Sales ": Number(t.sales).toFixed(2),
+      "Weekly Sales": Number(t.weeklysale).toFixed(2),
+      "Montly Sales":Number( t.monthlysales).toFixed(2),
+      "Yearly Sales":Number( t.yearlysales).toFixed(2)
 
     }));
     setExceldata(data);
@@ -426,11 +449,11 @@ function Items() {
                     <StyledTableRow key={index}>
                       <StyledTableCell >{row.productnames}</StyledTableCell>
                       <StyledTableCell >{row.locations}</StyledTableCell>
-                      <StyledTableCell >{row.mrprate.toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{row.sales.toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{row.weeklysale.toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{row.monthlysales.toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{row.yearlysales.toFixed(2)}</StyledTableCell>
+                      <StyledTableCell >{Number(row.mrprate).toFixed(2)}</StyledTableCell>
+                      <StyledTableCell >{Number(row.sales).toFixed(2)}</StyledTableCell>
+                      <StyledTableCell >{Number(row.weeklysale ).toFixed(2) }</StyledTableCell>
+                      <StyledTableCell >{Number(row.monthlysales).toFixed(2)}</StyledTableCell>
+                      <StyledTableCell >{Number(row.yearlysales).toFixed(2)}</StyledTableCell>
                     </StyledTableRow>
                   )))
                   : <StyledTableRow><StyledTableCell colSpan={13} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
@@ -483,11 +506,12 @@ function Items() {
                 <StyledTableRow key={index}>
                   <StyledTableCell >{row.productnames}</StyledTableCell>
                   <StyledTableCell >{row.locations}</StyledTableCell>
-                  <StyledTableCell >{row.mrprate.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell >{row.sales.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell >{row.weeklysale.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell >{row.monthlysales.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell >{row.yearlysales.toFixed(2)}</StyledTableCell>
+                  <StyledTableCell >{Number(row.mrprate).toFixed(2)}</StyledTableCell>
+                  <StyledTableCell >{Number(row.sales).toFixed(2)}</StyledTableCell>
+                  <StyledTableCell >{Number(row.weeklysale).toFixed(2)}</StyledTableCell>
+                  <StyledTableCell >{Number(row.monthlysales).toFixed(2)}</StyledTableCell>
+                  <StyledTableCell >{Number(row.yearlysales).toFixed(2)}</StyledTableCell>
+
                 </StyledTableRow>
               )
               ))}

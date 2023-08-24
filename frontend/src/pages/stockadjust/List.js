@@ -77,8 +77,12 @@ function StocktransferandAdjustlist() {
 
             setAllProducts(productresult);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -213,8 +217,12 @@ function StocktransferandAdjustlist() {
             setAdjustitem(isUserRoleAccess.role == 'Admin' ? adjustresult : filteredData)
             setTransfereditem(isUserRoleAccess.role == 'Admin' ? transferresult : filteredDataTransfer)
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -235,8 +243,12 @@ function StocktransferandAdjustlist() {
             });
 
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 

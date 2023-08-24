@@ -73,9 +73,14 @@ function Categorycreate() {
       });
       backLPage('/product/category/list');
     } catch (err) {
-      const messages = err.response.data.message;
-      setShowAlert(messages);
-      handleClickOpenc();
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            setShowAlert(messages);
+            handleClickOpenc();
+        }else{
+            setShowAlert("Something went wrong!");
+            handleClickOpenc();
+        }
     }
   };
 
@@ -100,8 +105,12 @@ function Categorycreate() {
       setCateName(resultname);
     }
      catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 

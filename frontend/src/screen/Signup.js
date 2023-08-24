@@ -19,7 +19,6 @@ import { Country, State } from "country-state-city";
 import Select from 'react-select';
 import './Signin.css';
 import axios from 'axios';
-import { GoogleLogin } from 'react-google-login';
 import { toast } from 'react-toastify';
 import { AUTH } from '../services/Authservice';
 import { SERVICE } from '../services/Baseservice';
@@ -47,8 +46,12 @@ const Signup = () => {
             let res_users = await axios.get(`${SERVICE.USER_TERMSTRUE}`);
             setAutoid(res_users.data.usersterms);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -58,8 +61,12 @@ const Signup = () => {
             let res_business = await axios.get(`${SERVICE.SETTINGS}`);
             setBusinessAutoid(res_business.data.busisetngs);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -95,7 +102,6 @@ const Signup = () => {
                     refNOINC = (refLstDigit);
                     newval = strings + refNOINC;
                 }
-                return newval
             }))}
 
         //business auto id
@@ -129,7 +135,6 @@ const Signup = () => {
                         refNOINC = (refLstDigit);
                         newvalbusiness = strings + refNOINC;
                     }
-                    return newvalbusiness
                 }))}
 
     const fetchAuth = async() =>{
@@ -509,8 +514,12 @@ const Signup = () => {
             setSignup(auth.data);
             backPage('/signin')
         } catch(err){
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
     const responseGoogle = (response) => {
@@ -528,19 +537,19 @@ const Signup = () => {
     // store signup data db
     const handleSubmit =(e) =>{
         e.preventDefault();
-        if(signup.companyname === "" && signup.staffname === "" && signup.email === "" && signup.phonenum === "" && signup.password === "" && signup.termscondition === false){
+        if(signup.companyname == "" && signup.staffname == "" && signup.email == "" && signup.phonenum == "" && signup.password == "" && signup.termscondition == false){
             toast.error("Please fill all fields!");
-        }else if(signup.companyname === ""){
+        }else if(signup.companyname == ""){
             toast.error("Please enter company name!");
-        }else if(signup.staffname === ""){
+        }else if(signup.staffname == ""){
             toast.error("Please enter Name!");
-        }else if(signup.email === ""){
+        }else if(signup.email == ""){
             toast.error("Please enter email!");
-        }else if(signup.phonenum === ""){
+        }else if(signup.phonenum == ""){
             toast.error("Please enter mobile number!");
-        }else if(signup.password === ""){
+        }else if(signup.password == ""){
             toast.error("Please enter password!");
-        }else if(signup.termscondition === false){
+        }else if(signup.termscondition == false){
             toast.error("Please select terms!");
         }else{
             fetchAuth();
@@ -721,7 +730,7 @@ const Signup = () => {
                                 <Box sx={loginSignIn.socialicons}>
                                 <Box component="img" sx={loginSignIn.socialgoogle} alt="Google logo" src={google} />
                         {/* <Typography sx={loginSignIn.socialiconstxt}>Google</Typography> */}
-                        <GoogleLogin
+                        {/* <GoogleLogin
                                   clientId="517438224490-cdrp1615c7jtmh2bb9orh31dvsiok6d8.apps.googleusercontent.com"
                                   
                                   render={renderProps => (
@@ -731,7 +740,7 @@ const Signup = () => {
                                   onSuccess={responseGoogle}
                                   onFailure={responseGoogle}
                                   cookiePolicy={'single_host_origin'}
-                                />
+                                /> */}
                                 </Box>
                   
                                 <Box sx={loginSignIn.micrsoftlogo}>

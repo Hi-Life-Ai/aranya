@@ -37,8 +37,12 @@ function BusinessLoceditlist() {
             })
             setBusinsLoca(response.data.sbusilocation);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -82,8 +86,12 @@ function BusinessLoceditlist() {
             bactToPage('/settings/location/list');
         }
         catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 

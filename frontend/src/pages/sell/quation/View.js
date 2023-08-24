@@ -31,8 +31,12 @@ const QuotationView = () => {
             setIsQuotation(res.data.squotation);
             setTableData(res.data.squotation.goods);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

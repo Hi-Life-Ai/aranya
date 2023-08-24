@@ -37,8 +37,12 @@ function Categoryeditlist() {
       setIsCategory(req.data.scategory);
       setSubCategories(req.data.scategory.subcategories);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
 
@@ -127,8 +131,12 @@ function Categoryeditlist() {
       });
       backPage("/product/category/list");
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 

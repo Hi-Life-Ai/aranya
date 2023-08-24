@@ -66,8 +66,12 @@ function Expensestablelist() {
             })
             setExpenses(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -80,8 +84,12 @@ function Expensestablelist() {
             })
             setExp(res.data.sexpense);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
     let expid = exp._id;
@@ -97,8 +105,12 @@ function Expensestablelist() {
             await fetchExpense();
             handleCloseDelete();
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

@@ -42,9 +42,14 @@ function Unitcreate() {
     });
     backLPage('/product/unit/list');
     } catch (err) {
-      const messages = err.response.data.message;
-      setShowAlert(messages);
-      handleClickOpen();
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            setShowAlert(messages);
+            handleClickOpen();
+        }else{
+            setShowAlert("Something went wrong!");
+            handleClickOpen();
+        }
     }
   };
 
@@ -62,8 +67,12 @@ function Unitcreate() {
         })
         setUnitData(result);
     } catch (err) {
-        const messages = err.response.data.message;
-        toast.error(messages);
+      const messages = err?.response?.data?.message;
+      if(messages) {
+          toast.error(messages);
+      }else{
+          toast.error("Something went wrong!")
+      }
     }
 };
 

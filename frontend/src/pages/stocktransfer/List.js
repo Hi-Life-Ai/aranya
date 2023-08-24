@@ -6,7 +6,6 @@ import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { Link } from 'react-router-dom';
 import { userStyle } from '../PageStyle';
-import "rsuite/dist/rsuite.css";
 import Navbar from '../../components/header/Navbar';
 import Footer from '../../components/footer/Footer';
 import Headtitle from '../../components/header/Headtitle';
@@ -43,8 +42,12 @@ const Transfertablelist = () => {
 
           setTransfer(response.data.transfers)
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

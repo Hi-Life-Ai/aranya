@@ -52,8 +52,12 @@ function Departmentcreate() {
     setIsDepartmentName(departmentname);
       setdepartments(result);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+      if(messages) {
+          toast.error(messages);
+      }else{
+          toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -84,9 +88,14 @@ function Departmentcreate() {
       setdepartmentAdd(res.data);
       backLPage('/user/department/list');
     } catch (err) {
-      const messages = err.response.data.errorMessage;
-        setShowAlert(messages);
-      handleClickOpenc();
+      const messages = err?.response?.data?.message;
+        if(messages) {
+          setShowAlert(messages);
+          handleClickOpenc();
+        }else{
+          setShowAlert("Something went wrong!");
+          handleClickOpenc();
+        }
     } 
   };
 

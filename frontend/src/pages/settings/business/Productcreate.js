@@ -149,8 +149,12 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.err(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -173,8 +177,12 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.err(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

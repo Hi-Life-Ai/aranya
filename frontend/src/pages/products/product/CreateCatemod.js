@@ -49,8 +49,12 @@ function CreatecateMod({ setFetchCate }) {
       setCateCode(resultcode);
       setCateName(resultname);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 
@@ -98,8 +102,12 @@ function CreatecateMod({ setFetchCate }) {
       });
       cateModClose();
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages)
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 

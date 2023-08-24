@@ -171,8 +171,12 @@ const Quotationedit = () => {
             setQuotationEdit(res.data.squotation);
             setTableData(res.data.squotation.goods);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -204,8 +208,12 @@ const Quotationedit = () => {
             })
             setMergeprod(result);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -222,8 +230,12 @@ const Quotationedit = () => {
             })
             setTaxrates(taxRateData);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -240,8 +252,12 @@ const Quotationedit = () => {
             })
             setProducts(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -262,9 +278,14 @@ const Quotationedit = () => {
                 value: t.productname
             })))
         } catch (err) {
-            const messages = err.response.data.message;
-            setShowAlert(messages)
-            alertOpen();
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                setShowAlert(messages);
+                alertOpen();
+            }else{
+                setShowAlert("Something went wrong!");
+                alertOpen();
+            }
         }
     }
 
@@ -284,8 +305,12 @@ const Quotationedit = () => {
             setCategory(result);
 
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -306,8 +331,12 @@ const Quotationedit = () => {
             setSubCategory(reqdata);
 
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -335,8 +364,12 @@ const Quotationedit = () => {
             })
             fetchtable(res.data.sproduct)
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -365,8 +398,12 @@ const Quotationedit = () => {
             })))
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -392,8 +429,12 @@ const Quotationedit = () => {
             })))
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -648,8 +689,12 @@ const Quotationedit = () => {
             setLocationData(posresult);
             setPos(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -739,13 +784,14 @@ const Quotationedit = () => {
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
+                totalnettax:Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
                 grandtotal: Number(totalNetCostCalcSub()),
                 totalbillamt: Number(totalNetCostCalcSub()),
                 userbyadd: String(isUserRoleAccess.staffname),
-
+                signature: String(setngs.signature),
             });
             let res = await axios.delete(`${SERVICE.QUOTATION_SINGLE}/${id}`, {
                 headers: {
@@ -756,9 +802,14 @@ const Quotationedit = () => {
             handleSubmitclear();
             backLPage('/sell/pos/create');
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             setShowAlert(messages);
             alertOpen();
+        }else{
+            setShowAlert("Something went wrong!");
+            alertOpen();
+        }
         }
     };
 
@@ -820,12 +871,14 @@ const Quotationedit = () => {
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
+                totalnettax:Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
                 grandtotal: Number(totalNetCostCalcSub()),
                 totalbillamt: Number(totalNetCostCalcSub()),
                 userbyadd: String(isUserRoleAccess.staffname),
+                signature: String(setngs.signature),
             });
 
             toast.success(draftreq.data.message, {
@@ -833,8 +886,12 @@ const Quotationedit = () => {
             });
             backLPage('/sell/quotation/list');
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

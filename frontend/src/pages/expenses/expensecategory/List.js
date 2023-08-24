@@ -51,8 +51,12 @@ function Expcategorylist() {
             })
             setExcategorys(result)
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -71,8 +75,12 @@ function Expcategorylist() {
             })
             setExpcat(res.data.sexcategory);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
     let expcatid = expcat._id;
@@ -90,8 +98,12 @@ function Expcategorylist() {
             await fetchExpenseCategory();
             handleClose();
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

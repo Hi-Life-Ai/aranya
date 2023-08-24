@@ -22,7 +22,6 @@ import { FaPrint, FaFilePdf, FaFileCsv, FaFileExcel } from "react-icons/fa";
 import DeleteIcon from '@mui/icons-material/Delete';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import Headtitle from '../../../components/header/Headtitle'
-import ReactQuill from 'react-quill';
 
 const Expenseeditlist = () => {
 
@@ -96,8 +95,12 @@ const Expenseeditlist = () => {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -120,8 +123,12 @@ const Expenseeditlist = () => {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -137,8 +144,12 @@ const Expenseeditlist = () => {
             setExpenseForm(response.data.sexpense);
             await fetchLocation(response.data.sexpense);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -161,8 +172,12 @@ const Expenseeditlist = () => {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -205,8 +220,12 @@ const Expenseeditlist = () => {
             });
             backLPage('/expense/expense/list');
         } catch (err) {
-            const messages = err.expenseedit.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

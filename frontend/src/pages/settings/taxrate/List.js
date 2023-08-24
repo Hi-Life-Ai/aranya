@@ -56,8 +56,12 @@ const Taxratelisttable = () => {
       })
       setTaxRate(taxresult)
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
 
@@ -75,8 +79,12 @@ const Taxratelisttable = () => {
         });
       setTax(response.data.staxrate);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
   let taxid = tax._id;
@@ -93,8 +101,12 @@ const Taxratelisttable = () => {
       handleClose();
       await fetchTaxrate();
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 

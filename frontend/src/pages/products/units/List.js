@@ -57,8 +57,12 @@ function Unitslisttable() {
       })
       setUnits(result);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 
@@ -72,8 +76,12 @@ function Unitslisttable() {
       })
       setUnitld(response.data.sunit);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+      if(messages) {
+          toast.error(messages);
+      }else{
+          toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -89,8 +97,12 @@ function Unitslisttable() {
       await fetchUnit();
       handleClose();
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+      if(messages) {
+          toast.error(messages);
+      }else{
+          toast.error("Something went wrong!")
+      }
     }
   };
 

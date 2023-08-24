@@ -89,8 +89,12 @@ function BusinessLocCreate() {
             setIsBusilocations(resultloc);
             setBusilocations(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -178,8 +182,12 @@ function BusinessLocCreate() {
                 position: toast.POSITION.TOP_CENTER
             });
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

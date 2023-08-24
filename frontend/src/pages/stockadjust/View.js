@@ -26,8 +26,12 @@ function Stockadjustviewlist() {
             })
             setAdjustitem(response.data.stransfer);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 

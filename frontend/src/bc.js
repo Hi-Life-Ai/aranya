@@ -19,10 +19,10 @@ function App() {
 
   const authContextData = useMemo(() => {
     return { auth, setAuth, forgotAuth, setForgotAuth, setngs, setSetngs,isSetngs, setIsSetngs}
-  },[auth])
+  },[])
   const applicationContextData = useMemo(() => {
     return {isUserRoleAccess, setIsUserRoleAccess, isUserRoleCompare, setIsUserRoleCompare}
-  },[auth])
+  },[])
 
   useEffect(()=> {
     isCheckUserLogin();
@@ -48,6 +48,9 @@ function App() {
           let usersettings = await axios.post(AUTH.GETSINGLESETTINGS,{
             userloginbusinessid:String(getLoginUserSettings)
           })
+
+          console.log(userrole.data.result,'u role')
+        
           setSetngs(usersettings.data.result[0]);
           setIsUserRoleAccess(loginuserdata.data.suser);
           setIsUserRoleCompare(userrole.data.result)

@@ -62,8 +62,12 @@ function Expiringreportall() {
         }))
       );
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   }
 
@@ -97,8 +101,8 @@ function Expiringreportall() {
           let expDate = new Date(valueData.expirydate);
           let previousexpirydate = new Date(expDate.getTime() - expiryday * 24 * 60 * 60 * 1000)
           let beforeDate = moment(previousexpirydate).format('DD-MM-YYYY');
-          if (currentDate < beforeDate ) {
-            finalResult.push(valueData);
+          if (currentDate == beforeDate || currentDate <= beforeDate) {
+            finalResult.push({...valueData, expirydays:beforeDate});
           }
         })
       })
@@ -107,8 +111,12 @@ function Expiringreportall() {
 
     }
     catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+      if(messages) {
+          toast.error(messages);
+      }else{
+          toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -120,7 +128,6 @@ function Expiringreportall() {
       "Item Code": t.productid,
       "Item Name": t.productname,
       "Manufacture Date": t.unit,
-      "Location": t.location,
       "Quantity": t.quantity,
       "MRP": t.mrp,
       "Expiry Data": t.expirydate,
@@ -330,8 +337,7 @@ function Expiringreportall() {
                 <StyledTableRow >
                   <StyledTableCell onClick={() => handleSorting('productid')}><Box sx={userStyle.tableheadstyle}><Box>Item Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productid')}</Box></Box></StyledTableCell>
                   <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Item Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('createdAt')}><Box sx={userStyle.tableheadstyle}><Box>Manufacture Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('createdAt')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('location')}><Box sx={userStyle.tableheadstyle}><Box>Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('location')}</Box></Box></StyledTableCell>
+                  <StyledTableCell onClick={() => handleSorting('expirydays')}><Box sx={userStyle.tableheadstyle}><Box>Expiry Days</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('expirydays')}</Box></Box></StyledTableCell>
                   <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
                   <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
                   <StyledTableCell onClick={() => handleSorting('expirydate')}><Box sx={userStyle.tableheadstyle}><Box>Expiry Data</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('expirydate')}</Box></Box></StyledTableCell>
@@ -343,8 +349,7 @@ function Expiringreportall() {
                     <StyledTableRow key={index}>
                       <StyledTableCell>{row.productid}</StyledTableCell>
                       <StyledTableCell>{row.productname}</StyledTableCell>
-                      <StyledTableCell>{moment(row.createdAt).format('DD-MM-YYYY')}</StyledTableCell>
-                      <StyledTableCell>{row.location}</StyledTableCell>
+                      <StyledTableCell>{row.expirydays}</StyledTableCell>
                       <StyledTableCell>{row.quantity}</StyledTableCell>
                       <StyledTableCell>{row.mrp}</StyledTableCell>
                       <StyledTableCell>{moment(row.expirydate).format('DD-MM-YYYY')}</StyledTableCell>
@@ -392,7 +397,6 @@ function Expiringreportall() {
                     <StyledTableCell>Item Code </StyledTableCell>
                     <StyledTableCell>Item Name</StyledTableCell>
                     <StyledTableCell>Manufacture Date</StyledTableCell>
-                    <StyledTableCell>Location</StyledTableCell>
                     <StyledTableCell>Quantity</StyledTableCell>
                     <StyledTableCell>MRP</StyledTableCell>
                     <StyledTableCell>Expiry Data</StyledTableCell>

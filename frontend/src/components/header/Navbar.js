@@ -1,10 +1,8 @@
 import React, { useState, useContext, useEffect} from 'react';
 import { Box } from '@mui/material';
 import { SidebarItems } from './SidebarListItem';
-import axios from 'axios';
 import MenuItems from './Menuitem';
 import { UserRoleAccessContext } from '../../context/Appcontext';
-import { SERVICE } from '../../services/Baseservice';
 import Header from './Header';
 
 const Navbar = () => {
@@ -12,42 +10,8 @@ const Navbar = () => {
   const [filterSidebar,setFilterSidebar] = useState([]);
 
   const {isUserRoleCompare} = useContext(UserRoleAccessContext);
-  const [roleAccess, setRoleAccess] = useState([]);
 
-  const [users, setUsers] = useState([]);
-  // let [roleAccess] = isUserRoleCompare;
-
-  const fetchUsers = async () => {
-    try {
-      const response = await axios.get(`${SERVICE.USER_SINGLE}/${localStorage.LoginUserId}`); // replace this with the actual API endpoint to fetch the user role access data
-      setUsers(response.data.suser.role);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const fetchUserRoleAccess = async () => {
-    try {
-
-    let Roles = await axios.get(`${SERVICE.ROLE}`);
-    let Result = Roles.data.roles.filter((data) => {
-      if (users == data.rolename) {
-        setRoleAccess(data)
-      }
-    })
- 
-    }
-     catch (err) {
-      console.error(err);
-  };
-}
-
-  useEffect(() => {
- 
-    fetchUsers();
-   
-    fetchUserRoleAccess();
-  },[users]);
+  let [roleAccess] = isUserRoleCompare;
 
   useEffect(
     ()=>{

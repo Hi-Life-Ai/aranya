@@ -57,8 +57,12 @@ function PrintLabellist() {
                 }))
             );
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -118,8 +122,12 @@ function PrintLabellist() {
             setGetProductData([...getProductData, res.data.sproduct]);
         }
         catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 

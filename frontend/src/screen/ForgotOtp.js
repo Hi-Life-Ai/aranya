@@ -3,6 +3,7 @@ import { Box, Typography, Button,  FormControl, OutlinedInput, InputAdornment, I
 import { Container } from '@mui/system';
 import Forgotlogo from '../assets/images/mainlogo.png';
 import { loginforgot } from './Loginstyle';
+import { FaEyeSlash } from "react-icons/fa";
 import Footer from '../components/footer/Footer';
 import './Signin.css';
 import { AuthContext } from '../context/Appcontext';
@@ -28,9 +29,12 @@ const ForgotOtp = () => {
         //   setSignin(response);
         }
         catch (err) {
-          console.log(err,'error')
-          const messages = err.response.data.message;
-          toast.error(messages);
+          const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
       }
     

@@ -42,8 +42,12 @@ function TaxrateCreatelist() {
       })
       setLocationData(result);
     } catch (err) {
-      const messages = err.response.data.message;
-      toast.error(messages);
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
     }
   };
 
@@ -74,9 +78,14 @@ function TaxrateCreatelist() {
       });
       backLPage('/settings/taxrate/list');
     } catch (err) {
-      const messages = err.response.data.errorMessage;
-      setShowAlert(messages)
-      handleClickOpenalert();
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            setShowAlert(messages);
+            handleClickOpenalert();
+        }else{
+            setShowAlert("Something went wrong!");
+            handleClickOpenalert();
+        }
 
     }
   };
@@ -104,9 +113,14 @@ function TaxrateCreatelist() {
       });
 
     } catch (err) {
-      const messages = err.response.data.errorMessage;
-      setShowAlert(messages)
-      handleClickOpenalert();
+      const messages = err?.response?.data?.message;
+        if(messages) {
+            setShowAlert(messages);
+            handleClickOpenalert();
+        }else{
+            setShowAlert("Something went wrong!");
+            handleClickOpenalert();
+        }
     }
   };
 

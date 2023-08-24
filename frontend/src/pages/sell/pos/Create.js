@@ -21,6 +21,8 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs from 'dayjs';
 import CloseIcon from "@material-ui/icons/Close";
 import PropTypes from 'prop-types';
+import autoTable from 'jspdf-autotable';
+import jsPDF from "jspdf";
 import { StyledTableRow, StyledTableCell } from '../../../components/Table';
 import CheckOutlinedIcon from '@mui/icons-material/CheckOutlined';
 import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
@@ -232,8 +234,12 @@ const Poscreate = () => {
             })
             setMergeprod(result);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -250,8 +256,12 @@ const Poscreate = () => {
             })
             setTaxrates(taxRateData);
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -268,8 +278,12 @@ const Poscreate = () => {
             })
             setProducts(result);
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -290,13 +304,16 @@ const Poscreate = () => {
                 value: t.productname
             })))
         } catch (err) {
-            const messages = err.response.data.message;
-            setShowAlert(messages)
+            const messages = err?.response?.data?.message;
+        if(messages) {
+            setShowAlert(messages);
+            alertOpen();
+        }else{
+            setShowAlert("Something went wrong!");
             alertOpen();
         }
+        }
     }
-
-
 
     // fetch categories
     const fetchcategory = async (e) => {
@@ -312,8 +329,12 @@ const Poscreate = () => {
             setCategory(result);
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -334,8 +355,12 @@ const Poscreate = () => {
             setSubCategory(reqdata);
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -364,8 +389,12 @@ const Poscreate = () => {
             setSingleprod(res.data.sproduct)
             fetchtable(res.data.sproduct)
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -394,8 +423,12 @@ const Poscreate = () => {
             })))
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -418,8 +451,12 @@ const Poscreate = () => {
             })))
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     }
 
@@ -686,8 +723,12 @@ const Poscreate = () => {
             setPos(result);
             setPosRecent(getrecent)
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -712,8 +753,12 @@ const Poscreate = () => {
             setQuotations(result);
             setQuotationRecent(getrecent)
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
         }
     };
 
@@ -872,15 +917,17 @@ const Poscreate = () => {
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
+                totalnettax:Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
                 grandtotal: Number(totalNetCostCalcSub()),
                 totalbillamt: Number(totalNetCostCalcSub()),
                 userbyadd: String(isUserRoleAccess.staffname),
+                signature: String(setngs.signature),
             });
             handleprint();
-            handleSubmitclear();
+            // handleSubmitclear();
             handleClosepay();
             await fetchQot();
             await fetchDraft();
@@ -912,9 +959,14 @@ const Poscreate = () => {
             //     userbyadd: String(isUserRoleAccess.staffname),
             // });
         } catch (err) {
-            const messages = err.response.data.message;
+            const messages = err?.response?.data?.message;
+        if(messages) {
             setShowAlert(messages);
             alertOpen();
+        }else{
+            setShowAlert("Something went wrong!");
+            alertOpen();
+        }
         }
     };
 
@@ -952,13 +1004,14 @@ const Poscreate = () => {
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
+                totalnettax:Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
                 grandtotal: Number(totalNetCostCalcSub()),
                 totalbillamt: Number(totalNetCostCalcSub()),
                 userbyadd: String(isUserRoleAccess.staffname),
-
+                signature: String(setngs.signature),
             });
             await fetchQot();
             await fetchDraft();
@@ -975,8 +1028,12 @@ const Poscreate = () => {
             backLPage('/sell/pos/create');
 
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages)
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -1038,16 +1095,18 @@ const Poscreate = () => {
                     salesman: String(posAdd.salesman == undefined || null ? "" : posAdd.salesman),
                     salesmannumber: Number(posAdd.salesmannumber == undefined || null ? 0 : posAdd.salesmannumber),
                     salescommission: Number(posAdd.salescommission == undefined ? 0 :  posAdd.salescommission),
-                date: String(purchaseDateTime),
-                goods: [...tableData],
-                totalitems: Number(tableData.length),
-                totalproducts: Number(totalQuantityCalc()),
-                taxcgst: Number(CGST ? CGST : 0),
-                taxigst: Number(IGST ? IGST : 0),
-                taxsgst: Number(GST ? GST : 0),
-                grandtotal: Number(totalNetCostCalcSub()),
-                totalbillamt: Number(totalNetCostCalcSub()),
-                userbyadd: String(isUserRoleAccess.staffname),
+                    date: String(purchaseDateTime),
+                    goods: [...tableData],
+                    totalitems: Number(tableData.length),
+                    totalproducts: Number(totalQuantityCalc()),
+                    totalnettax:Number(totalTaxValCal().toFixed(2)),
+                    taxcgst: Number(CGST ? CGST : 0),
+                    taxigst: Number(IGST ? IGST : 0),
+                    taxsgst: Number(GST ? GST : 0),
+                    grandtotal: Number(totalNetCostCalcSub()),
+                    totalbillamt: Number(totalNetCostCalcSub()),
+                    userbyadd: String(isUserRoleAccess.staffname),
+                    signature: String(setngs.signature),
                    
                 });
                 await fetchQot();
@@ -1064,8 +1123,12 @@ const Poscreate = () => {
                 setTableData(clearvalall);
                 backLPage('/sell/pos/create');
             } catch (err) {
-                const messages = err.response.data.message;
-                toast.error(messages)
+                const messages = err?.response?.data?.message;
+        if(messages) {
+            toast.error(messages);
+        }else{
+            toast.error("Something went wrong!")
+        }
             }
         }
 
@@ -1165,8 +1228,12 @@ const Poscreate = () => {
             setDrafts(result);
             setDraftRecent(getrecent)
         } catch (err) {
-            const messages = err.response.data.message;
-            toast.error(messages);
+            const messages = err?.response?.data?.message;
+            if(messages) {
+                toast.error(messages);
+            }else{
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -1859,7 +1926,7 @@ const Poscreate = () => {
             {/* invoice print layout     */}
 
             <>
-                <Box sx={userStyle.printcls} ref={componentRef}>
+                <Box sx={userStyle.printcls} ref={componentRef} id="aranysinvoice">
                     <Box sx={{ padding: '20px' }}>
                     {setngs.businesslogo ? (
                         <>
@@ -1992,7 +2059,7 @@ const Poscreate = () => {
                                     </Grid>
                                     <Grid item md={6} sm={6} xs={6}>
                                         <Typography>{Number(totalTaxValCal()).toFixed(2)}</Typography>
-                                        <Typography>{totalQuantityCalc()}</Typography>
+                                        <Typography>{tableData.length}</Typography>
                                         <Typography>{totalQuantityCalc()}</Typography>
                                     </Grid>
                                 </Grid><br /><br />
