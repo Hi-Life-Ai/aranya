@@ -6,15 +6,16 @@ const catchAsyncErrors = require('../../../middleware/catchAsyncError');
 exports.getAllRoles = catchAsyncErrors(async (req, res, next) => {
     let roles;
 
-    try{
-        roles = await Role.find()
-    }catch(err){
+    try {
+        roles = await Role.find({ assignbusinessid: req.body.businessid })
+    } catch (err) {
         console.log(err.message);
     }
 
-    if(!roles){
+    if (!roles) {
         return next(new ErrorHandler('Role not found!', 400));
     }
+
 
     return res.status(200).json({
         // count: roles.length,
@@ -26,16 +27,16 @@ exports.getAllAuthRoles = catchAsyncErrors(async (req, res, next) => {
     let roles;
     let result;
 
-    try{
+    try {
         roles = await Role.find();
-        result = roles.filter((data,index)=>{
+        result = roles.filter((data, index) => {
             return data.assignbusinessid == req.body.userloginbusinessid && data.rolename == req.body.userrole
         })
-    }catch(err){
+    } catch (err) {
         console.log(err.message);
     }
 
-    if(!roles){
+    if (!roles) {
         return next(new ErrorHandler('Role not found!', 400));
     }
 
@@ -46,22 +47,29 @@ exports.getAllAuthRoles = catchAsyncErrors(async (req, res, next) => {
 })
 
 // Create new Role => /api/role/new
-exports.addRole = catchAsyncErrors(async (req, res, next) =>{
-    
-    let addrole = await Role.create(req.body);
+exports.addRole = catchAsyncErrors(async (req, res, next) => {
 
-    return res.status(200).json({ 
+    // let addrole;
+    // addrole = await Role.findOne({ rolename: req.body.rolename });
+
+    // if(addrole){
+    //     return next(new ErrorHandler('Role already exists!', 400));
+    // }
+
+    addrole = await Role.create(req.body);
+
+    return res.status(200).json({
         message: 'Successfully added!'
-     });
+    });
 })
 
 // get Signle Role => /api/role/:id
-exports.getSingleRole = catchAsyncErrors(async (req, res, next)=>{
+exports.getSingleRole = catchAsyncErrors(async (req, res, next) => {
     const id = req.params.id;
 
     let srole = await Role.findById(id);
 
-    if(!srole){
+    if (!srole) {
         return next(new ErrorHandler('Role not found!', 400));
     }
 
@@ -77,23 +85,23 @@ exports.updateRole = catchAsyncErrors(async (req, res, next) => {
     let uprole = await Role.findByIdAndUpdate(id, req.body);
 
     if (!uprole) {
-      return next(new ErrorHandler('Role not found!', 400));
+        return next(new ErrorHandler('Role not found!', 400));
     }
-    return res.status(200).json({ 
+    return res.status(200).json({
         message: 'Updated Successfully!'
-     });
+    });
 })
 
 // delete Role by id => /api/role/:id
-exports.deleteRole = catchAsyncErrors(async (req, res, next)=>{
+exports.deleteRole = catchAsyncErrors(async (req, res, next) => {
     const id = req.params.id;
 
     let drole = await Role.findByIdAndRemove(id);
 
-    if(!drole){
+    if (!drole) {
         return next(new ErrorHandler('Role not found!', 400));
     }
-    
+
     return res.status(200).json({
         message: 'Deleted Successfully!'
     });

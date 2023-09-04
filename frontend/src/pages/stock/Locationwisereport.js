@@ -42,7 +42,6 @@ function Locationwisereportall() {
     let quantity = [];
     let Mrp = [];
     let applicabletax = [];
-    let hsn = [];
     let allData = [];
 
     // Business Location
@@ -55,10 +54,10 @@ function Locationwisereportall() {
             });
             let result = req.data.busilocations.filter((data, index) => {
                 if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid&& data.activate == true
+                    return data.assignbusinessid == setngs.businessid
                 } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid&& data.activate == true
+                    if (isUserRoleAccess.businesslocation.includes(data.locationid)) {
+                        return data.assignbusinessid == setngs.businessid
                     }
                 }
             })
@@ -70,12 +69,8 @@ function Locationwisereportall() {
                 }))
             );
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
@@ -93,12 +88,8 @@ function Locationwisereportall() {
             setPos(result)
         }
         catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     };
     useEffect(() => {
@@ -129,7 +120,6 @@ function Locationwisereportall() {
                     quantity.push(value.quantity)
                     Mrp.push(value.mrp)
                     applicabletax.push(value.applicabletax)
-                    hsn.push(value.hsn)
                 })
                 allData = productId.map(function (data, i) {
                     return {
@@ -140,7 +130,6 @@ function Locationwisereportall() {
                         quantity: quantity[i],
                         mrp: Mrp[i],
                         applicabletax: applicabletax[i],
-                        hsn: hsn[i],
                     };
 
                 });
@@ -163,12 +152,8 @@ function Locationwisereportall() {
 
         }
         catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     };
 
@@ -187,8 +172,7 @@ function Locationwisereportall() {
             "Location": t.location,
             "Quantity": t.quantity,
             "MRP": t.mrp,
-            "GST": t.applicabletax,
-            "HSN": t.hsn,
+            "Tax": t.applicabletax,
         }));
         setExceldata(data);
     }
@@ -220,6 +204,15 @@ function Locationwisereportall() {
         const direction = sorting.column === column && sorting.direction === 'asc' ? 'desc' : 'asc';
         setSorting({ column, direction });
     };
+
+    const sortedData = pos.sort((a, b) => {
+        if (sorting.direction === 'asc') {
+            return a[sorting.column] > b[sorting.column] ? 1 : -1;
+        } else if (sorting.direction === 'desc') {
+            return a[sorting.column] < b[sorting.column] ? 1 : -1;
+        }
+        return 0;
+    });
 
     const renderSortingIcon = (column) => {
         if (sorting.column !== column) {
@@ -288,6 +281,9 @@ function Locationwisereportall() {
     const lastVisiblePage = Math.min(firstVisiblePage + visiblePages - 1, totalPages);
 
     const pageNumbers = [];
+
+    const indexOfLastItem = page * pageSize;
+    const indexOfFirstItem = indexOfLastItem - pageSize;
 
     for (let i = firstVisiblePage; i <= lastVisiblePage; i++) {
         pageNumbers.push(i);
@@ -388,7 +384,6 @@ function Locationwisereportall() {
                                     <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
                                     <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
                                     <StyledTableCell onClick={() => handleSorting('applicabletax')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('applicabletax')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>HSN</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
                                 </StyledTableRow>
                             </TableHead>
                             <TableBody>
@@ -401,7 +396,6 @@ function Locationwisereportall() {
                                             <StyledTableCell>{row.quantity}</StyledTableCell>
                                             <StyledTableCell>{row.mrp}</StyledTableCell>
                                             <StyledTableCell>{row.applicabletax}</StyledTableCell>
-                                            <StyledTableCell>{row.hsn}</StyledTableCell>
                                         </StyledTableRow>
                                     )))
                                     : <StyledTableRow><StyledTableCell colSpan={13} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
@@ -448,8 +442,7 @@ function Locationwisereportall() {
                                         <StyledTableCell>Location</StyledTableCell>
                                         <StyledTableCell>Quantity</StyledTableCell>
                                         <StyledTableCell>MRP</StyledTableCell>
-                                        <StyledTableCell>GST</StyledTableCell>
-                                        <StyledTableCell>HSN</StyledTableCell>
+                                        <StyledTableCell>Tax</StyledTableCell>
                                     </StyledTableRow>
                                 </TableHead>
                                 <TableBody>
@@ -462,7 +455,6 @@ function Locationwisereportall() {
                                                 <StyledTableCell>{row.quantity}</StyledTableCell>
                                                 <StyledTableCell>{row.mrp}</StyledTableCell>
                                                 <StyledTableCell>{row.applicabletax}</StyledTableCell>
-                                            <StyledTableCell>{row.hsn}</StyledTableCell>
                                             </StyledTableRow>
                                         ))
                                     }

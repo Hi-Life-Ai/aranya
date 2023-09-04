@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, } from "react";
-import { Box, Button, Typography, Paper, Select, MenuItem, FormControl, OutlinedInput, TableHead, Table, TableContainer,TableCell,TableRow, TableBody, Grid } from '@mui/material';
+import { Box, Button, Typography, Paper, Select, MenuItem, FormControl, OutlinedInput, TableHead, Table, TableContainer, TableCell, TableRow, TableBody, Grid } from '@mui/material';
 import { StyledTableRow, StyledTableCell } from '../../components/Table';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
@@ -17,13 +17,18 @@ import { useReactToPrint } from "react-to-print"
 import { FaPrint, FaFilePdf } from 'react-icons/fa';
 import autoTable from 'jspdf-autotable';
 import jsPDF from "jspdf";
+import { ThreeDots } from 'react-loader-spinner';
 
 const Transfertablelist = () => {
+
+
+    const [isLoader, setIsLoader] = useState(false);
 
     const [transfer, setTransfer] = useState([]);
     const { isUserRoleCompare } = useContext(UserRoleAccessContext);
     const { auth, setngs } = useContext(AuthContext);
     let arr = [];
+    const { isUserRoleAccess } = useContext(UserRoleAccessContext);
 
     // Datatable 
     const [page, setPage] = useState(1);
@@ -31,23 +36,28 @@ const Transfertablelist = () => {
     const [sorting, setSorting] = useState({ column: '', direction: '' });
     const [searchQuery, setSearchQuery] = useState("");
 
-    // transfer 
+    // transfer cccccccccccccccccccccccccccc
     const fetchtransfer = async () => {
         try {
-            let response = await axios.get(SERVICE.TRANSFERS, {
+            let response = await axios.post(SERVICE.TRANSFERS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
-            });
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
 
-          setTransfer(response.data.transfers)
+            });
+            setIsLoader(true)
+            setTransfer(response.data.transfers)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -76,6 +86,15 @@ const Transfertablelist = () => {
         const direction = sorting.column === column && sorting.direction === 'asc' ? 'desc' : 'asc';
         setSorting({ column, direction });
     };
+
+    const sortedData = transfer.sort((a, b) => {
+        if (sorting.direction === 'asc') {
+            return a[sorting.column] > b[sorting.column] ? 1 : -1;
+        } else if (sorting.direction === 'desc') {
+            return a[sorting.column] < b[sorting.column] ? 1 : -1;
+        }
+        return 0;
+    });
 
     const renderSortingIcon = (column) => {
         if (sorting.column !== column) {
@@ -144,6 +163,9 @@ const Transfertablelist = () => {
 
     const pageNumbers = [];
 
+    const indexOfLastItem = page * pageSize;
+    const indexOfFirstItem = indexOfLastItem - pageSize;
+
     for (let i = firstVisiblePage; i <= lastVisiblePage; i++) {
         pageNumbers.push(i);
     }
@@ -211,43 +233,53 @@ const Transfertablelist = () => {
                 </Grid><br /><br />
                 { /* Table start */}
                 <Box>
-                    <TableContainer component={Paper} >
-                        <Table aria-label="customized table" id="transfertable">
-                            <TableHead>
-                                <StyledTableRow>
-                                    <StyledTableCell onClick={() => handleSorting('date')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('date')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('fromlocation')}><Box sx={userStyle.tableheadstyle}><Box>From Company</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('fromlocation')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('tobusinesslocations')}><Box sx={userStyle.tableheadstyle}><Box>To Locations</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('tobusinesslocations')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell>Actions</StyledTableCell>
-                                </StyledTableRow>
-                            </TableHead>
-                            <TableBody>
-                                {filteredData.length > 0 ?
-                                    (filteredData.map((row, index) => (
-                                        <StyledTableRow key={index}>
-                                            <StyledTableCell>{row.date}</StyledTableCell>
-                                            <StyledTableCell>{row.fromlocation}</StyledTableCell>
-                                            <StyledTableCell>{row.products?.map((value) => value.productname + ", ")}</StyledTableCell>
-                                            <StyledTableCell>{row.products?.map((value) => value.locations?.map((data, liindec) => value.quantity[data] + ','))}</StyledTableCell>
-                                            <StyledTableCell>{row.tobusinesslocations+ ", "}</StyledTableCell>
-                                           <StyledTableCell>
-                                                <Grid sx={{display:'flex'}}>
-                                                {isUserRoleCompare[0].vstocktransferlist && (
-                                                        <>
-                                                        <Link to={`/stocktransfer/view/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonview} style={{ minWidth: '0px' }}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
-                                                        </>
-                                                    )}
-                                                </Grid>
-                                            </StyledTableCell>
+                    {isLoader ? (
+                        <>
+                            <TableContainer component={Paper} >
+                                <Table aria-label="customized table" id="transfertable">
+                                    <TableHead>
+                                        <StyledTableRow>
+                                            <StyledTableCell onClick={() => handleSorting('date')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('date')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('fromlocation')}><Box sx={userStyle.tableheadstyle}><Box>From Company</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('fromlocation')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('tobusinesslocations')}><Box sx={userStyle.tableheadstyle}><Box>To Locations</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('tobusinesslocations')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell>Actions</StyledTableCell>
                                         </StyledTableRow>
-                                    )))
-                                    : <StyledTableRow><StyledTableCell colSpan={6} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                }
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredData.length > 0 ?
+                                            (filteredData.map((row, index) => (
+                                                <StyledTableRow key={index}>
+                                                    <StyledTableCell>{row.date}</StyledTableCell>
+                                                    <StyledTableCell>{row.fromlocation}</StyledTableCell>
+                                                    <StyledTableCell>{row.products?.map((value) => value.productname + ", ")}</StyledTableCell>
+                                                    <StyledTableCell>{row.products?.map((value) => value.locations?.map((data, liindec) => value.quantity[data] + ','))}</StyledTableCell>
+                                                    <StyledTableCell>{row.tobusinesslocations + ", "}</StyledTableCell>
+                                                    <StyledTableCell>
+                                                        <Grid sx={{ display: 'flex' }}>
+                                                            {isUserRoleCompare[0].vstocktransferlist && (
+                                                                <>
+                                                                    <Link to={`/stocktransfer/view/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonview} style={{ minWidth: '0px' }}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                                                                </>
+                                                            )}
+                                                        </Grid>
+                                                    </StyledTableCell>
+                                                </StyledTableRow>
+                                            )))
+                                            : <StyledTableRow><StyledTableCell colSpan={6} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                        }
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
+                        </>
+                    ) : (
+                        <>
+                            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                            </Box>
+                        </>
+                    )}
                     <br /><br />
                     <Box style={userStyle.dataTablestyle}>
                         <Box>
@@ -291,7 +323,7 @@ const Transfertablelist = () => {
                                         <TableCell>{row.fromlocation}</TableCell>
                                         <TableCell>{row.products.map((value) => value.productname + ", ")}</TableCell>
                                         <StyledTableCell>{row.products.map((value) => value.locations.map((data, liindec) => value.quantity[data] + ','))}</StyledTableCell>
-                                        <TableCell>{row.tobusinesslocations+ ", "}</TableCell>
+                                        <TableCell>{row.tobusinesslocations + ", "}</TableCell>
                                     </TableRow>
                                 ))
                             )}

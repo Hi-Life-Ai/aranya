@@ -16,6 +16,7 @@ import moment from 'moment';
 function Userviewlist() {
 
     const { auth, setngs } = useContext(AuthContext);
+    const [isLocations, setIsLocations] = useState([]);
     const [useradd, setUseradd] = useState({});
 
     const id = useParams().id
@@ -28,14 +29,20 @@ function Userviewlist() {
                         'Authorization': `Bearer ${auth.APIToken}`
                     }
             });
+
+            let res = await axios.get(SERVICE.BUSINESS_LOCATION, {
+                headers: {
+                    'Authorization': `Bearer ${auth.APIToken}`
+                }
+            }); 
+            let locresult = res.data.busilocations.filter((data, index)=>{
+                return data.assignbusinessid == setngs.businessid
+            })
+            setIsLocations(locresult);
             setUseradd(response.data.suser);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
@@ -52,7 +59,7 @@ function Userviewlist() {
             <Headtitle title={'User View'} />
             <Typography sx={userStyle.HeaderText}>View User</Typography>
             <Box sx={userStyle.container}>
-                <form>
+                <form >
                     <Grid container spacing={2} sx={{
                         padding: '40px 20px'
                     }}>
@@ -63,7 +70,7 @@ function Userviewlist() {
                                     <OutlinedInput
                                         sx={userStyle.input}
                                         value={useradd.entrynumber}
-                                        type="number"
+                                        type="text"
                                     />
                                 </FormControl>
                             </Grid>
@@ -72,15 +79,47 @@ function Userviewlist() {
                         <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Date</InputLabel>
                             <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    sx={userStyle.input}
+                                <OutlinedInput
                                     value={dateval}
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >Business Location</InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    sx={userStyle.input}
+                                    value={isLocations?.map((data, i) => useradd.businesslocation.map((value, liindec) => data.locationid.includes(value) ? data.name + " ": ""))}
                                     type="text"
                                 />
                             </FormControl>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
-                            <InputLabel >User ID <b style={{ color: "red" }}>*</b></InputLabel>
+                            <InputLabel >Department</InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    value={useradd.department}
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >Role <b style={{ color: "red" }}>*</b></InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    value={useradd.role}
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >Sales Commission(%)</InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    value={useradd.salescommission}
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >User ID<b style={{ color: "red" }}>*</b></InputLabel>
                             <Grid sx={{ display: "flex" }}>
                                 <FormControl size="small" fullWidth>
                                     <OutlinedInput
@@ -91,6 +130,15 @@ function Userviewlist() {
                                 </FormControl>
                             </Grid>
                             <Typography variant="caption">Leave blank to auto generate</Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >Date of Join</InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    value={doj}
+                                    type="text"
+                                />
+                            </FormControl>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Staff Name <b style={{ color: "red" }}>*</b> </InputLabel>
@@ -113,77 +161,12 @@ function Userviewlist() {
                             </FormControl>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
-                            <InputLabel>Business Location</InputLabel>
-                            <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    sx={userStyle.input}
-                                    value={useradd.businesslocation + ", "}
-                                    type="text"
-                                />
-                                </FormControl>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={4}>
-                            <InputLabel >Department</InputLabel>
-                            <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    sx={userStyle.input}
-                                    value={useradd.department}
-                                    type="text"
-                                />
-                                </FormControl>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={4}>
-                            <InputLabel >Role <b style={{ color: "red" }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    sx={userStyle.input}
-                                    value={useradd.role}
-                                    type="text"
-                                />
-                            </FormControl>
-                        </Grid>
-                        { useradd.role == "Salesman" ? 
-                        <>
-                        <Grid item xs={12} sm={6} md={4} lg={4}>
-                            <InputLabel >Sales Commission (%)</InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    value={useradd.salescommission}
-                                    type="text"
-                                />
-                            </FormControl>
-                        </Grid>
-                        </> : ""}
-                        <Grid item xs={12} sm={6} md={4} lg={4} sx={{ '& .MuiFormControlLabel-root': { marginTop: '20px !important' }, '& .MuiIconButton-root': {marginTop: '20px'} }}>
-                            <FormGroup>
-                                <span>
-                                    <FormControlLabel  control={<Checkbox checked={useradd.useractive}  />} label="User Active" />
-                                    <Tooltip arrow title="Active users only login!">
-                                        <IconButton size="small">
-                                            <FcInfo />
-                                        </IconButton>
-                                    </Tooltip>
-                                </span>
-                            </FormGroup>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={4}>
-                            <InputLabel >Date of Join</InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    value={doj}
-                                />
-                            </FormControl>
-                        </Grid>
-                        <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Gender</InputLabel>
                             <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    sx={userStyle.input}
+                                <OutlinedInput
                                     value={useradd.gender}
-                                    type="text"
                                 />
-                            </FormControl>
+                            </FormControl><br></br>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Blood Group</InputLabel>
@@ -191,6 +174,8 @@ function Userviewlist() {
                                 <OutlinedInput
                                     sx={userStyle.input}
                                     value={useradd.bloodgroup}
+                                    type="text"
+
                                 />
                             </FormControl>
                         </Grid>
@@ -199,14 +184,25 @@ function Userviewlist() {
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
                                     sx={userStyle.input}
-                                    value={useradd.dob}
+                                    value={dob}
+                                    type="text"
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >Religion</InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    sx={userStyle.input}
+                                    value={useradd.religion}
+                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Nationality</InputLabel>
                             <FormControl size="small" fullWidth>
-                            <OutlinedInput
+                                <OutlinedInput
                                     sx={userStyle.input}
                                     value={useradd.nationality}
                                     type="text"
@@ -227,6 +223,7 @@ function Userviewlist() {
                                 <OutlinedInput
                                     sx={userStyle.input}
                                     value={useradd.areacity}
+                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
@@ -234,8 +231,8 @@ function Userviewlist() {
                             <InputLabel >Pincode</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     value={useradd.pincode}
+                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
@@ -243,8 +240,8 @@ function Userviewlist() {
                             <InputLabel >Mobile <b style={{ color: "red" }}>*</b></InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     value={useradd.phonenum}
+                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
@@ -252,10 +249,21 @@ function Userviewlist() {
                             <InputLabel >Other Contact Number</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     value={useradd.otherphonenum}
                                 />
                             </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4} sx={{ '& .MuiFormControlLabel-root': { marginTop: '20px !important' }, '& .MuiIconButton-root': {marginTop: '20px'} }}>
+                            <FormGroup>
+                            <span>
+                            <FormControlLabel control={<Checkbox checked={Boolean(useradd.useractive)} />} label="User Active" />
+                                    <Tooltip arrow title="Active users only login!">
+                                        <IconButton size="small">
+                                            <FcInfo />
+                                        </IconButton>
+                                    </Tooltip>
+                                </span>
+                            </FormGroup>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Email <b style={{ color: "red" }}>*</b></InputLabel>
@@ -263,7 +271,16 @@ function Userviewlist() {
                                 <OutlinedInput
                                     sx={userStyle.input}
                                     value={useradd.email}
-                                    type="email"
+                                    type="text"
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >Password <b style={{ color: "red" }}>*</b></InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    value={useradd.password}
+                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
@@ -271,9 +288,7 @@ function Userviewlist() {
                             <InputLabel >Marital Status</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     value={useradd.maritalstatus}
-                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
@@ -281,7 +296,6 @@ function Userviewlist() {
                             <InputLabel >Family Details</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     value={useradd.familydetails}
                                     type="text"
                                 />
@@ -328,7 +342,6 @@ function Userviewlist() {
                             <InputLabel >Aadhaar Number</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     value={useradd.aadharnumber}
                                 />
                             </FormControl>
@@ -337,36 +350,28 @@ function Userviewlist() {
                             <InputLabel >Bank A/C Number</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     value={useradd.accnumber}
                                 />
                             </FormControl>
                         </Grid>
                         <Grid item lg={4} md={4} sm={6} xs={12}>
-                            <InputLabel sx={{ m: 1 }}>Profile Image</InputLabel>
+                            <InputLabel sx={{ m: 1 }}>Product Image</InputLabel>
                             <Grid sx={{ display: 'flex', justifyContent: 'center' }}>
-                                {useradd.profileimage ? (
-                                    <>
-                                    <img src={useradd.profileimage} style={{ width: '30%' }} alt="Profile Image" />
-                                    </>
-                                ):(
-                                    <></>
-                                )}
+                                <img src={useradd.profileimage} style={{ width: '30%' }} />
                             </Grid>
                         </Grid>
-                        <Grid item xs={12} sm={12} md={8} lg={8}>
+                        <Grid item xs={12} sm={12} md={12} lg={12}>
                             <InputLabel >Remarks</InputLabel>
                             <FormControl size="small" fullWidth >
-                                <TextareaAutosize aria-label="minimum height" minRows={10} mincol={5} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
+                                <TextareaAutosize aria-label="minimum height" minRows={5} mincol={5} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
                                     value={useradd.remarks}
-                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
                         <Grid item md={2} xs={12}></Grid>
                         <Grid container sx={userStyle.gridcontainer}>
                             <Grid >
-                                <Link to="/user/user/list"><Button sx={userStyle.buttoncancel}>CANCEL</Button></Link>
+                                <Link to="/user/user/list"><Button sx={userStyle.buttoncancel}>BACK</Button></Link>
                             </Grid>
                         </Grid>
                     </Grid>

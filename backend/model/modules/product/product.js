@@ -34,7 +34,7 @@ const productSchema = new Schema({
         type: Number,
         required: false
     },
-    hsn:{
+    hsn: {
         type: String,
         required: false
     },
@@ -46,15 +46,15 @@ const productSchema = new Schema({
         type: String,
         required: false
     },
-    unit:  {
+    unit: {
         type: String,
         required: false
     },
-    currentstock:{
+    currentstock: {
         type: Number,
         required: false
     },
-    managestock:  {
+    managestock: {
         type: Boolean,
         required: false
     },
@@ -66,11 +66,11 @@ const productSchema = new Schema({
         type: Number,
         required: false
     },
-    productdescription:  {
+    productdescription: {
         type: String,
         required: false
     },
-    productimage:  {
+    productimage: {
         type: String,
         required: false
     },
@@ -82,11 +82,11 @@ const productSchema = new Schema({
         type: String,
         required: false
     },
-    assignbusinessid:{
+    assignbusinessid: {
         type: String,
         required: false
     },
-    createdAt:{
+    createdAt: {
         type: Date,
         default: Date.now
     },

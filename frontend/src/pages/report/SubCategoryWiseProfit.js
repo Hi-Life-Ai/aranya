@@ -19,7 +19,7 @@ import { UserRoleAccessContext } from '../../context/Appcontext';
 import { AuthContext } from '../../context/Appcontext';
 import Selects from 'react-select';
 import { useReactToPrint } from "react-to-print";
-
+import { ThreeDots } from 'react-loader-spinner';
 function SubCategoryProfitWiselist() {
 
   const [exceldata, setExceldata] = useState([]);
@@ -32,26 +32,24 @@ function SubCategoryProfitWiselist() {
   const [pageSize, setPageSize] = useState(1);
   const [sorting, setSorting] = useState({ column: '', direction: '' });
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoader, setIsLoader] = useState(false);
 
-  let tableDatas = [];
   let totalsales = 0
   let totalprofit = 0
   // Acces
-  const { isUserRoleCompare } = useContext(UserRoleAccessContext);
+  const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
 
   // Category
   const fetchSubCategory = async () => {
     try {
-      let request = await axios.get(SERVICE.CATEGORIES, {
+      let request = await axios.post(SERVICE.CATEGORY_OPTIONS, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid),
       });
-      let req_data = request.data.categories?.filter((data) => {
-        return data.assignbusinessid == setngs.businessid
-      })
 
-      let sub_data = req_data.map((data) => {
+      let sub_data = request.data.result.map((data) => {
         return data.subcategories
       })
       let condata = sub_data.flat()
@@ -63,69 +61,81 @@ function SubCategoryProfitWiselist() {
 
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
   useEffect(() => {
     fetchSubCategory()
-  },[])
+  }, [])
 
-  // fetching datas for table function
-  const fetchProfit = async (e) => {
+
+
+
+  const fetchSubcateProfit = async (e) => {
+
+
     try {
-      let req_data = await axios.get(SERVICE.POS, {
+      let req_data = await axios.post(SERVICE.SUBCATE_PROFIT, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
-      });
-      req_data.data.pos1.filter((item) => {
-        item.goods.forEach((data) => {
-          if (data.subcategory == e.value) {
-            tableDatas.push({ ...data, location: item.location })
-          } else {
-            setPosData([]);
-          }
-        })
-      })
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation],
+        subcategory: String(e.subcategryname)
 
-      // console.log(tableDatas);
-      const result = [...tableDatas.reduce((r, o) => {
+      });
+
+      let result = req_data.data.filterpos
+      console.log(result);
+
+      const finalprofits = [...result.reduce((r, o) => {
         const key = o.productid;
         const items = r.get(key) || Object.assign({}, o, {
           quantity: 0,
-          subtotal:0,
+          sellingvalue: 0,
           profit: 0,
           sales: 0,
           allmrp: 0,
           allsellingvalue: 0,
-
         });
-        items.quantity += +o.quantity;         
-        items.subtotal += +o.subtotal;
+        items.quantity += +o.quantity
         items.sellingvalue += +o.sellingvalue
-        items.sales += +o.sales
+        items.sales += +o.subtotal
         items.allmrp += +o.quantity * +o.mrp
         items.allsellingvalue += +o.quantity * +o.sellingvalue
         return r.set(key, items);
       }, new Map).values()];
 
-      setPosData(result);
+
+      setPosData(finalprofits);
+      setIsLoader(true)
 
     } catch (err) {
+      setIsLoader(true)
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
 
   }
+
+
+
+
+
+
+
+
+
 
   // Export Excel
   const fileName = 'Category Wise Profit'
@@ -133,8 +143,8 @@ function SubCategoryProfitWiselist() {
   const getexcelDatas = async () => {
     let data = posData.map(t => ({
       "Productname": t.productname,
-      "Date": moment(t.date).format('DD-MM-YYYY'),
-      "Location": t.location,
+      "Date": t.formatedate,
+      "Location": t.businesslocation,
       "Mrp rate": t.allmrp.toFixed(2),
       "Sales ": t.subtotal.toFixed(2),
       "Quantity": t.quantity,
@@ -266,7 +276,7 @@ function SubCategoryProfitWiselist() {
             <InputLabel htmlFor="component-outlined">Sub Category Name <b style={{ color: "red" }}> *</b></InputLabel>
             <FormControl size="small" fullWidth >
               <Selects
-                onChange={(e) => { fetchProfit(e) }}
+                onChange={(e) => { fetchSubcateProfit(e) }}
                 placeholder={"Sub Categories"}
                 styles={colourStyles}
                 options={subcateOptions}
@@ -318,51 +328,62 @@ function SubCategoryProfitWiselist() {
           </Grid>
         </Grid><br /><br />
         <Box>
-          <TableContainer component={Paper} >
-            <Table sx={{ minWidth: 700 }}>
-              <TableHead>
-                <StyledTableRow>
-                  <StyledTableCell onClick={() => handleSorting('location')}><Box sx={userStyle.tableheadstyle}><Box>Location Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('location')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('subtotal')}><Box sx={userStyle.tableheadstyle}><Box>Sales </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subtotal')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('profits')}><Box sx={userStyle.tableheadstyle}><Box>Profit </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('profits')}</Box></Box></StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody align="left">
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell >{row.location}</StyledTableCell>
-                      <StyledTableCell >{row.productname}</StyledTableCell>
-                      <StyledTableCell >{row.allmrp}</StyledTableCell>
-                      <StyledTableCell >{row.quantity}</StyledTableCell>
-                      <StyledTableCell >{row.subtotal.toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{(Number(row.subtotal) - Number(row.allmrp)).toFixed(2)}</StyledTableCell>
+          {isLoader ? (
+            <>
+              <TableContainer component={Paper} >
+                <Table sx={{ minWidth: 700 }}>
+                  <TableHead>
+                    <StyledTableRow>
+                      <StyledTableCell onClick={() => handleSorting('businesslocation')}><Box sx={userStyle.tableheadstyle}><Box>Location Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('businesslocation')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('subtotal')}><Box sx={userStyle.tableheadstyle}><Box>Sales </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subtotal')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('profits')}><Box sx={userStyle.tableheadstyle}><Box>Profit </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('profits')}</Box></Box></StyledTableCell>
                     </StyledTableRow>
+                  </TableHead>
+                  <TableBody align="left">
+                    {filteredData.length > 0 ?
+                      (filteredData.map((row, index) => (
+                        <StyledTableRow key={index}>
+                          <StyledTableCell >{row.businesslocation}</StyledTableCell>
+                          <StyledTableCell >{row.productname}</StyledTableCell>
+                          <StyledTableCell >{row.allmrp}</StyledTableCell>
+                          <StyledTableCell >{row.quantity}</StyledTableCell>
+                          <StyledTableCell >{row.subtotal.toFixed(2)}</StyledTableCell>
+                          <StyledTableCell >{(Number(row.subtotal) - Number(row.allmrp)).toFixed(2)}</StyledTableCell>
+                        </StyledTableRow>
 
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={10} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-              <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
-                <StyledTableRow className="table2_total" >
-                  {posData && (
-                    posData.forEach(
-                      (item => {
-                        totalsales += +item.subtotal;
-                        totalprofit += Number(item.subtotal) - Number(item.allmrp)
-                      })
-                    ))}
+                      )))
+                      : <StyledTableRow><StyledTableCell colSpan={10} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                    }
+                  </TableBody>
+                  <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
+                    <StyledTableRow className="table2_total" >
+                      {posData && (
+                        posData.forEach(
+                          (item => {
+                            totalsales += +item.subtotal;
+                            totalprofit += Number(item.subtotal) - Number(item.allmrp)
+                          })
+                        ))}
 
-                  <StyledTableCell align="center" colSpan={4} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹{totalsales.toFixed(2)} </StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalprofit.toFixed(2)}</StyledTableCell>
-                </StyledTableRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
+                      <StyledTableCell align="center" colSpan={4} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
+                      <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹{totalsales.toFixed(2)} </StyledTableCell>
+                      <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalprofit.toFixed(2)}</StyledTableCell>
+                    </StyledTableRow>
+                  </TableFooter>
+                </Table>
+              </TableContainer>
+            </>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <ThreeDots height="80" width="80" radius="9" color="#1976D2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+              </Box>
+            </>
+          )}
+
           <br /><br />
           <Box style={userStyle.dataTablestyle}>
             <Box>
@@ -418,20 +439,20 @@ function SubCategoryProfitWiselist() {
             }
           </TableBody>
           <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
-                <StyledTableRow className="table2_total" >
-                  {posData && (
-                    posData.forEach(
-                      (item => {
-                        totalsales += +item.subtotal;
-                        totalprofit += Number(item.subtotal) - Number(item.allmrp)
-                      })
-                    ))}
+            <StyledTableRow className="table2_total" >
+              {posData && (
+                posData.forEach(
+                  (item => {
+                    totalsales += +item.subtotal;
+                    totalprofit += Number(item.subtotal) - Number(item.allmrp)
+                  })
+                ))}
 
-                  <StyledTableCell align="center" colSpan={5} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹{totalsales.toFixed(2)} </StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalprofit.toFixed(2)}</StyledTableCell>
-                </StyledTableRow>
-              </TableFooter>
+              <StyledTableCell align="center" colSpan={5} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
+              <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹{totalsales.toFixed(2)} </StyledTableCell>
+              <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalprofit.toFixed(2)}</StyledTableCell>
+            </StyledTableRow>
+          </TableFooter>
         </Table>
       </TableContainer>
     </Box>

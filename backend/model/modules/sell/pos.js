@@ -11,6 +11,38 @@ const posSchema = new Schema({
         type: String,
         required: false,
     },
+    company: {
+        type: String,
+        required: false
+    },
+    companyaddress: {
+        type: String,
+        required: false
+    },
+    gstn: {
+        type: Number,
+        required: false
+    },
+    location: {
+        type: String,
+        required: false
+    },
+    translocaddress: {
+        type: String,
+        required: false
+    },
+    deliverylocaddress: {
+        type: String,
+        required: false
+    },
+    salesman: {
+        type: String,
+        required: false
+    },
+    salescommission: {
+        type: Number,
+        required: false
+    },
     date: {
         type: String,
         required: false,
@@ -29,7 +61,7 @@ const posSchema = new Schema({
                 type: Number,
                 requried: false,
             },
-            productid: {
+            stockid: {
                 type: String,
                 requried: false,
             },
@@ -49,14 +81,6 @@ const posSchema = new Schema({
                 type: String,
                 requried: false,
             },
-            hsn: {
-                type: String,
-                requried: false,
-            },
-            sellingpricetax: {
-                type: String,
-                requried: false,
-            },
             discountamt: {
                 type: Number,
                 requried: false,
@@ -65,28 +89,12 @@ const posSchema = new Schema({
                 type: Number,
                 requried: false,
             },
-            companyrate: {
-                type: Number,
-                required: false
-            },
-            superstockrate: {
-                type: Number,
-                required: false
-            },
-            dealerrate: {
-                type: Number,
-                required: false
+            productid: {
+                type: String,
+                requried: false,
             },
             mrp: {
                 type: Number,
-                required: false
-            },
-            sellingvalue: {
-                type: Number,
-                required: false
-            },
-            ratetype: {
-                type: String,
                 required: false
             },
             afterdiscount: {
@@ -154,27 +162,6 @@ const posSchema = new Schema({
         type: String,
         required: false
     },
-    //own company
-    company: {
-        type: String,
-        required: false
-    },
-    companyaddress: {
-        type: String,
-        required: false
-    },
-    companycontactpersonname: {
-        type: String,
-        required: false
-    },
-    companycontactpersonnumber: {
-        type: Number,
-        required: false
-    },
-    gstn: {
-        type: String,
-        required: false
-    },
     bankname: {
         type: String,
         required: false
@@ -186,61 +173,6 @@ const posSchema = new Schema({
     ifsccode: {
         type: String,
         required: false
-    },
-    //Delivery
-    location: {
-        type: String,
-        required: false
-    },
-    deliveryaddress: {
-        type: String,
-        required: false
-    },
-    deliverygstn: {
-        type: String,
-        required: false
-    },
-    deliverycontactpersonname: {
-        type: String,
-        required: false
-    },
-    deliverycontactpersonnumber: {
-        type: Number,
-        required: false
-    },
-    //transport
-    drivername: {
-        type: String,
-        required: false
-    },
-    drivernumber: {
-        type: String,
-        required: false
-    },
-    drivernphonenumber: {
-        type: Number,
-        required: false
-    },
-    //salesman
-    salesman: {
-        type: String,
-        required: false
-    },
-    salescommission: {
-        type: Number,
-        required: false
-    },
-    salesmannumber: {
-        type: Number,
-        required: false
-    },
-    totalnettax:{
-        type:Number,
-        required:false
-    },
-    signature:{
-        type:String,
-        required:false
     },
     createdAt: {
         type: Date,

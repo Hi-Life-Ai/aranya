@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Box, Button, Grid, Select, MenuItem, OutlinedInput, Paper, TableFooter, Typography,Dialog, DialogContent, DialogActions, TableContainer, Table, TableHead, TableBody, FormControl, } from '@mui/material';
+import { Box, Button, Grid, Select, MenuItem, OutlinedInput, Paper, TableFooter, Typography, TableContainer, Table, TableHead, TableBody, FormControl, } from '@mui/material';
 import { FaPrint, FaFilePdf, } from 'react-icons/fa';
 import Navbar from '../../components/header/Navbar';
 import Footer from '../../components/footer/Footer';
@@ -15,7 +15,6 @@ import { useReactToPrint } from "react-to-print";
 import Headtitle from '../../components/header/Headtitle';
 import { SERVICE } from '../../services/Baseservice';
 import { AuthContext } from '../../context/Appcontext';
-import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 
@@ -31,16 +30,7 @@ function Unitwisereportall() {
     const [sorting, setSorting] = useState({ column: '', direction: '' });
     const [searchQuery, setSearchQuery] = useState("");
 
-      //popup model
-      const [isErrorOpen, setIsErrorOpen] = useState(false);
-      const [showAlert, setShowAlert] = useState()
-      const handleOpen = () => {  setIsErrorOpen(true);  };
-      const handleClose = () => {  setIsErrorOpen(false); };
-
     let total = 0.00;
-  let totalcompanyrate = 0.00;
-  let totalsuperstockyrate = 0.00;
-  let totaldealarrate = 0.00;
     //role access
     const { isUserRoleCompare } = useContext(UserRoleAccessContext);
 
@@ -66,12 +56,8 @@ function Unitwisereportall() {
                 }))
             );
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
@@ -95,12 +81,8 @@ function Unitwisereportall() {
             setProducts(prodDataLocation);
         }
         catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     };
 
@@ -108,31 +90,18 @@ function Unitwisereportall() {
         fetchUnit();
     }, [])
 
-    const handleSubmit = () =>{
-        if(selectFilter.unit == ""){
-          setShowAlert("Please select unit name!");
-          handleOpen();
-        }else{
-          searchLoc();
-        }
-    }
-
     // Export Excel
     const fileName = 'Unit Wise Report';
     //  get particular columns for export excel
     const getexcelDatas = async () => {
         var data = products.map(t => ({
             "Item Code": t.sku,
-      "Item Name": t.productname,
-      "Category": t.category,
-      "Company Rate": t.companyrate.toFixed(2),
-      "Super stock's Rate": t.superstockrate.toFixed(2),
-      "Dealer Rate": t.dealerrate.toFixed(2),
-      "MRP": t.mrp.toFixed(2),
-      "Unit": t.unit,
-      "TAX": t.applicabletax,
-      "HSN": t.hsn,
-      "Current Stock": t.currentstock,
+            "Item Name": t.productname,
+            "Category": t.category,
+            "MRP": t.mrp.toFixed(2),
+            "Unit": t.unit,
+            "Tax": t.hsncode,
+            "Current Stock": t.currentstock,
         }));
         setExceldata(data);
     }
@@ -164,6 +133,15 @@ function Unitwisereportall() {
         const direction = sorting.column === column && sorting.direction === 'asc' ? 'desc' : 'asc';
         setSorting({ column, direction });
     };
+
+    const sortedData = products.sort((a, b) => {
+        if (sorting.direction === 'asc') {
+            return a[sorting.column] > b[sorting.column] ? 1 : -1;
+        } else if (sorting.direction === 'desc') {
+            return a[sorting.column] < b[sorting.column] ? 1 : -1;
+        }
+        return 0;
+    });
 
     const renderSortingIcon = (column) => {
         if (sorting.column !== column) {
@@ -270,7 +248,7 @@ function Unitwisereportall() {
                                  border: '1px solid #339d3a',
                                  color: '#339d3a',
                              }
-                        }} onClick={handleSubmit} >Generate</Button>
+                        }} onClick={(e) => { searchLoc() }} >Generate</Button>
                     </Grid>
                     <Grid item lg={3} md={3}  ></Grid>
                 </Grid>
@@ -339,17 +317,13 @@ function Unitwisereportall() {
                         <Table >
                             <TableHead  >
                                 <StyledTableRow >
-                                <StyledTableCell onClick={() => handleSorting('sku')}><Box sx={userStyle.tableheadstyle}><Box>Item Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sku')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Item Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('category')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('category')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('companyrate')}><Box sx={userStyle.tableheadstyle}><Box>Company rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('companyrate')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('superstockrate')}><Box sx={userStyle.tableheadstyle}><Box>Super Stock's rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('superstockrate')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('dealerrate')}><Box sx={userStyle.tableheadstyle}><Box>Dealer rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('dealerrate')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Unit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('applicabletax')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('applicabletax')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>HSN</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('currentstock')}><Box sx={userStyle.tableheadstyle}><Box>Current Stock</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('currentstoxk')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('sku')}><Box sx={userStyle.tableheadstyle}><Box>Item Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sku')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Item Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('category')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('category')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Unit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('hsncode')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsncode')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('currentstock')}><Box sx={userStyle.tableheadstyle}><Box>Current Stock</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('minquantity')}</Box></Box></StyledTableCell>
                                 </StyledTableRow>
                             </TableHead>
                             <TableBody>
@@ -359,36 +333,26 @@ function Unitwisereportall() {
                                             <StyledTableCell>{row.sku}</StyledTableCell>
                                             <StyledTableCell>{row.productname}</StyledTableCell>
                                             <StyledTableCell>{row.category}</StyledTableCell>
-                                            <StyledTableCell>{row.companyrate}</StyledTableCell>
-                                            <StyledTableCell>{row.superstockrate}</StyledTableCell>
-                                            <StyledTableCell>{row.dealerrate}</StyledTableCell>
-                                            <StyledTableCell>{row.mrp}</StyledTableCell>
+                                            <StyledTableCell>{row.mrp.toFixed(2)}</StyledTableCell>
                                             <StyledTableCell>{row.unit}</StyledTableCell>
-                                            <StyledTableCell>{row.applicabletax}</StyledTableCell>
-                                            <StyledTableCell>{row.hsn}</StyledTableCell>
+                                            <StyledTableCell>{row.hsn == "" || row.hsn == "None" ? row.applicabletax : row.hsn}</StyledTableCell>
                                             <StyledTableCell>{row.currentstock}</StyledTableCell>
                                         </StyledTableRow>
                                     )))
-                                    : <StyledTableRow><StyledTableCell colSpan={17} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                    : <StyledTableRow><StyledTableCell colSpan={13} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
                                 }
                             </TableBody>
                             <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
-                            <StyledTableRow className="table2_total" >
-                                {products && (
-                                    products.forEach(
-                                    (item => {
-                                        totalcompanyrate += +item.companyrate;
-                                        totalsuperstockyrate += +item.superstockrate;
-                                        totaldealarrate += +item.dealerrate;
-                                        total += +item.mrp;
-                                    })
-                                    ))}
-                                <StyledTableCell align="center" colSpan={3} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
-                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalcompanyrate.toFixed(2)}</StyledTableCell>
-                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalsuperstockyrate.toFixed(2)}</StyledTableCell>
-                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totaldealarrate.toFixed(2)}</StyledTableCell>
-                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {total.toFixed(2)}</StyledTableCell>
-                                <StyledTableCell align="left" colSpan={4}></StyledTableCell>
+                                <StyledTableRow className="table2_total" >
+                                    {products && (
+                                        products.forEach(
+                                            (item => {
+                                                total += +item.mrp;
+                                            })
+                                        ))}
+                                    <StyledTableCell align="center" colSpan={3} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
+                                    <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {total.toFixed(2)}</StyledTableCell>
+                                    <StyledTableCell align="left" colSpan={3}></StyledTableCell>
                                 </StyledTableRow>
                             </TableFooter>
                         </Table>
@@ -427,17 +391,13 @@ function Unitwisereportall() {
                             <Table sx={{ minWidth: 700 }} aria-label="customized table" id="producttable" ref={componentRef}>
                                 <TableHead>
                                     <StyledTableRow >
-                                    <StyledTableCell>Item Code </StyledTableCell>
-                                    <StyledTableCell>Item Name</StyledTableCell>
-                                    <StyledTableCell>Category</StyledTableCell>
-                                    <StyledTableCell>Company rate</StyledTableCell>
-                                    <StyledTableCell>Super stock's rate</StyledTableCell>
-                                    <StyledTableCell>Dealer rate</StyledTableCell>
-                                    <StyledTableCell>MRP</StyledTableCell>
-                                    <StyledTableCell>Unit</StyledTableCell>
-                                    <StyledTableCell>Tax</StyledTableCell>
-                                    <StyledTableCell>HSN</StyledTableCell>
-                                    <StyledTableCell>Current Stock</StyledTableCell>
+                                        <StyledTableCell>Item Code </StyledTableCell>
+                                        <StyledTableCell>Item Name</StyledTableCell>
+                                        <StyledTableCell>Category</StyledTableCell>
+                                        <StyledTableCell>MRP</StyledTableCell>
+                                        <StyledTableCell>Unit</StyledTableCell>
+                                        <StyledTableCell>Tax</StyledTableCell>
+                                        <StyledTableCell>Current Stock</StyledTableCell>
                                     </StyledTableRow>
                                 </TableHead>
                                 <TableBody>
@@ -445,16 +405,12 @@ function Unitwisereportall() {
                                         products?.map((row, index) => (
                                             <StyledTableRow key={index}>
                                                 <StyledTableCell>{row.sku}</StyledTableCell>
-                        <StyledTableCell>{row.productname}</StyledTableCell>
-                        <StyledTableCell>{row.category}</StyledTableCell>
-                        <StyledTableCell>{row.companyrate}</StyledTableCell>
-                      <StyledTableCell>{row.superstockrate}</StyledTableCell>
-                      <StyledTableCell>{row.dealerrate}</StyledTableCell>
-                      <StyledTableCell>{row.mrp}</StyledTableCell>
-                      <StyledTableCell>{row.unit}</StyledTableCell>
-                      <StyledTableCell>{row.applicabletax}</StyledTableCell>
-                      <StyledTableCell>{row.hsn}</StyledTableCell>
-                      <StyledTableCell>{row.currentstock}</StyledTableCell>
+                                                <StyledTableCell>{row.productname}</StyledTableCell>
+                                                <StyledTableCell>{row.category}</StyledTableCell>
+                                                <StyledTableCell>{row.mrp.toFixed(2)}</StyledTableCell>
+                                                <StyledTableCell>{row.unit}</StyledTableCell>
+                                                <StyledTableCell>{row.hsn == "" || row.hsn == "None" ? row.applicabletax : row.hsn}</StyledTableCell>
+                                                <StyledTableCell>{row.currentstock}</StyledTableCell>
                                             </StyledTableRow>
                                         ))
                                     }
@@ -463,24 +419,8 @@ function Unitwisereportall() {
                         </TableContainer>
                     </Box>
                 </Box>
+
             </>
-             {/* ALERT DIALOG */}
-          <Box>
-            <Dialog
-                open={isErrorOpen}
-                onClose={handleClose}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogContent sx={{ width: '350px', textAlign: 'center', alignItems: 'center' }}>
-                    <ErrorOutlineOutlinedIcon sx={{ fontSize: "80px", color: 'orange' }} />
-                    <Typography variant="h6" >{showAlert}</Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button variant="contained" color="error" onClick={handleClose}>ok</Button>
-                </DialogActions>
-            </Dialog>
-          </Box>
         </Box>
     );
 

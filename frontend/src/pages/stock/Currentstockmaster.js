@@ -16,9 +16,9 @@ function Currentstockmastercreate() {
     const { auth } = useContext(AuthContext);
 
     // Text field
-    const [current, setCurrent] = useState({ productname: "", currentstock: "" });
+    const [current, setCurrent] = useState({ productname: " ", currentstock: " " });
     const [products, setProducts] = useState();
-    const [sum, setSum] = useState("");
+    const [sum, setSum] = useState();
 
     // Empty ALERT POPUP
     const [isErrorOpen, setIsErrorOpen] = useState(false);
@@ -30,11 +30,11 @@ function Currentstockmastercreate() {
     const [isAddCurrent, setIsAddCurrent] = useState(false);
     const handleClickOpenCurrent = () => {
 
-        if (current.productname == "") {
+        if (current.productname == " ") {
             setShowAlert("Please select Products!");
             handleClickOpenalert()
         }
-        else if (current.currentstock == "" || 0) {
+        else if (current.currentstock == " ") {
             setShowAlert("Please enter quantity!");
             handleClickOpenalert()
         }
@@ -44,7 +44,7 @@ function Currentstockmastercreate() {
     };
     const handleCloseCurrent = () => {
         setIsAddCurrent(false);
-        setCurrent({ productname: "", currentstock: "" })
+        setCurrent({ productname: " ", currentstock: " " })
     };
 
     // Categorys
@@ -63,12 +63,8 @@ function Currentstockmastercreate() {
                 }))
             );
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     };
     useEffect(() => { fetchProducts() }, [])

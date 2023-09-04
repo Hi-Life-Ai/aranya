@@ -21,6 +21,9 @@ import { UserRoleAccessContext } from '../../../context/Appcontext';
 import { SERVICE } from '../../../services/Baseservice';
 import { useReactToPrint } from "react-to-print";
 import { AuthContext } from '../../../context/Appcontext';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import { ThreeDots } from 'react-loader-spinner';
+
 
 function Roleslisttable() {
 
@@ -34,9 +37,10 @@ function Roleslisttable() {
   const [pageSize, setPageSize] = useState(1);
   const [sorting, setSorting] = useState({ column: '', direction: '' });
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoader, setIsLoader] = useState(false);
 
   // Access
-  const { isUserRoleCompare } = useContext(UserRoleAccessContext);
+  const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
 
   // Delete model
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -46,22 +50,26 @@ function Roleslisttable() {
   // Roles
   const fetchHandler = async () => {
     try {
-      let role = await axios.get(`${SERVICE.ROLE}`, {
+      let role = await axios.post(`${SERVICE.ROLE}`, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid)
+
       });
-      let result = role.data.roles.filter((data, index) => {
-        return data.rolename != 'Admin' && data.assignbusinessid == setngs.businessid
-      })
-      setRoles(result)
+      // let result = role.data.roles.filter((data, index) => {
+      //   return data.rolename != 'Admin' && data.assignbusinessid == setngs.businessid
+      // })
+      setRoles(role?.data?.roles);
+      setIsLoader(true);
     } catch (err) {
+      setIsLoader(true);
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -76,11 +84,11 @@ function Roleslisttable() {
       setDeltRole(res.data.srole);
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -99,11 +107,11 @@ function Roleslisttable() {
       handleClose();
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -280,78 +288,92 @@ function Roleslisttable() {
             </Grid>
           </Box>
         </Grid><br />
-        <Grid container sx={userStyle.gridcontainer}>
-          <Grid >
-            {isUserRoleCompare[0].csvrole && (
-              <>
-                <ExportCSV csvData={exceldata} fileName={fileName} />
-              </>
-            )}
-            {isUserRoleCompare[0].excelrole && (
-              <>
-                <ExportXL csvData={exceldata} fileName={fileName} />
-              </>
-            )}
-            {isUserRoleCompare[0].printrole && (
-              <>
-                <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
-              </>
-            )}
-            {isUserRoleCompare[0].pdfrole && (
-              <>
-                <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
+        {isLoader ? <>
+          <Grid container sx={userStyle.gridcontainer}>
+            <Grid >
+              {isUserRoleCompare[0].csvrole && (
+                <>
+                  <ExportCSV csvData={exceldata} fileName={fileName} />
+                </>
+              )}
+              {isUserRoleCompare[0].excelrole && (
+                <>
+                  <ExportXL csvData={exceldata} fileName={fileName} />
+                </>
+              )}
+              {isUserRoleCompare[0].printrole && (
+                <>
+                  <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
+                </>
+              )}
+              {isUserRoleCompare[0].pdfrole && (
+                <>
+                  <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
 
-              </>
-            )}
-          </Grid>
-        </Grid><br />
-        <Box>
-          <TableContainer component={Paper} sx={userStyle.tablecontainer}>
-            <Table sx={{ minWidth: 700 }} aria-label="customized table" id="roletable">
-              <TableHead>
-                <StyledTableRow>
-                  <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('rolename')}><Box sx={userStyle.tableheadstyle}><Box>Roles</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('rolename')}</Box></Box></StyledTableCell>
-                  <StyledTableCell>Action</StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody align="left">
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell component="th" scope="row">{row.rolename}</StyledTableCell>
-                      <StyledTableCell>
-                        <Grid sx={{ display: 'flex' }}>
-                          {isUserRoleCompare[0].erole && <Link to={`/user/role/edit/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>}
-                          {isUserRoleCompare[0].drole && (<Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>)}
-                        </Grid>
-                      </StyledTableCell>
-                    </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={2} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-            </Table>
-          </TableContainer><br /><br />
-          <Box style={userStyle.dataTablestyle}>
-            <Box>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, roles.length)} of {roles.length} entries
-            </Box>
-            <Box>
-              <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Prev
-              </Button>
-              {pageNumbers?.map((pageNumber) => (
-                <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
-                  {pageNumber}
+                </>
+              )}
+            </Grid>
+          </Grid><br />
+          <Box>
+            <TableContainer component={Paper} sx={userStyle.tablecontainer}>
+              <Table sx={{ minWidth: 700 }} aria-label="customized table" id="roletable">
+                <TableHead>
+                  <StyledTableRow>
+                    <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('rolename')}><Box sx={userStyle.tableheadstyle}><Box>Roles</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('rolename')}</Box></Box></StyledTableCell>
+                    <StyledTableCell>Action</StyledTableCell>
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody align="left">
+                  {filteredData.length > 0 ?
+                    (filteredData.map((row, index) => (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell component="th" scope="row">{row.rolename}</StyledTableCell>
+                        <StyledTableCell>
+                          <Grid sx={{ display: 'flex' }}>
+                            {isUserRoleCompare[0].erole && <Link to={`/user/role/edit/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>}
+                            {isUserRoleCompare[0].erole && (
+                              <>
+                                <Link to={`/user/role/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                              </>
+                            )}
+                            {isUserRoleCompare[0].drole && (<Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>)}
+                          </Grid>
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    )))
+                    : <StyledTableRow><StyledTableCell colSpan={2} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                  }
+                </TableBody>
+              </Table>
+            </TableContainer><br /><br />
+            <Box style={userStyle.dataTablestyle}>
+              <Box>
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, roles.length)} of {roles.length} entries
+              </Box>
+              <Box>
+                <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Prev
                 </Button>
-              ))}
-              {lastVisiblePage < totalPages && <span>...</span>}
-              <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Next
-              </Button>
+                {pageNumbers?.map((pageNumber) => (
+                  <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
+                    {pageNumber}
+                  </Button>
+                ))}
+                {lastVisiblePage < totalPages && <span>...</span>}
+                <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Next
+                </Button>
+              </Box>
             </Box>
           </Box>
-        </Box>
+
+        </> : <>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+          </Box>
+
+        </>}
+
       </Box>
 
       {/* Delete */}

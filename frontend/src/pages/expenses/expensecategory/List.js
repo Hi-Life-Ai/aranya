@@ -19,9 +19,13 @@ import { AuthContext } from '../../../context/Appcontext';
 import { useReactToPrint } from "react-to-print";
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
+import { ThreeDots } from 'react-loader-spinner';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+
 
 function Expcategorylist() {
 
+    const [isLoader, setIsLoader] = useState(false);
     const { isUserRoleCompare } = useContext(UserRoleAccessContext);
     const { auth, setngs } = useContext(AuthContext);
     const [excategorys, setExcategorys] = useState([]);
@@ -37,24 +41,28 @@ function Expcategorylist() {
     const [open, setOpen] = useState(false);
     const handleClickOpen = () => { setOpen(true); };
     const handleClose = () => { setOpen(false); };
+    const { isUserRoleAccess } = useContext(UserRoleAccessContext);
 
     // Expense Category 
     const fetchExpenseCategory = async () => {
         try {
-            let res = await axios.get(SERVICE.EXPENSE_CATEGORY, {
+            let res = await axios.post(SERVICE.EXPENSE_CATEGORY_BYID, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = res.data.excategorys.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setExcategorys(result)
+
+            setExcategorys(res.data.excategorys)
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -74,11 +82,13 @@ function Expcategorylist() {
                 },
             })
             setExpcat(res.data.sexcategory);
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -97,11 +107,13 @@ function Expcategorylist() {
             });
             await fetchExpenseCategory();
             handleClose();
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -303,40 +315,55 @@ function Expcategorylist() {
                     </Grid>
                 </Grid>
                 <Box>
-                    <TableContainer component={Paper} sx={userStyle.tablecontainer}>
-                        <Table sx={{ minWidth: 700 }} aria-label="customized table" id="expcattable" >
-                            <TableHead>
-                                <StyledTableRow>
-                                    <StyledTableCell onClick={() => handleSorting('categoryname')}><Box sx={userStyle.tableheadstyle}><Box>Category Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categoryname')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('categorycode')}><Box sx={userStyle.tableheadstyle}><Box>Category Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categorycode')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell>Action</StyledTableCell>
-                                </StyledTableRow>
-                            </TableHead>
-                            <TableBody>
-                                {filteredData.length > 0 ?
-                                    (filteredData.map((row, index) => (
-                                        <StyledTableRow key={index}>
-                                            <StyledTableCell component="th" scope="row">{row.categoryname} </StyledTableCell>
-                                            <StyledTableCell align="left">{row.categorycode}</StyledTableCell>
-                                            <StyledTableCell align="left">
-                                                {isUserRoleCompare[0].eexpensecategory && (
-                                                    <>
-                                                        <Link to={`/expense/expensecategory/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
-                                                    </>
-                                                )}
-                                                {isUserRoleCompare[0].dexpensecategory && (
-                                                    <>
-                                                        <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontSize: "large" }} /></Button>
-                                                    </>
-                                                )}
-                                            </StyledTableCell>
+                    {isLoader ? (
+                        <>
+                            <TableContainer component={Paper} sx={userStyle.tablecontainer}>
+                                <Table sx={{ minWidth: 700 }} aria-label="customized table" id="expcattable" >
+                                    <TableHead>
+                                        <StyledTableRow>
+                                            <StyledTableCell onClick={() => handleSorting('categoryname')}><Box sx={userStyle.tableheadstyle}><Box>Category Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categoryname')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('categorycode')}><Box sx={userStyle.tableheadstyle}><Box>Category Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categorycode')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell>Action</StyledTableCell>
                                         </StyledTableRow>
-                                    )))
-                                    : <StyledTableRow><StyledTableCell colSpan={10} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                }
-                            </TableBody>
-                        </Table>
-                    </TableContainer><br></br>
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredData.length > 0 ?
+                                            (filteredData.map((row, index) => (
+                                                <StyledTableRow key={index}>
+                                                    <StyledTableCell component="th" scope="row">{row.categoryname} </StyledTableCell>
+                                                    <StyledTableCell align="left">{row.categorycode}</StyledTableCell>
+                                                    <StyledTableCell align="left">
+                                                        {isUserRoleCompare[0].eexpensecategory && (
+                                                            <>
+                                                                <Link to={`/expense/expensecategory/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
+                                                            </>
+                                                        )}
+                                                        {isUserRoleCompare[0].dexpensecategory && (
+                                                            <>
+                                                                <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontSize: "large" }} /></Button>
+                                                            </>
+                                                        )}
+                                                        {isUserRoleCompare[0].eexpense && (
+                                                            <>
+                                                                <Link to={`/expense/expensecategory/view/${row._id}`} style={{ textDecoration: 'none', minWidth: '0px' }}><Button sx={userStyle.buttonview} style={{ minWidth: '0px' }}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                                                            </>
+                                                        )}
+                                                    </StyledTableCell>
+                                                </StyledTableRow>
+                                            )))
+                                            : <StyledTableRow><StyledTableCell colSpan={10} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                        }
+                                    </TableBody>
+                                </Table>
+                            </TableContainer><br></br>
+                        </>
+                    ) : (
+                        <>
+                            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                            </Box>
+                        </>
+                    )}
                     <Box style={userStyle.dataTablestyle}>
                         <Box>
                             Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, excategorys.length)} of {excategorys.length} entries

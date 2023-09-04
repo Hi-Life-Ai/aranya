@@ -4,7 +4,7 @@ import axios from 'axios';
 import { StyledTableRow, StyledTableCell } from "../components/Table";
 import { toast } from 'react-toastify';
 import { SERVICE } from '../services/Baseservice';
-import { AuthContext } from '../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../context/Appcontext';
 import { userStyle } from '../pages/PageStyle';
 import moment from 'moment';
 import { ExportXL, ExportCSV } from '../pages/Export';
@@ -15,62 +15,67 @@ import autoTable from 'jspdf-autotable';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 
-function Dashrecentsale({isLocations, isLocationChange},) {
+function Dashrecentsale({ isLocations, isLocationChange },) {
 
   // POS
   const [pos, setPos] = useState([]);
-  const { auth } = useContext(AuthContext);
   const [exceldata, setExceldata] = useState([]);
+
+  const { isUserRoleAccess, isUserRoleCompare } = useContext(UserRoleAccessContext);
+  const { auth, setngs } = useContext(AuthContext);
 
   //Datatable
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(1);
 
-    //  Datefield
-    var today = new Date();
-    var dd = String(today.getDate()).padStart(2, '0');
-    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-    var yyyy = today.getFullYear();
-    today = dd + '-' + mm + '-' + yyyy;
+  //  Datefield
+  var today = new Date();
+  var dd = String(today.getDate()).padStart(2, '0');
+  var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+  var yyyy = today.getFullYear();
+  today = dd + '-' + mm + '-' + yyyy;
 
   //  Fetch pos data
   const fetchPos = async () => {
     try {
-      let res = await axios.get(SERVICE.POS, {
+      let res = await axios.post(SERVICE.POS, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        locationid: String(setngs.businesscation),
+        userassignedlocation: [isUserRoleAccess.businesslocation],
+        role: String(isUserRoleAccess.role),
       });
 
-      let getDatawithFilter = res.data.pos1.filter((data) => {
-        let dateTrim = moment(data.date).format('DD-MM-YYYY');
-        if(isLocationChange){
-          if (data.location == isLocations && dateTrim == today) {
-            return data
-          }
-        }else{
-          if(dateTrim == today){
-            return data
-          }
-        }
-      })
-      setPos(getDatawithFilter);
+      // let getDatawithFilter = res?.data?.pos1.filter((data) => {
+      //   let dateTrim = moment(data.date).format('DD-MM-YYYY');
+      //   if(isLocationChange){
+      //     if (data.location == isLocations && dateTrim == today) {
+      //       return data
+      //     }
+      //   }else{
+      //     if(dateTrim == today){
+      //       return data
+      //     }
+      //   }
+      // })
+      setPos(res?.data?.pos1);
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
   useEffect(
-    ()=>{
-    
-    fetchPos();
+    () => {
 
-  },[isLocations])
+      fetchPos();
+
+    }, [isLocations])
 
   // Print
   const componentRef = useRef();

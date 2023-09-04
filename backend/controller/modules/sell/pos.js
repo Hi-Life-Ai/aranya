@@ -1,43 +1,105 @@
 const Pos = require('../../../model/modules/sell/pos');
 const ErrorHandler = require('../../../utils/errorhandler');
 const catchAsyncErrors = require('../../../middleware/catchAsyncError');
-const path = require('path')
-var nodemailer = require('nodemailer');
+
+//  Datefield
+var today = new Date();
+var dd = String(today.getDate()).padStart(2, '0');
+var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+var yyyy = today.getFullYear();
+today = yyyy + '-' + mm + '-' + dd;
 
 // get All product => /api/products
 exports.getAllPos = catchAsyncErrors(async (req, res, next) => {
     let pos1;
-    try{
-        pos1 = await Pos.find()
-    }catch(err){
+    let result;
+
+    try {
+        result = await Pos.find({ assignbusinessid: req.body.businessid })
+    } catch (err) {
         console.log(err.message);
     }
-    if(!pos1){
-        return next(new ErrorHandler('Sale not found!', 404));
+    if (!result) {
+        return next(new ErrorHandler('pos not found!', 404));
     }
+
+    pos1 = result.filter((data, index) => {
+        if (req.body.role == 'Admin') {
+            return data
+        } else if (req.body.userassignedlocation.includes(data.businesslocation)) {
+            return data
+        }
+    })
+
     return res.status(200).json({
         // count: products.length,
         pos1
     });
 })
+
+// Pos datefilter.....
+exports.getPosdatefilter = catchAsyncErrors(async (req, res, next) => {
+    const { businesslocation, startdate, enddate } = req.body
+
+    let pos1;
+
+
+    try {
+        pos1 = await Pos.find({ businessid: businesslocation, formatteddate: { $gte: startdate, $lte: enddate } })
+
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Pos not found!', 404));
+    }
+
+    return res.status(200).json({
+        pos1
+    });
+})
+
+//pos today date.....
+exports.getTodaypos = catchAsyncErrors(async (req, res, next) => {
+    let today;
+    let result;
+    try {
+        result = await Pos.find({ assignbusinessid: req.body.businessid, today: today })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!result) {
+        return next(new ErrorHandler('Data not found!', 404));
+    }
+    today = result.filter((data, index) => {
+        if (req.body.role == 'Admin') {
+            return data
+        } else if (req.body.userassignedlocation.includes(data.businesslocation)) {
+            return data
+        }
+    })
+    return res.status(200).json({
+        today
+    });
+})
 // get All Purchases => /api/productpurchases
 exports.getAllProductSales = catchAsyncErrors(async (req, res, next) => {
     let sales = [];
-    try{
-       let req = await Pos.find();
-        let datasales = req.map((data,index)=>{
-        return data.goods
-       })
-       datasales.forEach((value)=>{
-        value.forEach((valueData)=>{
-
-            sales.push(valueData);
+    try {
+        let req = await Pos.find();
+        let datasales = req.map((data, index) => {
+            return data.goods
         })
-       })
-    }catch(err){
+        datasales.forEach((value) => {
+            value.forEach((valueData) => {
+
+                sales.push(valueData);
+            })
+        })
+    } catch (err) {
         console.log(err.message);
     }
-    if(!sales){
+    if (!sales) {
         return next(new ErrorHandler('Purchase not found!', 404));
     }
     return res.status(200).json({
@@ -46,100 +108,20 @@ exports.getAllProductSales = catchAsyncErrors(async (req, res, next) => {
     });
 })
 // Create new product => /api/product/new
-exports.addPos = catchAsyncErrors(async (req, res, next) =>{
-//    let apos = await Pos.create(req.body); 
-  
-  let tableContent = '<table style="padding:10px;">';
-  tableContent += '<tr><th>ITEM</th><th> MRP</th><th> UNIT PRICE</th><th> QUANTITY</th><th> NET PRICE</th><th> GST</th><th> HSN</th><th> TOTAL</th></tr>';
-  
-  req.body.goods.forEach(row => {
-    tableContent += `<tr><td>${row.productname}</td><td>${' '+row.mrp}</td><td>${' '+row.sellingvalue}</td><td>${' '+row.quantity}</td><td>${' '+row.netrate}</td><td>${' '+row.taxtareval}</td><td>${'  '+row.hsn}</td><td>${'  '+row.subtotal}</td></tr>`;
-  });
-  
-  tableContent += '</table>';
-  
-  const emailContent = `
-    <h3>ARANYA INVOICE LAYOUT</h3>
-    <div style="display:flex;">
-        <div style="justify-content:flex-start;">
-            <h4><b>COMPANY DETAILS</b><h4>
-            <p><b>Name:</b>${req.body.company}</p>
-            <p><b>Address:</b>${req.body.companyaddress}</p>
-            <p><b>GSTN:</b>${req.body.gstn}</p>
-            <p><b>Contact person:</b>${req.body.companycontactpersonname+'/'+req.body.companycontactpersonnumber}</p><br>
-            <p><b>Order Number:</b>${req.body.referenceno}</p>
-            <p><b>Order Date:</b>${req.body.date}</p>
-            <p><b>Salesman:</b>${req.body.salesman+'/'+req.body.salesmannumber}</p>
-        </div>
-        <div style="justify-content:flex-end;">
-            <h4><b>DELIVERY DETAILS</b></h4>
-            <p><b>Name:</b>${req.body.location}</p>
-            <p><b>Address:</b>${req.body.deliveryaddress}</p>
-            <p><b>GSTN:</b>${req.body.deliverygstn}</p>
-            <p><b>Contact person:</b>${req.body.deliverycontactpersonname+'/'+req.body.deliverycontactpersonnumber}</p><br>
-            <h4><b>TRANSPORT DETAILS</b></h4>
-            <p><b>Driver Name:</b>${req.body.drivername}</p>
-            <p><b>No:</b>${req.body.drivernumber}</p>
-            <p><b>Contact No:</b>${req.body.drivernphonenumber}</p><br>
-            <p><b>Invoice Number:</b>${req.body.referenceno}</p>
-            <p><b>Invoice Date:</b>${req.body.date}</p>
-        </div>
-    </div
-    ${tableContent}
-    <h3>Net Total: ${req.body.grandtotal}</h3>
-    <div style="display:flex;">
-        <div style="justify-content:flex-start;">
-            <p><b>Net Tax:</b>${req.body.totalnettax}</p>
-            <p><b>No. of Items:</b>${req.body.totalitems}</p>
-            <p><b>Total Items:</b>${req.body.totalproducts}</p><br>
-            <p><b>Bank Name:</b>${req.body.bankname}</p>
-            <p><b>Acc No:</b>${req.body.accountnumber}</p>
-            <p><b>IFSC Code:</b>${req.body.ifsccode}</p>
-        </div>
-        <div style="justify-content:flex-end;">
-            <br><br><br><br><br><br><br><br>
-            <img src=${req.body.signature}>
-            <p><b>Authorized Signatory</b></p>
-        </div>
-    </div>
-  `;
+exports.addPos = catchAsyncErrors(async (req, res, next) => {
+    let aproduct = await Pos.create(req.body)
 
-   // send mail
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: 'cshankari27@gmail.com',
-        pass: 'vqhzwuklzypwruyu',
-    }
-  });
-
-  const mailOptions = {
-    from: 'clockinout@example.com',
-    to: "ragubyrenuga2000@gmail.com",
-    subject: 'ARANYA HEALTHCARE | INVOICE',
-    html: emailContent
-};
-
-transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-        res.status(500).send('Error sending email');
-    } else {
-        console.log('Email sent');
-        res.status(200).send('Email sent successfully');
-    }
-});
-
-    return res.status(200).json({ 
-        message: 'Successfully added!' 
+    return res.status(200).json({
+        message: 'Successfully added!'
     });
 })
 // get Signle product => /api/product/:id
-exports.getSinglePos = catchAsyncErrors(async (req, res, next)=>{
+exports.getSinglePos = catchAsyncErrors(async (req, res, next) => {
     const id = req.params.id;
 
     let spos = await Pos.findById(id);
 
-    if(!spos){
+    if (!spos) {
         return next(new ErrorHandler('Sale not found!', 404));
     }
     return res.status(200).json({
@@ -153,18 +135,582 @@ exports.updatePos = catchAsyncErrors(async (req, res, next) => {
     let upos = await Pos.findByIdAndUpdate(id, req.body);
 
     if (!upos) {
-      return next(new ErrorHandler('Sale not found!', 404));
+        return next(new ErrorHandler('Sale not found!', 404));
     }
-    return res.status(200).json({message: 'Updated successfully' });
+    return res.status(200).json({ message: 'Updated successfully' });
 })
 // delete product by id => /api/product/:id
-exports.deletePos = catchAsyncErrors(async (req, res, next)=>{
+exports.deletePos = catchAsyncErrors(async (req, res, next) => {
     const id = req.params.id;
 
     let dpos = await Pos.findByIdAndRemove(id);
 
-    if(!dpos){
+    if (!dpos) {
         return next(new ErrorHandler('Sale not found!', 404));
     }
-    return res.status(200).json({message: 'Deleted successfully'});
+    return res.status(200).json({ message: 'Deleted successfully' });
+})
+
+
+
+exports.getDaywiseProfit = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+
+    const { userassignedlocation, role, businessid, location, selectdate } = req.body
+
+
+    try {
+        pos1 = await Pos.find({ assignbusinessid: businessid, location: { $eq: location }, formatedate: { $lte: selectdate } })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data.goods
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data.goods
+        }
+    })
+
+    let filterpos = result.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+exports.getMonthWiseProfit = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+
+    const { userassignedlocation, role, businessid, location, selectmonth } = req.body
+
+
+
+    try {
+        pos1 = await Pos.find({ assignbusinessid: businessid, location: { $eq: location }, })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data
+        }
+    })
+
+
+    let posdata = result.map((data, i) => {
+        var monthdate = new Date(data.date).getMonth() + 1
+
+        if (monthdate == selectmonth) {
+            return data.goods
+        } else {
+            return []
+        }
+
+
+    })
+
+    let filterpos = posdata.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+exports.getWeekWseProfit = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+    const { userassignedlocation, role, businessid, location, selectdate } = req.body
+    const previousWeekDates = [];
+    const currentDate = new Date(selectdate);
+    for (let i = 1; i <= 7; i++) {
+        const previousDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7 + i);
+        previousWeekDates.push(moment(previousDate).utc().format('DD-MM-YYYY'));
+    }
+
+
+
+
+
+    try {
+        pos1 = await Pos.find({ assignbusinessid: businessid, location: { $eq: location }, })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data
+        }
+    })
+
+
+
+    let weekprofit = result.map((data, index) => {
+        let dateTrim = moment(data.date).utc().format('DD-MM-YYYY')
+        if (previousWeekDates.includes(dateTrim)) {
+            return data.goods
+        } else {
+            return []
+        }
+
+    })
+
+
+
+    let filterpos = weekprofit.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+
+
+
+
+exports.getYearWiseProfit = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+
+    const { userassignedlocation, role, businessid, location, selectyear } = req.body
+
+
+
+    try {
+        pos1 = await Pos.find({ assignbusinessid: businessid, location: { $eq: location }, })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data
+        }
+    })
+
+
+    let posdata = result.map((data, i) => {
+        var year = new Date(data.date).getFullYear()
+
+        if (year == selectyear) {
+            return data.goods
+        } else {
+            return []
+        }
+
+
+    })
+
+    let filterpos = posdata.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+
+
+
+exports.getCurrentYearwiseprofit = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+
+    const { userassignedlocation, role, businessid, } = req.body
+
+
+    try {
+        pos1 = await Pos.find({ assignbusinessid: businessid, })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data
+        }
+    })
+
+
+    let posdata = result.map((data, i) => {
+        var year = new Date(data.date).getFullYear()
+        let = new Date().getFullYear()
+        if (year == year) {
+            return data.goods
+        } else {
+            return []
+        }
+
+
+    })
+
+    let currentprofit = posdata.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+    return res.status(200).json({
+        currentprofit
+    });
+})
+
+
+exports.getCategoryWiseprofit = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+    const { userassignedlocation, role, businessid, category } = req.body
+    console.log(category);
+
+    try {
+        pos1 = await Pos.aggregate([
+            {
+                $match: { assignbusinessid: businessid },
+            },
+            {
+                $unwind: "$goods",
+            },
+            {
+                $match: { "goods.category": category },
+            },
+        ]);
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data.goods
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data.goods
+        }
+    })
+
+    let filterpos = result.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+exports.getSubCategoryprofit = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+    const { userassignedlocation, role, businessid, subcategory } = req.body
+
+
+    try {
+        pos1 = await Pos.aggregate([
+            {
+                $match: { assignbusinessid: businessid },
+            },
+            {
+                $unwind: "$goods",
+            },
+            {
+                $match: { "goods.subcategory": subcategory },
+            },
+        ]);
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data.goods
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data.goods
+        }
+    })
+
+    let filterpos = result.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+
+
+exports.getlocationprofitindivdual = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+
+    const { userassignedlocation, role, businessid, location } = req.body
+
+
+    try {
+        pos1 = await Pos.find({ assignbusinessid: businessid, location: { $eq: location }, })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data.goods
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data.goods
+        }
+    })
+
+    let filterpos = result.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+
+// exports.getItemSearchProducts = catchAsyncErrors(async (req, res, next) => {
+//     let pos1;
+//     let result
+//     let startdate = new Date()
+//     const formattedDate = moment(startdate).format('YYYY-MM-DD');
+
+//     const { userassignedlocation, role, businessid, product, } = req.body
+
+
+//     try {
+//         pos1 = await Pos.find({  assignbusinessid: businessid,  formatedate: "2023-05-16", goods:[{ productname :  product}] })
+//     } catch (err) {
+//         console.log(err.message); 
+//     }
+//     if (!pos1) {
+//         return next(new ErrorHandler('Sale not found!', 404));
+//     }
+
+//     result = pos1.map((data, index) => {
+//         if (role == 'Admin') {
+//             return data.goods
+//         } else if (userassignedlocation.includes(data.businesslocation)) {
+//             return data.goods
+//         }
+//     })
+
+//     let filterpos = result.reduce((accumulator, currentArray) => {
+//         return accumulator.concat(currentArray);
+//     }, []);
+
+
+
+//     return res.status(200).json({
+//         filterpos
+//     });
+// })
+
+exports.getItemSearchProducts = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+    let startdate = new Date()
+    const formattedDate = moment(startdate).format('YYYY-MM-DD');
+
+    const { userassignedlocation, role, businessid, product, } = req.body
+
+    try {
+        pos1 = await Pos.aggregate([
+            {
+                $match: { assignbusinessid: businessid },
+            },
+            {
+                $unwind: "$goods",
+            },
+            {
+                $match: { "goods.productname": product },
+            },
+        ]);
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data.goods
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data.goods
+        }
+    })
+
+    let filterpos = result.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+exports.getItemLocation = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+    const { userassignedlocation, role, businessid, location, } = req.body
+
+    try {
+        pos1 = await Pos.find({ assignbusinessid: businessid, location: { $eq: location } })
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data.goods
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data.goods
+        }
+    })
+
+    let filterpos = result.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+
+
+exports.getItemProduct = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    let result
+
+    const { userassignedlocation, role, businessid, product } = req.body
+
+    try {
+        pos1 = await Pos.aggregate([
+            {
+                $match: { assignbusinessid: businessid },
+            },
+            {
+                $unwind: "$goods",
+            },
+            {
+                $match: { "goods.productname": product },
+            },
+
+        ]);
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+
+    result = pos1.map((data, index) => {
+        if (role == 'Admin') {
+            return data.goods
+        } else if (userassignedlocation.includes(data.businesslocation)) {
+            return data.goods
+        }
+    })
+
+    let filterpos = result.reduce((accumulator, currentArray) => {
+        return accumulator.concat(currentArray);
+    }, []);
+
+
+
+    return res.status(200).json({
+        filterpos
+    });
+})
+
+// get All Purchases => /api/productpurchases sellRoute.route('/poscatefilter').post(getAllPosCategory);
+exports.getAllPosCategory = catchAsyncErrors(async (req, res, next) => {
+    let pos1;
+    try {
+        pos1 = await Pos.find({ location: { $eq: req.body.busilocation } })
+        console.log(pos1);
+    } catch (err) {
+        console.log(err.message);
+    }
+    if (!pos1) {
+        return next(new ErrorHandler('Sale not found!', 404));
+    }
+    return res.status(200).json({
+        pos1
+    });
 })

@@ -13,19 +13,20 @@ import Headtitle from '../../components/header/Headtitle';
 import { UserRoleAccessContext } from '../../context/Appcontext';
 import { SERVICE } from '../../services/Baseservice';
 import { useReactToPrint } from "react-to-print";
-import moment from "moment";
 import { AuthContext } from '../../context/Appcontext';
 import { toast } from 'react-toastify';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import Selects from 'react-select';
+import { ThreeDots } from 'react-loader-spinner';
 
 function MonthwiseprofitList() {
 
     const [monthwise, setMonthWise] = useState([]);
     const [exceldata, setExceldata] = useState([]);
     const { auth, setngs } = useContext(AuthContext);
+    const [isLoader, setIsLoader] = useState(false);
 
     //  Data Table
     const [page, setPage] = useState(1);
@@ -62,32 +63,18 @@ function MonthwiseprofitList() {
 
     const [locations, setLocations] = useState([]);
 
-    let date = []
-    let productName = [];
-    let productId = [];
-    let location = [];
-    let quantity = [];
-    let Mrp = [];
-    let Sellingvalue = [];
-    let sales = [];
-    let allData = [];
 
     const fetchLocation = async () => {
         try {
-            let req = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let req = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = req.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate == true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate == true
-                    }
-                }
-            })
+            let result = req.data.businesslocationsactive
             setLocations(
                 result?.map((d) => ({
                     ...d,
@@ -95,14 +82,15 @@ function MonthwiseprofitList() {
                     value: d.name,
                 }))
             );
-
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -110,81 +98,75 @@ function MonthwiseprofitList() {
         fetchLocation();
     }, []);
 
-    const fetchMatchLocationandMonth = async () => {
+
+
+
+    const fetchDatalocation = async (e) => {
 
         try {
-            let req = await axios.get(SERVICE.POS, {
+            let req = await axios.post(SERVICE.MONTHWISE_PROFIT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                location: String(dateFilter.location),
+                selectmonth: String(dateFilter.month)
             });
+            let result = req.data.filterpos
 
-            req.data.pos1.map(item => {
-                var mm = new Date(item.date).getMonth() + 1
-                if (dateFilter.location == item.location && mm == dateFilter.month) {
-                    item.goods.map(value => {
-                        date.push(moment(item.date).format('DD-MM-YYYY'))
-                        location.push(item.location)
-                        productId.push(value.productid)
-                        productName.push(value.productname)
-                        quantity.push(value.quantity)
-                        Mrp.push(value.mrp)
-                        Sellingvalue.push(value.sellingvalue == undefined || "" ? 0 : Number(value.sellingvalue))
-                        sales.push(value.subtotal)
-                    })
-                }
+         
 
-                allData = productId.map(function (data, i) {
-                    return {
-                        productid: data,
-                        productname: productName[i],
-                        date: date[i],
-                        location: location[i],
-                        quantity: quantity[i],
-                        mrp: Mrp[i],
-                        sellingvalue: Sellingvalue[i],
-                        sales: sales[i],
-                    };
+            const finalprofits = [...result.reduce((r, o) => {
+                const key = o.productid;
+                const items = r.get(key) || Object.assign({}, o, {
+                    quantity: 0,
+                    sellingvalue: 0,
+                    profit: 0,
+                    sales: 0,
+                    allmrp: 0,
+                    allsellingvalue: 0,
                 });
+                items.quantity += +o.quantity
+                items.sellingvalue += +o.sellingvalue
+                items.sales += +o.subtotal
+                items.allmrp += +o.quantity * +o.mrp
+                items.allsellingvalue += +o.quantity * +o.sellingvalue
+                return r.set(key, items);
+            }, new Map).values()];
 
-                const result = [...allData.reduce((r, o) => {
-                    const key = o.productid;
-                    const items = r.get(key) || Object.assign({}, o, {
-                        quantity: 0,
-                        sellingvalue: 0,
-                        profit: 0,
-                        sales: 0,
-                        allmrp: 0,
-                        allsellingvalue: 0,
-                    });
-                    items.quantity += +o.quantity
-                    items.sellingvalue += +o.sellingvalue
-                    items.sales += +o.sales
-                    items.allmrp += +o.quantity * +o.mrp
-                    items.allsellingvalue += +o.quantity * +o.sellingvalue
+            console.log(finalprofits);
+            setMonthWise(finalprofits);
 
-                    return r.set(key, items);
-                }, new Map).values()];
-                setMonthWise(result);
-            })
 
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            }
+            else {
                 toast.error("Something went wrong!")
             }
         }
     }
+
+
+
+
+
+
+
 
     // Excel
     const fileName = 'Month Wise Profit '
     // get particular columns for export excel
     const getexcelDatas = async () => {
         var data = monthwise.map(t => ({
-            Date: t.date,
-            'Location': t.location,
+            Date: t.formatedate,
+            'Location': t.businesslocation,
             'Product Name': t.productname,
             'Quantity': t.quantity,
             'MRP': t.allmrp.toFixed(2),
@@ -215,6 +197,15 @@ function MonthwiseprofitList() {
         const direction = sorting.column === column && sorting.direction === 'asc' ? 'desc' : 'asc';
         setSorting({ column, direction });
     };
+
+    const sortedData = monthwise.sort((a, b) => {
+        if (sorting.direction === 'asc') {
+            return a[sorting.column] > b[sorting.column] ? 1 : -1;
+        } else if (sorting.direction === 'desc') {
+            return a[sorting.column] < b[sorting.column] ? 1 : -1;
+        }
+        return 0;
+    });
 
     const renderSortingIcon = (column) => {
         if (sorting.column !== column) {
@@ -315,7 +306,9 @@ function MonthwiseprofitList() {
             handleClickOpenalert()
         }
         else {
-            fetchMatchLocationandMonth()
+            fetchDatalocation()
+
+
         }
     }
 
@@ -354,7 +347,7 @@ function MonthwiseprofitList() {
                             </FormControl>
                         </Grid>
                         <Grid item lg={3} md={3}>
-                            <Button onClick={handleSubmit} variant='outlined'sx={userStyle.btngenerate}  >Generate</Button>
+                            <Button onClick={handleSubmit} variant='outlined' sx={userStyle.btngenerate}  >Generate</Button>
                         </Grid>
                         <Grid item lg={1} md={1}></Grid>
                     </Grid>
@@ -416,52 +409,64 @@ function MonthwiseprofitList() {
                     </Grid><br /><br></br>
                     { /* ****** Table start ****** */}
                     <Box>
-                        <TableContainer component={Paper} >
-                            <Table sx={{}} aria-label="simple table">
-                                <TableHead sx={{ fontWeight: "600" }} >
-                                    <StyledTableRow >
-                                        <StyledTableCell onClick={() => handleSorting('date')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('date')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('location')}><Box sx={userStyle.tableheadstyle}><Box>Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('location')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('sales')}><Box sx={userStyle.tableheadstyle}><Box>Sales</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sales')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('totalsale')}><Box sx={userStyle.tableheadstyle}><Box>Profit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('totalsale')}</Box></Box></StyledTableCell>
-                                    </StyledTableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {filteredData.length > 0 ?
-                                        (filteredData.map((row, index) => (
-                                            <StyledTableRow key={index}>
-                                                <StyledTableCell align="left">{row.date}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.location}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.productname}</StyledTableCell >
-                                                <StyledTableCell align="left">{row.quantity}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.allmrp.toFixed(2)}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.sales.toFixed(2)}</StyledTableCell>
-                                                <StyledTableCell align="left">{(Number(row.sales) - Number(row.allmrp)).toFixed(2)}</StyledTableCell>
-                                            </StyledTableRow>
-                                        )))
-                                        : <StyledTableRow><StyledTableCell colSpan={7} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                    }
-                                </TableBody>
-                                <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
-                                    <StyledTableRow className="table2_total" >
-                                        {monthwise && (
-                                            monthwise.forEach(
-                                                (item => {
-                                                    salesamount += +item.sales;
-                                                    profitamount += Number(item.sales) - Number(item.allmrp)
-                                                })
-                                            ))}
-                                        <StyledTableCell align="center" colSpan={5} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
-                                        <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {salesamount.toFixed(0)}</StyledTableCell>
-                                        <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {profitamount.toFixed(0)}</StyledTableCell>
 
-                                    </StyledTableRow>
-                                </TableFooter>
-                            </Table>
-                        </TableContainer>
+                        {isLoader ? (
+                            <>
+                                <TableContainer component={Paper} >
+                                    <Table sx={{}} aria-label="simple table">
+                                        <TableHead sx={{ fontWeight: "600" }} >
+                                            <StyledTableRow >
+                                                <StyledTableCell onClick={() => handleSorting('formatedate')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('formatedate')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('businesslocation')}><Box sx={userStyle.tableheadstyle}><Box>Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('businesslocation')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('sales')}><Box sx={userStyle.tableheadstyle}><Box>Sales</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sales')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('totalsale')}><Box sx={userStyle.tableheadstyle}><Box>Profit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('totalsale')}</Box></Box></StyledTableCell>
+                                            </StyledTableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filteredData.length > 0 ?
+                                                (filteredData.map((row, index) => (
+                                                    <StyledTableRow key={index}>
+                                                        <StyledTableCell align="left">{row.formatedate}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.businesslocation}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.productname}</StyledTableCell >
+                                                        <StyledTableCell align="left">{row.quantity}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.allmrp.toFixed(2)}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.sales.toFixed(2)}</StyledTableCell>
+                                                        <StyledTableCell align="left">{(Number(row.sales) - Number(row.allmrp)).toFixed(2)}</StyledTableCell>
+                                                    </StyledTableRow>
+                                                )))
+                                                : <StyledTableRow><StyledTableCell colSpan={7} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                            }
+                                        </TableBody>
+                                        <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
+                                            <StyledTableRow className="table2_total" >
+                                                {monthwise && (
+                                                    monthwise.forEach(
+                                                        (item => {
+                                                            salesamount += +item.sales;
+                                                            profitamount += Number(item.sales) - Number(item.allmrp)
+                                                        })
+                                                    ))}
+                                                <StyledTableCell align="center" colSpan={5} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
+                                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {salesamount.toFixed(0)}</StyledTableCell>
+                                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {profitamount.toFixed(0)}</StyledTableCell>
+
+                                            </StyledTableRow>
+                                        </TableFooter>
+                                    </Table>
+                                </TableContainer>
+                            </>
+                        ) : (
+                            <>
+                                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                    <ThreeDots height="80" width="80" radius="9" color="#1976D2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                                </Box>
+                            </>
+                        )}
+
                         <br /><br />
                         <Box style={userStyle.dataTablestyle}>
                             <Box>
@@ -510,8 +515,8 @@ function MonthwiseprofitList() {
                                     {monthwise.length > 0 && (
                                         monthwise.map((row, index) => (
                                             <StyledTableRow key={index}>
-                                                <StyledTableCell align="left">{row.date}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.location}</StyledTableCell>
+                                                <StyledTableCell align="left">{row.formatedate}</StyledTableCell>
+                                                <StyledTableCell align="left">{row.businesslocation}</StyledTableCell>
                                                 <StyledTableCell align="left">{row.productname}</StyledTableCell >
                                                 <StyledTableCell align="left">{row.quantity}</StyledTableCell>
                                                 <StyledTableCell align="left">{row.allmrp.toFixed(2)}</StyledTableCell>

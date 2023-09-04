@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { Box, Grid,Dialog,DialogContent,DialogActions,Typography,Button, FormControl, InputLabel, OutlinedInput } from '@mui/material';
+import { Box, Grid, Dialog, DialogContent, DialogActions, Typography, Button, FormControl, InputLabel, OutlinedInput } from '@mui/material';
 import { userStyle, colourStyles } from "../../PageStyle";
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import axios from 'axios';
@@ -8,7 +8,7 @@ import { AuthContext } from '../../../context/Appcontext';
 import Selects from 'react-select';
 import { toast } from 'react-toastify';
 
-export default function Productcreate({isSetngs, setIsSetngs}) {
+export default function Productcreate({ isSetngs, setIsSetngs }) {
 
     const [units, setUnits] = useState();
     const [taxrates, setTaxrates] = useState();
@@ -30,8 +30,8 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,skuprefix: value};
+            setIsSetngs((prevState) => {
+                return { ...prevState, skuprefix: value };
             })
         }
         else if (regExSpecialChar.test(e.target.value)) {
@@ -39,15 +39,15 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,skuprefix: value};
+            setIsSetngs((prevState) => {
+                return { ...prevState, skuprefix: value };
             })
-        }else if(val.length > 2){
+        } else if (val.length > 2) {
             setShowAlert("Prefix can't more than 2 characters!")
             handleClickOpen();
             let num = val.slice(0, 2);
-            setIsSetngs((prevState)=> {
-                return {...prevState,skuprefix: num};
+            setIsSetngs((prevState) => {
+                return { ...prevState, skuprefix: num };
             })
         }
     }
@@ -61,8 +61,8 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,minquantity:value};
+            setIsSetngs((prevState) => {
+                return { ...prevState, minquantity: value };
             })
         }
         else if (regExSpecialChar.test(e.target.value)) {
@@ -70,9 +70,9 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,minquantity:value};
-            })        
+            setIsSetngs((prevState) => {
+                return { ...prevState, minquantity: value };
+            })
         }
     }
 
@@ -85,8 +85,8 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,maxquantity:value};
+            setIsSetngs((prevState) => {
+                return { ...prevState, maxquantity: value };
             })
         }
         else if (regExSpecialChar.test(e.target.value)) {
@@ -94,9 +94,9 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,maxquantity:value};
-            })        
+            setIsSetngs((prevState) => {
+                return { ...prevState, maxquantity: value };
+            })
         }
     }
 
@@ -109,8 +109,8 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,expiryday:value};
+            setIsSetngs((prevState) => {
+                return { ...prevState, expiryday: value };
             })
         }
         else if (regExSpecialChar.test(e.target.value)) {
@@ -118,31 +118,29 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             handleClickOpen();
             let num = val.length;
             let value = val.slice(0, num - 1)
-            setIsSetngs((prevState)=> {
-                return {...prevState,expiryday:value};
-            })        
+            setIsSetngs((prevState) => {
+                return { ...prevState, expiryday: value };
+            })
         }
     }
 
     //selling price tax 
     const selltaxtype = [
-        {value:"Exclusive", label:"Exclusive"},
-        {value:"Inclusive", label:"Inclusive"}
+        { value: "Exclusive", label: "Exclusive" },
+        { value: "Inclusive", label: "Inclusive" }
     ];
 
     // Units
     const fetchUnit = async () => {
         try {
-            let response = await axios.get(SERVICE.UNIT,{
+            let response = await axios.post(SERVICE.UNIT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
             });
-            let result = response.data.units.filter((data, index)=>{
-                return data.assignbusinessid == setngs.businessid
-            })
             setUnits(
-                result?.map((d) => ({
+                response.data.units?.map((d) => ({
                     ...d,
                     label: d.unit,
                     value: d.unit,
@@ -150,27 +148,25 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
     };
 
-     // Taxrates
-     const fetchRates = async () => {
+    // Taxrates
+    const fetchRates = async () => {
         try {
-            let response = await axios.get(SERVICE.TAXRATE,{
+            let response = await axios.post(SERVICE.TAXRATE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
-            });
-            let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
+                businessid: String(setngs.businessid),
             });
             setTaxrates(
-                taxRateData?.map((d) => ({
+                response.data.taxrates?.map((d) => ({
                     ...d,
                     label: d.taxname,
                     value: d.taxname,
@@ -178,19 +174,19 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
     };
 
     useEffect(
-        () =>{
+        () => {
             fetchUnit();
             fetchRates();
-        },[]
+        }, []
     )
 
     return (
@@ -204,21 +200,23 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                             type="text"
                             name="skuprefix"
                             value={isSetngs.skuprefix}
-                            onChange={(e) => {setIsSetngs((prevState)=> {
-                                return {...prevState,skuprefix:e.target.value};
-                            }); handleValidationSku(e)}}
+                            onChange={(e) => {
+                                setIsSetngs((prevState) => {
+                                    return { ...prevState, skuprefix: e.target.value };
+                                }); handleValidationSku(e)
+                            }}
                         />
                     </FormControl>
                 </Grid>
                 <Grid item xs={12} sm={12} md={6} lg={6}>
                     <InputLabel htmlFor="component-outlined">Default Unit</InputLabel>
                     <FormControl size="small" fullWidth>
-                    <Selects
+                        <Selects
                             maxMenuHeight={200}
                             styles={colourStyles}
                             placeholder={isSetngs.defaultunit}
-                            onChange={(e) => setIsSetngs((prevState)=> {
-                                return {...prevState,defaultunit:e.value};
+                            onChange={(e) => setIsSetngs((prevState) => {
+                                return { ...prevState, defaultunit: e.value };
                             })}
                             options={units}
                         />
@@ -231,8 +229,8 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                             maxMenuHeight={200}
                             styles={colourStyles}
                             placeholder={isSetngs.applicabletax}
-                            onChange={(e) => setIsSetngs((prevState)=> {
-                                return {...prevState,applicabletax:e.value};
+                            onChange={(e) => setIsSetngs((prevState) => {
+                                return { ...prevState, applicabletax: e.value };
                             })}
                             options={taxrates}
                         />
@@ -245,8 +243,8 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                             maxMenuHeight={200}
                             styles={colourStyles}
                             placeholder={isSetngs.sellingpricetax}
-                            onChange={(e) => setIsSetngs((prevState)=> {
-                                return {...prevState,sellingpricetax:e.value};
+                            onChange={(e) => setIsSetngs((prevState) => {
+                                return { ...prevState, sellingpricetax: e.value };
                             })}
                             options={selltaxtype}
                         />
@@ -260,9 +258,11 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                             type="text"
                             name="skuprefix"
                             value={isSetngs.minquantity}
-                            onChange={(e) => {setIsSetngs((prevState)=> {
-                                return {...prevState,minquantity:e.target.value};
-                            }) ; handleValidationMinQty(e)}}
+                            onChange={(e) => {
+                                setIsSetngs((prevState) => {
+                                    return { ...prevState, minquantity: e.target.value };
+                                }); handleValidationMinQty(e)
+                            }}
                         />
                     </FormControl>
                 </Grid>
@@ -274,9 +274,11 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                             type="text"
                             name="skuprefix"
                             value={isSetngs.maxquantity}
-                            onChange={(e) => {setIsSetngs((prevState)=> {
-                                return {...prevState,maxquantity:e.target.value};
-                            }); handleValidationMaxQty(e)}}
+                            onChange={(e) => {
+                                setIsSetngs((prevState) => {
+                                    return { ...prevState, maxquantity: e.target.value };
+                                }); handleValidationMaxQty(e)
+                            }}
                         />
                     </FormControl>
                 </Grid>
@@ -288,9 +290,11 @@ export default function Productcreate({isSetngs, setIsSetngs}) {
                             type="text"
                             name="skuprefix"
                             value={isSetngs.expiryday}
-                            onChange={(e) => {setIsSetngs((prevState)=> {
-                                return {...prevState,expiryday:e.target.value};
-                            }); handleValidationExpiryDay(e)}}
+                            onChange={(e) => {
+                                setIsSetngs((prevState) => {
+                                    return { ...prevState, expiryday: e.target.value };
+                                }); handleValidationExpiryDay(e)
+                            }}
                         />
                     </FormControl>
                 </Grid>

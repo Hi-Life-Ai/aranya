@@ -16,9 +16,11 @@ import Qrcodegeneratesize2 from './Qrcodesize2';
 import Qrcodegeneratesize3 from './Qrcodesize3';
 import Qrcodegeneratesize4 from './Qrcodesize4';
 import { useReactToPrint } from "react-to-print";
+import { UserRoleAccessContext } from '../../context/Appcontext';
 import { toast } from 'react-toastify';
 import { SERVICE } from '../../services/Baseservice';
 import { AuthContext } from '../../context/Appcontext';
+
 
 function PrintLabellist() {
 
@@ -38,19 +40,26 @@ function PrintLabellist() {
     const handleClickOpen = () => { setIsErrorOpen(true); };
     const handleClose = () => { setIsErrorOpen(false); };
 
+    const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
+
+
     //   Products
     const fetchProducts = async () => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
             setProductsList(
-                result?.map((d) => ({
+                response?.data?.products?.map((d) => ({
                     ...d,
                     label: d.productname,
                     value: d.sku,
@@ -58,11 +67,11 @@ function PrintLabellist() {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -87,13 +96,14 @@ function PrintLabellist() {
     };
 
     // Delete Searched Product
-    const deleteRow = (index, e) => {
-        setTableData(tableData.filter((v, item) => 
-        item !== index
+    const deleteRow = (index) => {
+        setTableData(tableData.filter((v, item) =>
+            item !== index
         ));
+        setIsQrCodePreview(false);
         // let rows = [];
         // setTableData(
-                    
+
         //             getProductData.forEach((value, index) => {
 
         //                 for (let i = 0; i >= Number(tableData[index].labelitem); i--) {
@@ -106,9 +116,9 @@ function PrintLabellist() {
         //                     )
         //                 }
         //             })
-                    
-             
-            
+
+
+
         // )
     }
 
@@ -123,11 +133,11 @@ function PrintLabellist() {
         }
         catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -146,8 +156,8 @@ function PrintLabellist() {
             }
         })
         setTableData(labelItemTabledata);
-
     }
+
     useEffect(
         () => {
             fetchProducts();
@@ -204,7 +214,9 @@ function PrintLabellist() {
                                                 size="small"
                                             />
                                         </StyledTableCell>
-                                        <StyledTableCell><AiOutlineClose style={{ color: 'red', fontWeight: '900', cursor: 'pointer', fontSize: 'large' }} onClick={(e) => deleteRow(index, e)} /></StyledTableCell>
+                                        <StyledTableCell>
+                                            <AiOutlineClose style={{ color: 'red', fontWeight: '900', cursor: 'pointer', fontSize: 'large' }} onClick={(e) => deleteRow(index)} sx={{ height: '30px', minWidth: '30px', marginTop: '4px', padding: '6px 10px' }} />
+                                        </StyledTableCell>
                                     </StyledTableRow>
                                 )
                             })}
@@ -371,7 +383,7 @@ function PrintLabellist() {
 
                 </Box>
             </Box><br /><br />
-            
+
             <div ref={componentRef} style={{ padding: 0, margin: 0 }}>
                 < Grid container columnSpacing={1} sx={{ padding: 0, backgroundColor: 'white', }} width="555px">
                     {isQrCodePreview &&
@@ -391,7 +403,7 @@ function PrintLabellist() {
                             })
                             return rows;
                         })
-                    ()}
+                            ()}
                 </Grid>
             </div>
 

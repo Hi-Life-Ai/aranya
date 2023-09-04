@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { userStyle } from '../PageStyle';
-import { Box, Paper, Table, TableBody, TableHead, Grid,Typography, TableContainer, Button, } from '@mui/material';
+import { Box, Paper, Table, TableBody, TableHead, Grid, Typography, TableContainer, Button, } from '@mui/material';
 import Navbar from '../../components/header/Navbar';
 import Footer from '../../components/footer/Footer';
 import { useParams } from 'react-router-dom';
@@ -14,10 +14,7 @@ import { StyledTableRow, StyledTableCell } from '../../components/Table';
 function Stocktransferviewlist() {
     const { auth, setngs } = useContext(AuthContext);
     const [adjustitem, setAdjustitem] = useState({});
-    const [isFromLocation, setIsFromLocation] = useState({});
-    const [isToLocation, setIsToLocation] = useState([]);
     const id = useParams().id;
-    let tolocations = [];
     const fetchStockadjust = async () => {
         try {
             let response = await axios.get(`${SERVICE.TRANSFER_SINGLE}/${id}`, {
@@ -28,18 +25,18 @@ function Stocktransferviewlist() {
             setAdjustitem(response.data.stransfer);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     useEffect(
         () => {
-        fetchStockadjust();
-    }, []);
+            fetchStockadjust();
+        }, []);
     return (
         <Box>
             <Headtitle title={'View Stock Transer'} />
@@ -58,11 +55,11 @@ function Stocktransferviewlist() {
                         </TableHead>
                         <TableBody>
                             <StyledTableRow >
-                                <StyledTableCell>{adjustitem.date}</StyledTableCell>    
+                                <StyledTableCell>{adjustitem.date}</StyledTableCell>
                                 <StyledTableCell>{adjustitem.fromlocation}</StyledTableCell>
                                 <StyledTableCell>{adjustitem.products?.map((a) => a.productname + ", ")}</StyledTableCell>
                                 <StyledTableCell>{adjustitem.products?.map((value) => value.locations?.map((data, liindec) => value.quantity[data] + ','))}</StyledTableCell>
-                                <StyledTableCell>{adjustitem.tobusinesslocations+ ", "}</StyledTableCell>
+                                <StyledTableCell>{adjustitem.tobusinesslocations + ", "}</StyledTableCell>
                             </StyledTableRow>
                         </TableBody>
                     </Table>
@@ -81,7 +78,7 @@ function Stocktransferview() {
         <Box>
             <Navbar />
             <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' }}}>
+                <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
                     <Stocktransferviewlist /><br /><br /><br /><br />
                     <Footer />
                 </Box>

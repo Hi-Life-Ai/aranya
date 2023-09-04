@@ -9,16 +9,20 @@ import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import jsPDF from "jspdf";
 import { useReactToPrint } from 'react-to-print';
 import autoTable from 'jspdf-autotable';
+import { ExportXL, ExportCSV } from '../../Export';
 import { toast } from 'react-toastify';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { UserRoleAccessContext, AuthContext } from '../../../context/Appcontext';
 import { SERVICE } from '../../../services/Baseservice';
 import Headtitle from '../../../components/header/Headtitle';
+import { ThreeDots } from 'react-loader-spinner';
+
 
 function Categorieslisttable() {
 
@@ -27,14 +31,16 @@ function Categorieslisttable() {
   const [cats, setCats] = useState({});
   const [exceldata, setExceldata] = useState([]);
 
+  const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
+
+
   // Datatable 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(1);
   const [sorting, setSorting] = useState({ column: '', direction: '' });
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoader, setIsLoader] = useState(false);
 
-  // Access
-  const { isUserRoleCompare } = useContext(UserRoleAccessContext);
 
   // Delete modal
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -44,21 +50,21 @@ function Categorieslisttable() {
   //  Fetch Category Data
   const fetchCategory = async () => {
     try {
-      let res = await axios.get(SERVICE.CATEGORIES, {
+      let res = await axios.post(SERVICE.CATEGORIES, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid),
       });
-      let result = res.data.categories.filter((data, index) => {
-        return data.assignbusinessid == setngs.businessid
-      })
-      setCategories(result);
+      setIsLoader(true);
+      setCategories(res?.data?.categories);
     } catch (err) {
+      setIsLoader(true);
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
@@ -74,11 +80,11 @@ function Categorieslisttable() {
       //set function to get particular row
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -95,11 +101,11 @@ function Categorieslisttable() {
       handleClose();
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -116,7 +122,8 @@ function Categorieslisttable() {
   const getexcelDatas = async () => {
     var data = categories.map(t => ({
       categoryname: t.categoryname, categorycode: t.categorycode, categorydescription: t.categorydescription,
-      subcategories: t.subcategories, brands: t.brands
+      subcategoryname: t.subcategories?.map(value => value.subcategryname)?.toString(),
+      subcategrycode: t.subcategories?.map(value => value.subcategrycode)?.toString()
     }));
     setExceldata(data);
   }
@@ -280,85 +287,107 @@ function Categorieslisttable() {
             </Grid>
           </Box>
         </Grid><br /><br />
-        <Grid container sx={{ justifyContent: 'center' }}>
-          <Grid>
-            {isUserRoleCompare[0].printcategory && (
-              <>
-                <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
-              </>
-            )}
-            {isUserRoleCompare[0].pdfcategory && (
-              <>
-                <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
-              </>
-            )}
-          </Grid>
-        </Grid><br /><br />
-        <Box>
-          {/* Table Start */}
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 700 }} aria-label="customized table">
-              <TableHead>
-                <StyledTableRow>
-                  <StyledTableCell >Action</StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('categoryname')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categoryname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('categorycode')}><Box sx={userStyle.tableheadstyle}><Box>Category Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categorycode')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('categorydescription')}><Box sx={userStyle.tableheadstyle}><Box>Description</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categorydescription')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('subcategories')}><Box sx={userStyle.tableheadstyle}><Box>Sub Category Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subcategories')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('subcategories')}><Box sx={userStyle.tableheadstyle}><Box>Sub Category Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subcategories')}</Box></Box></StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody align="left">
-                {filteredData.length > 0 ?
-                  (filteredData.map((item, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell>
-                        <Grid sx={{ display: 'flex' }}>
-                          {isUserRoleCompare[0].ecategory && (
-                            <>
-                              <Link to={`/product/category/edit/${item._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
-                            </>
-                          )}
-                          {isUserRoleCompare[0].dcategory && (
-                            <>
-                              <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(item._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
-                            </>
-                          )}
-                        </Grid>
-                      </StyledTableCell>
-                      <StyledTableCell component="th" scope="row">{item.categoryname}</StyledTableCell>
-                      <StyledTableCell>{item.categorycode}</StyledTableCell>
-                      <StyledTableCell>{item.categorydescription}</StyledTableCell>
-                      <StyledTableCell>{item.subcategories.map((value) => value.subcategryname + ",")}</StyledTableCell>
-                      <StyledTableCell>{item.subcategories.map((value) => value.subcategrycode + ",")}</StyledTableCell>
-                    </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={8} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-            </Table>
-          </TableContainer><br /><br />
-          <Box style={userStyle.dataTablestyle}>
-            <Box>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, categories.length)} of {categories.length} entries
-            </Box>
-            <Box>
-              <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Prev
-              </Button>
-              {pageNumbers?.map((pageNumber) => (
-                <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
-                  {pageNumber}
+        {isLoader ? <>
+          <Grid container sx={{ justifyContent: 'center' }}>
+            <Grid>
+              {isUserRoleCompare[0].printcategory && (
+                <>
+                  <ExportCSV csvData={exceldata} fileName={fileName} />
+                </>
+              )}
+              {isUserRoleCompare[0].printcategory && (
+                <>
+                  <ExportXL csvData={exceldata} fileName={fileName} />
+                </>
+              )}
+              {isUserRoleCompare[0].printcategory && (
+                <>
+                  <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
+                </>
+              )}
+              {isUserRoleCompare[0].pdfcategory && (
+                <>
+                  <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
+                </>
+              )}
+            </Grid>
+          </Grid><br /><br />
+          <Box>
+            {/* Table Start */}
+            <TableContainer component={Paper}>
+              <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                <TableHead>
+                  <StyledTableRow>
+                    <StyledTableCell >Action</StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('categoryname')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categoryname')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('categorycode')}><Box sx={userStyle.tableheadstyle}><Box>Category Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categorycode')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('categorydescription')}><Box sx={userStyle.tableheadstyle}><Box>Description</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('categorydescription')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('subcategories')}><Box sx={userStyle.tableheadstyle}><Box>Sub Category Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subcategories')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('subcategories')}><Box sx={userStyle.tableheadstyle}><Box>Sub Category Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subcategories')}</Box></Box></StyledTableCell>
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody align="left">
+                  {filteredData.length > 0 ?
+                    (filteredData.map((item, index) => (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell>
+                          <Grid sx={{ display: 'flex' }}>
+                            {isUserRoleCompare[0].ecategory && (
+                              <>
+                                <Link to={`/product/category/edit/${item._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
+                              </>
+                            )}
+                            {isUserRoleCompare[0].ecategory && (
+                              <>
+                                <Link to={`/product/category/view/${item._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                              </>
+                            )}
+                            {isUserRoleCompare[0].dcategory && (
+                              <>
+                                <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(item._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
+                              </>
+                            )}
+                          </Grid>
+                        </StyledTableCell>
+                        <StyledTableCell component="th" scope="row">{item.categoryname}</StyledTableCell>
+                        <StyledTableCell>{item.categorycode}</StyledTableCell>
+                        <StyledTableCell>{item.categorydescription}</StyledTableCell>
+                        <StyledTableCell>{item.subcategories.map((value) => value.subcategryname + ",")}</StyledTableCell>
+                        <StyledTableCell>{item.subcategories.map((value) => value.subcategrycode + ",")}</StyledTableCell>
+                      </StyledTableRow>
+                    )))
+                    : <StyledTableRow><StyledTableCell colSpan={8} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                  }
+                </TableBody>
+              </Table>
+            </TableContainer><br /><br />
+            <Box style={userStyle.dataTablestyle}>
+              <Box>
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, categories.length)} of {categories.length} entries
+              </Box>
+              <Box>
+                <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Prev
                 </Button>
-              ))}
-              {lastVisiblePage < totalPages && <span>...</span>}
-              <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Next
-              </Button>
+                {pageNumbers?.map((pageNumber) => (
+                  <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
+                    {pageNumber}
+                  </Button>
+                ))}
+                {lastVisiblePage < totalPages && <span>...</span>}
+                <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Next
+                </Button>
+              </Box>
             </Box>
+            {/* Table End */}
           </Box>
-          {/* Table End */}
-        </Box>
+
+        </> : <>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+          </Box>
+        </>}
       </Box>
       { /* content end */}
       {/* Print layout */}
@@ -383,6 +412,7 @@ function Categorieslisttable() {
                   <StyledTableCell>{item.categorydescription}</StyledTableCell>
                   <StyledTableCell>{item.subcategories.map((value) => value.subcategryname + ",")}</StyledTableCell>
                   <StyledTableCell>{item.subcategories.map((value) => value.subcategrycode + ",")}</StyledTableCell>
+
                 </StyledTableRow>
               ))
               )}

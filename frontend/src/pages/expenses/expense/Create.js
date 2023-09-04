@@ -33,6 +33,11 @@ const Expesecreatelist = () => {
     const [taxrates, setTaxrates] = useState();
     //set change expense category
     const [saveExpcate, setSaveExpcate] = useState();
+    const handleKeyDown = (event) => {
+        if (event.keyCode === 32) {
+            event.preventDefault();
+        }
+    };
     // expense date
     const [expenseDateTime, setExpenseDateTime] = useState(dayjs());
     const [paidonDateTime, setPaidonDateTime] = useState(dayjs());
@@ -40,7 +45,7 @@ const Expesecreatelist = () => {
 
     const [expenseAdd, setExpenseAdd] = useState({
         busilocation: "", expcategory: "None", referenceno: "",
-        expcontact: "", expimage: "", exptax: setngs ? setngs.applicabletax == undefined ? "" : setngs.applicabletax : setngs.applicabletax, totalamount: "", expnote: "", 
+        expcontact: "", expimage: "", exptax: setngs ? setngs.applicabletax == undefined ? "" : setngs.applicabletax : setngs.applicabletax, totalamount: "", expnote: "",
         expamount: "", repeaton: "", exppaidon: "", paymethod: "None", cardnum: "", cardhname: "",
         cardtransnum: "", cardtype: "None", month: "", year: "", securitycode: "", checkno: "",
         baccno: "", transnum1: "", transnum2: "", transnum3: "", transnum4: "",
@@ -56,18 +61,29 @@ const Expesecreatelist = () => {
     //  File Upload
     const [files, setFiles] = useState([]);
 
+    //  File Upload
     const handleFileUpload = (event) => {
-        const files = event.target.files;
-        const reader = new FileReader();
-        for (let i = 0; i <= 1; i++) {
-            const file = files[i];
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                setFiles((prevFiles) => [
-                    ...prevFiles,
-                    { name: file.name, data: reader.result.split(',')[1] },
-                ]);
-            };
+        const files = event.target.files[0];
+
+        const reader = new FileReader()
+        const file = files;
+        reader.readAsDataURL(files)
+        if (file) {
+            // Get the file extension
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            // Check if the file is an image or PDF
+            if (['jpg', 'jpeg', 'png', 'pdf'].includes(fileExtension)) {
+                // Handle the file upload here
+                reader.onloadend = (event) => {
+                    setFiles((prevFiles) => [
+                        ...prevFiles,
+                        { name: file.name, preview: reader.result, data: reader.result.split(',')[1] },
+                    ]);
+                };
+            } else {
+                // Display an error message or take appropriate action for unsupported file types
+                toast.error('Unsupported file type. Only images and PDFs are allowed.');
+            }
         }
     };
 
@@ -77,23 +93,24 @@ const Expesecreatelist = () => {
 
     const fetchData = async () => {
         try {
-            let res = await axios.get(SERVICE.EXPENSE, {
+            let res = await axios.post(SERVICE.EXPENSE_BYID, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = res.data.expenses.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let locresult = result.map((data, index) => {
+            let locresult = res.data.expenses.map((data, index) => {
                 return data.referenceno
             })
             setLocationData(locresult);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -112,20 +129,22 @@ const Expesecreatelist = () => {
     const [expenses, setExpenses] = useState();
     const fetchExpense = async () => {
         try {
-            let res = await axios.get(SERVICE.EXPENSE, {
+            let res = await axios.post(SERVICE.EXPENSE_BYID, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = res.data.expenses.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setExpenses(result);
+
+            setExpenses(res.data.expenses);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -134,22 +153,17 @@ const Expesecreatelist = () => {
     // Business Locations
     const fetchLocation = async () => {
         try {
-            let res = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let res = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = res.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate == true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate == true
-                    }
-                }
-            })
+
             setBusilocations(
-                result?.map((d) => ({
+                res.data.busilocations?.map((d) => ({
                     ...d,
                     label: d.name,
                     value: d.name,
@@ -157,9 +171,9 @@ const Expesecreatelist = () => {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -168,16 +182,18 @@ const Expesecreatelist = () => {
     // Expense Category
     const fetchExpenseCategory = async () => {
         try {
-            let res = await axios.get(SERVICE.EXPENSE_CATEGORY, {
+            let res = await axios.post(SERVICE.EXPENSE_CATEGORY_BYID, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = res.data.excategorys.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
+
             setExcategorys(
-                result?.map((d) => ({
+                res.data.excategorys?.map((d) => ({
                     ...d,
                     label: d.categoryname,
                     value: d.categoryname,
@@ -185,26 +201,25 @@ const Expesecreatelist = () => {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     const fetchRates = async () => {
         try {
-            let response = await axios.get(SERVICE.TAXRATE, {
+            let response = await axios.post(SERVICE.TAXRATE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
             });
-            let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
-            })
+
             setTaxrates(
-                taxRateData?.map((d) => ({
+                response.data.taxrates?.map((d) => ({
                     ...d,
                     label: d.taxname,
                     value: d.taxname,
@@ -212,9 +227,9 @@ const Expesecreatelist = () => {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -290,9 +305,9 @@ const Expesecreatelist = () => {
             });
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -357,13 +372,13 @@ const Expesecreatelist = () => {
                                     <Grid sx={userStyle.spanIcons2}>
                                         <CreateCatMod setSaveExpcate={setSaveExpcate} />
                                     </Grid>
-                                    <Grid sx={{'& .MuiIconButton-root': {marginTop: '7px'}}}>
-                                    <Tooltip title="You can add expense categories through the plus icon" placement="top" arrow>
-                                        <IconButton size="small">
-                                            <FcInfo />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Grid>
+                                    <Grid sx={{ '& .MuiIconButton-root': { marginTop: '7px' } }}>
+                                        <Tooltip title="You can add expense categories through the plus icon" placement="top" arrow>
+                                            <IconButton size="small">
+                                                <FcInfo />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Grid>
                                 </Grid>
                             </FormControl>
                         </Grid>
@@ -495,6 +510,7 @@ const Expesecreatelist = () => {
                                 <TextareaAutosize aria-label="minimum height" minRows={3} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
                                     value={expenseAdd.expnote}
                                     onChange={(e) => { setExpenseAdd({ ...expenseAdd, expnote: e.target.value }) }}
+                                    onKeyDown={handleKeyDown}
                                     name="expensenotes"
                                 />
                             </FormControl>

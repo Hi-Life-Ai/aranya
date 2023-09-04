@@ -41,20 +41,26 @@ const busilocSchema = new Schema({
     },
     
     landlinenumber:{
-        type: String,
+        type: Number,
         required: false
     },
     onephonenumber:{
         type:Number,
+        maxLength:[10 , 'Phone number cannot more than 10 charecters'],
         required:false
+
     },
     twophonenumber:{
         type:Number,
+        maxLength:[10 , 'Phone number cannot more than 10 charecters'],
         required:false
+
     },
     threephonenumber:{
         type:Number,
+        maxLength:[10 , 'Phone number cannot more than 10 charecters'],
         required:false
+
     },
     email:{
         type: String,
@@ -64,29 +70,15 @@ const busilocSchema = new Schema({
         type: String,
         required: false
     },
+    
     activate:{
         type: Boolean,
         required: false
     },
     whatsappno:{
         type:Number,
+        maxLength:[10 , 'Phone number cannot more than 10 charecters'],
         required:false
-    },
-    gstnno:{
-        type: String,
-        required: false
-    },
-    contactpersonname:{
-        type: String,
-        required: false
-    },
-    contactpersonnum:{
-        type: Number,
-        required: false
-    },
-    address:{
-        type: String,
-        required: false
     },
     createdAt:{
         type: Date,

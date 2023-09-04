@@ -18,6 +18,7 @@ import jsPDF from "jspdf";
 import autoTable from 'jspdf-autotable';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { ThreeDots } from 'react-loader-spinner';
 import Headtitle from '../../../components/header/Headtitle';
 import { UserRoleAccessContext } from '../../../context/Appcontext';
 import { SERVICE } from '../../../services/Baseservice';
@@ -29,6 +30,7 @@ function Userslisttable() {
   const [deltUser, setDeltUser] = useState({});
   const [exceldata, setExceldata] = useState([]);
   const { auth, setngs } = useContext(AuthContext);
+  const [isLoader, setIsLoader] = useState(false);
 
   // Datatable 
   const [page, setPage] = useState(1);
@@ -43,28 +45,37 @@ function Userslisttable() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const handleClickOpen = () => { setIsDeleteOpen(true); };
   const handleClose = () => { setIsDeleteOpen(false); };
-
+  console.log(setngs.businesslocation, 'loc');
+  console.log(setngs.businessid);
   // User
   const fetchHandler = async () => {
     try {
-      let res = await axios.get(`${SERVICE.USER_TERMSFALSE}`, {
+      let res = await axios.post(`${SERVICE.USER_TERMSFALSE}`, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid)
       });
-      let result = res.data.usersterms.filter((data, index) => {
-        return data.assignbusinessid == setngs.businessid
-      })
-      setUsers(result);
+      // let result = res.data.usersterms.filter((data, index) => {
+      //   return data.assignbusinessid == setngs.businessid
+      // })
+      setUsers(res?.data?.usersterms);
+      console.log(res.data);
+      setIsLoader(true)
+
     } catch (err) {
+      setIsLoader(true)
+
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
+
+  console.log(setngs, "ytyeghg")
 
   //set function to get particular row
   const rowData = async (id) => {
@@ -74,14 +85,14 @@ function Userslisttable() {
           'Authorization': `Bearer ${auth.APIToken}`
         }
       });
-      setDeltUser(res.data.suser);
+      setDeltUser(res?.data?.suser);
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -100,10 +111,10 @@ function Userslisttable() {
       handleClose();
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
@@ -281,85 +292,93 @@ function Userslisttable() {
             </Grid>
           </Box>
         </Grid><br />
-        <Grid container sx={userStyle.gridcontainer}>
-          <Grid >
-            {isUserRoleCompare[0].csvuser && (
-              <>
-                <ExportCSV csvData={exceldata} fileName={fileName} />
-              </>
-            )}
-            {isUserRoleCompare[0].exceluser && (
-              <>
-                <ExportXL csvData={exceldata} fileName={fileName} />
-              </>
-            )}
-            {isUserRoleCompare[0].printuser && (
-              <>
-                <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
-              </>
-            )}
-            {isUserRoleCompare[0].pdfuser && (
-              <>
-                <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
+        {isLoader ? <>
+          <Grid container sx={userStyle.gridcontainer}>
+            <Grid >
+              {isUserRoleCompare[0].csvuser && (
+                <>
+                  <ExportCSV csvData={exceldata} fileName={fileName} />
+                </>
+              )}
+              {isUserRoleCompare[0].exceluser && (
+                <>
+                  <ExportXL csvData={exceldata} fileName={fileName} />
+                </>
+              )}
+              {isUserRoleCompare[0].printuser && (
+                <>
+                  <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
+                </>
+              )}
+              {isUserRoleCompare[0].pdfuser && (
+                <>
+                  <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
 
-              </>
-            )}
-          </Grid>
-        </Grid><br />
-        <Box>
-          <TableContainer component={Paper} >
-            <Table sx={{ minWidth: 700, }} aria-label="customized table" id="usertable">
-              <TableHead>
-                <StyledTableRow>
-                  <StyledTableCell>Actions</StyledTableCell>
-                  <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('userid')}><Box sx={userStyle.tableheadstyle}><Box>User ID</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('userid')}</Box></Box></StyledTableCell>
-                  <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('staffname')}><Box sx={userStyle.tableheadstyle}><Box>Staff Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('staffname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('role')}><Box sx={userStyle.tableheadstyle}><Box>Role</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('role')}</Box></Box></StyledTableCell>
-                  <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('email')}><Box sx={userStyle.tableheadstyle}><Box>Email</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('email')}</Box></Box></StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody align="left">
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell >
-                        <Grid sx={{ display: 'flex' }}>
-                          {isUserRoleCompare[0].euser && <Link to={`/user/user/edit/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>}
-                          {isUserRoleCompare[0].vuser && <Link to={`/user/user/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>}
-                          {isUserRoleCompare[0].duser && (<Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>)}
-                        </Grid>
-                      </StyledTableCell>
-                      <StyledTableCell component="th" scope="row">{row.userid}</StyledTableCell>
-                      <StyledTableCell >{row.staffname}</StyledTableCell>
-                      <StyledTableCell >{row.role}</StyledTableCell>
-                      <StyledTableCell >{row.email}</StyledTableCell>
-                    </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={5} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-            </Table>
-          </TableContainer><br /><br />
-          <Box style={userStyle.dataTablestyle}>
-            <Box>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, users.length)} of {users.length} entries
-            </Box>
-            <Box>
-              <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Prev
-              </Button>
-              {pageNumbers?.map((pageNumber) => (
-                <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
-                  {pageNumber}
+                </>
+              )}
+            </Grid>
+          </Grid><br />
+          <Box>
+            <TableContainer component={Paper} >
+              <Table sx={{ minWidth: 700, }} aria-label="customized table" id="usertable">
+                <TableHead>
+                  <StyledTableRow>
+                    <StyledTableCell>Actions</StyledTableCell>
+                    <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('userid')}><Box sx={userStyle.tableheadstyle}><Box>User ID</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('userid')}</Box></Box></StyledTableCell>
+                    <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('staffname')}><Box sx={userStyle.tableheadstyle}><Box>Staff Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('staffname')}</Box></Box></StyledTableCell>
+                    <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('role')}><Box sx={userStyle.tableheadstyle}><Box>Role</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('role')}</Box></Box></StyledTableCell>
+                    <StyledTableCell sx={{ width: '600px !important' }} onClick={() => handleSorting('email')}><Box sx={userStyle.tableheadstyle}><Box>Email</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('email')}</Box></Box></StyledTableCell>
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody align="left">
+                  {filteredData.length > 0 ?
+                    (filteredData.map((row, index) => (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell >
+                          <Grid sx={{ display: 'flex' }}>
+                            {isUserRoleCompare[0].euser && <Link to={`/user/user/edit/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>}
+                            {isUserRoleCompare[0].vuser && <Link to={`/user/user/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>}
+                            {isUserRoleCompare[0].duser && (<Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>)}
+                          </Grid>
+                        </StyledTableCell>
+                        <StyledTableCell component="th" scope="row">{row.userid}</StyledTableCell>
+                        <StyledTableCell >{row.staffname}</StyledTableCell>
+                        <StyledTableCell >{row.role}</StyledTableCell>
+                        <StyledTableCell >{row.email}</StyledTableCell>
+                      </StyledTableRow>
+                    )))
+                    : <StyledTableRow><StyledTableCell colSpan={5} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                  }
+                </TableBody>
+              </Table>
+            </TableContainer><br /><br />
+            <Box style={userStyle.dataTablestyle}>
+              <Box>
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, users.length)} of {users.length} entries
+              </Box>
+              <Box>
+                <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Prev
                 </Button>
-              ))}
-              {lastVisiblePage < totalPages && <span>...</span>}
-              <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Next
-              </Button>
+                {pageNumbers?.map((pageNumber) => (
+                  <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
+                    {pageNumber}
+                  </Button>
+                ))}
+                {lastVisiblePage < totalPages && <span>...</span>}
+                <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Next
+                </Button>
+              </Box>
             </Box>
           </Box>
-        </Box>
+        </> : <>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+          </Box>
+
+        </>}
+
       </Box>
       {/* content end */}
 

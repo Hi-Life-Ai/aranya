@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
-import { Box, Button, Grid, Select, TableFooter, MenuItem, OutlinedInput, Paper, Typography,Dialog, DialogContent, DialogActions, TableContainer, Table, TableHead, TableBody, FormControl, } from '@mui/material';
+import { Box, Button, Grid, Select, TableFooter, MenuItem, OutlinedInput, Paper, Typography, Dialog, DialogContent, DialogActions, TableContainer, Table, TableHead, TableBody, FormControl, } from '@mui/material';
 import { FaPrint, FaFilePdf, } from 'react-icons/fa';
 import Navbar from '../../components/header/Navbar';
 import Footer from '../../components/footer/Footer';
@@ -18,6 +18,8 @@ import { AuthContext } from '../../context/Appcontext';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
+import { ThreeDots } from 'react-loader-spinner';
+
 
 
 function Categorywisereportall() {
@@ -33,28 +35,33 @@ function Categorywisereportall() {
   const [searchQuery, setSearchQuery] = useState("");
 
   //role access
-  const { isUserRoleCompare } = useContext(UserRoleAccessContext);
+  const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
+  const [isLoader, setIsLoader] = useState(false);
 
-    //popup model
-    const [isErrorOpen, setIsErrorOpen] = useState(false);
-    const [showAlert, setShowAlert] = useState()
-    const handleOpen = () => {  setIsErrorOpen(true);  };
-    const handleClose = () => {  setIsErrorOpen(false); };
+  //popup model
+  const [isErrorOpen, setIsErrorOpen] = useState(false);
+  const [showAlert, setShowAlert] = useState()
+  const handleOpen = () => { setIsErrorOpen(true); };
+  const handleClose = () => { setIsErrorOpen(false); };
 
   // get all products
   const fetchCategory = async () => {
     try {
-      let res = await axios.get(SERVICE.CATEGORIES, {
+      let res = await axios.post(SERVICE.CATEGORIES, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation]
+
       });
-      let result = res.data.categories.filter((data, index) => {
-        return data.assignbusinessid == setngs.businessid
-      })
+      // let result = res.data.categories.filter((data, index) => {
+      //   return data.assignbusinessid == setngs.businessid
+      // })
 
       setCategories(
-        result?.map((d) => ({
+        res?.data?.categories?.map((d) => ({
           ...d,
           label: d.categoryname,
           value: d.categoryname,
@@ -62,48 +69,55 @@ function Categorywisereportall() {
       );
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   }
 
   const searchLoc = async () => {
     try {
-      let res = await axios.get(SERVICE.PRODUCT, {
+      let res = await axios.post(SERVICE.PRODUCT, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation]
+
       });
 
-      let result = res.data.products.filter((data, index) => {
-        return data.assignbusinessid == setngs.businessid
-      })
+      // let result = res.data.products.filter((data, index) => {
+      //   return data.assignbusinessid == setngs.businessid
+      // })
 
-      let prodDataLocation = result.filter((data) => {
-        if (data.category == selectFilter.category) {
-          return data
-        }
-      });
-      setProducts(prodDataLocation);
+      // let prodDataLocation = res?.data?.products.filter((data) => {
+      //   if (data.category == selectFilter.category) {
+      //     return data
+      //   }
+      // });
+      setProducts(res?.data?.products);
+      setIsLoader(true);
+
     }
     catch (err) {
+      setIsLoader(true);
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
 
-  const handleSubmit = () =>{
-    if(selectFilter.category == ""){
+  const handleSubmit = () => {
+    if (selectFilter.category == "") {
       setShowAlert("Please select category!");
       handleOpen();
-    }else{
+    } else {
       searchLoc();
     }
   }
@@ -262,15 +276,15 @@ function Categorywisereportall() {
           </Grid>
           <Grid item lg={2} md={4} sm={12} xs={12}>
             <Button variant='outlined' sx={{
-               backgroundColor: '#339d3a !important',
-               height: '35px !important',
-               borderRadius: '5px !important',
-               color: 'white',
-               '&:hover': {
-                   backgroundColor: 'white !important',
-                   border: '1px solid #339d3a',
-                   color: '#339d3a',
-               }
+              backgroundColor: '#339d3a !important',
+              height: '35px !important',
+              borderRadius: '5px !important',
+              color: 'white',
+              '&:hover': {
+                backgroundColor: 'white !important',
+                border: '1px solid #339d3a',
+                color: '#339d3a',
+              }
             }} onClick={handleSubmit}>Generate</Button>
           </Grid>
           <Grid item lg={3} md={3}></Grid>
@@ -311,110 +325,116 @@ function Categorywisereportall() {
           { /* Header Content */}
 
           { /* Header Buttons */}
-          <Grid container sx={userStyle.gridcontainer}>
-            <Grid >
-              {isUserRoleCompare[0].csvcatwisereport && (
-                <>
-                  <ExportCSV csvData={exceldata} fileName={fileName} />
-                </>
-              )}
-              {isUserRoleCompare[0].excelcatwisereport && (
-                <>
-                  <ExportXL csvData={exceldata} fileName={fileName} />
-                </>
-              )}
-              {isUserRoleCompare[0].printcatwisereport && (
-                <>
-                  <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
-                </>
-              )}
-              {isUserRoleCompare[0].pdfcatwisereport && (
-                <>
-                  <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
-                </>
-              )}
-            </Grid>
-          </Grid><br />
-          { /* Table Start */}
-          <TableContainer component={Paper} >
-            <Table>
-              <TableHead  >
-                <StyledTableRow >
-                  <StyledTableCell onClick={() => handleSorting('sku')}><Box sx={userStyle.tableheadstyle}><Box>Item Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sku')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Item Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('category')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('category')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('companyrate')}><Box sx={userStyle.tableheadstyle}><Box>Company rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('companyrate')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('superstockrate')}><Box sx={userStyle.tableheadstyle}><Box>Super Stock's rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('superstockrate')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('dealerrate')}><Box sx={userStyle.tableheadstyle}><Box>Dealer rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('dealerrate')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Unit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('applicabletax')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('applicabletax')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>HSN</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('currentstock')}><Box sx={userStyle.tableheadstyle}><Box>Current Stock</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('currentstoxk')}</Box></Box></StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody>
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell>{row.sku}</StyledTableCell>
-                      <StyledTableCell>{row.productname}</StyledTableCell>
-                      <StyledTableCell>{row.category}</StyledTableCell>
-                      <StyledTableCell>{row.companyrate}</StyledTableCell>
-                      <StyledTableCell>{row.superstockrate}</StyledTableCell>
-                      <StyledTableCell>{row.dealerrate}</StyledTableCell>
-                      <StyledTableCell>{row.mrp}</StyledTableCell>
-                      <StyledTableCell>{row.unit}</StyledTableCell>
-                      <StyledTableCell>{row.applicabletax}</StyledTableCell>
-                      <StyledTableCell>{row.hsn}</StyledTableCell>
-                      <StyledTableCell>{row.currentstock}</StyledTableCell>
-                    </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={17} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-              <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
-                <StyledTableRow className="table2_total" >
-                  {products && (
-                    products.forEach(
-                      (item => {
-                        totalcompanyrate += +item.companyrate;
-                        totalsuperstockyrate += +item.superstockrate;
-                        totaldealarrate += +item.dealerrate;
-                        total += +item.mrp;
-                      })
-                    ))}
-                  <StyledTableCell align="center" colSpan={3} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalcompanyrate.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalsuperstockyrate.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totaldealarrate.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {total.toFixed(2)}</StyledTableCell>
-                  <StyledTableCell align="left" colSpan={4}></StyledTableCell>
-                </StyledTableRow>
-              </TableFooter>
-            </Table>
-          </TableContainer>
+          {isLoader ? <>
+            <Grid container sx={userStyle.gridcontainer}>
+              <Grid >
+                {isUserRoleCompare[0].csvcatwisereport && (
+                  <>
+                    <ExportCSV csvData={exceldata} fileName={fileName} />
+                  </>
+                )}
+                {isUserRoleCompare[0].excelcatwisereport && (
+                  <>
+                    <ExportXL csvData={exceldata} fileName={fileName} />
+                  </>
+                )}
+                {isUserRoleCompare[0].printcatwisereport && (
+                  <>
+                    <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
+                  </>
+                )}
+                {isUserRoleCompare[0].pdfcatwisereport && (
+                  <>
+                    <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
+                  </>
+                )}
+              </Grid>
+            </Grid><br />
+            { /* Table Start */}
+            <TableContainer component={Paper} >
+              <Table>
+                <TableHead  >
+                  <StyledTableRow >
+                    <StyledTableCell onClick={() => handleSorting('sku')}><Box sx={userStyle.tableheadstyle}><Box>Item Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sku')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Item Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('category')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('category')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('companyrate')}><Box sx={userStyle.tableheadstyle}><Box>Company rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('companyrate')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('superstockrate')}><Box sx={userStyle.tableheadstyle}><Box>Super Stock's rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('superstockrate')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('dealerrate')}><Box sx={userStyle.tableheadstyle}><Box>Dealer rate</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('dealerrate')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Unit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('applicabletax')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('applicabletax')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>HSN</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('currentstock')}><Box sx={userStyle.tableheadstyle}><Box>Current Stock</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('currentstoxk')}</Box></Box></StyledTableCell>
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredData.length > 0 ?
+                    (filteredData.map((row, index) => (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell>{row.sku}</StyledTableCell>
+                        <StyledTableCell>{row.productname}</StyledTableCell>
+                        <StyledTableCell>{row.category}</StyledTableCell>
+                        <StyledTableCell>{row.companyrate}</StyledTableCell>
+                        <StyledTableCell>{row.superstockrate}</StyledTableCell>
+                        <StyledTableCell>{row.dealerrate}</StyledTableCell>
+                        <StyledTableCell>{row.mrp}</StyledTableCell>
+                        <StyledTableCell>{row.unit}</StyledTableCell>
+                        <StyledTableCell>{row.applicabletax}</StyledTableCell>
+                        <StyledTableCell>{row.hsn}</StyledTableCell>
+                        <StyledTableCell>{row.currentstock}</StyledTableCell>
+                      </StyledTableRow>
+                    )))
+                    : <StyledTableRow><StyledTableCell colSpan={17} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                  }
+                </TableBody>
+                <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
+                  <StyledTableRow className="table2_total" >
+                    {products && (
+                      products.forEach(
+                        (item => {
+                          totalcompanyrate += +item.companyrate;
+                          totalsuperstockyrate += +item.superstockrate;
+                          totaldealarrate += +item.dealerrate;
+                          total += +item.mrp;
+                        })
+                      ))}
+                    <StyledTableCell align="center" colSpan={3} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
+                    <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalcompanyrate.toFixed(2)}</StyledTableCell>
+                    <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totalsuperstockyrate.toFixed(2)}</StyledTableCell>
+                    <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {totaldealarrate.toFixed(2)}</StyledTableCell>
+                    <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {total.toFixed(2)}</StyledTableCell>
+                    <StyledTableCell align="left" colSpan={4}></StyledTableCell>
+                  </StyledTableRow>
+                </TableFooter>
+              </Table>
+            </TableContainer>
 
-          <br /><br />
-          <Box style={userStyle.dataTablestyle}>
-            <Box>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, products.length)} of {products.length} entries
-            </Box>
-            <Box>
-              <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Prev
-              </Button>
-              {pageNumbers?.map((pageNumber) => (
-                <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
-                  {pageNumber}
+            <br /><br />
+            <Box style={userStyle.dataTablestyle}>
+              <Box>
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, products.length)} of {products.length} entries
+              </Box>
+              <Box>
+                <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Prev
                 </Button>
-              ))}
-              {lastVisiblePage < totalPages && <span>...</span>}
-              <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Next
-              </Button>
+                {pageNumbers?.map((pageNumber) => (
+                  <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
+                    {pageNumber}
+                  </Button>
+                ))}
+                {lastVisiblePage < totalPages && <span>...</span>}
+                <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Next
+                </Button>
+              </Box>
             </Box>
-          </Box>
+          </> : <>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+            </Box>
+          </>}
 
           { /* Table End */}
         </Box>
@@ -449,13 +469,13 @@ function Categorywisereportall() {
                         <StyledTableCell>{row.productname}</StyledTableCell>
                         <StyledTableCell>{row.category}</StyledTableCell>
                         <StyledTableCell>{row.companyrate}</StyledTableCell>
-                      <StyledTableCell>{row.superstockrate}</StyledTableCell>
-                      <StyledTableCell>{row.dealerrate}</StyledTableCell>
-                      <StyledTableCell>{row.mrp}</StyledTableCell>
-                      <StyledTableCell>{row.unit}</StyledTableCell>
-                      <StyledTableCell>{row.applicabletax}</StyledTableCell>
-                      <StyledTableCell>{row.hsn}</StyledTableCell>
-                      <StyledTableCell>{row.currentstock}</StyledTableCell>
+                        <StyledTableCell>{row.superstockrate}</StyledTableCell>
+                        <StyledTableCell>{row.dealerrate}</StyledTableCell>
+                        <StyledTableCell>{row.mrp}</StyledTableCell>
+                        <StyledTableCell>{row.unit}</StyledTableCell>
+                        <StyledTableCell>{row.applicabletax}</StyledTableCell>
+                        <StyledTableCell>{row.hsn}</StyledTableCell>
+                        <StyledTableCell>{row.currentstock}</StyledTableCell>
                       </StyledTableRow>
                     ))
                   }
@@ -464,23 +484,23 @@ function Categorywisereportall() {
             </TableContainer>
           </Box>
         </Box>
-         {/* ALERT DIALOG */}
-          <Box>
-            <Dialog
-                open={isErrorOpen}
-                onClose={handleClose}
-                aria-labelledby="alert-dialog-title"
-                aria-describedby="alert-dialog-description"
-            >
-                <DialogContent sx={{ width: '350px', textAlign: 'center', alignItems: 'center' }}>
-                    <ErrorOutlineOutlinedIcon sx={{ fontSize: "80px", color: 'orange' }} />
-                    <Typography variant="h6" >{showAlert}</Typography>
-                </DialogContent>
-                <DialogActions>
-                    <Button variant="contained" color="error" onClick={handleClose}>ok</Button>
-                </DialogActions>
-            </Dialog>
-          </Box>
+        {/* ALERT DIALOG */}
+        <Box>
+          <Dialog
+            open={isErrorOpen}
+            onClose={handleClose}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogContent sx={{ width: '350px', textAlign: 'center', alignItems: 'center' }}>
+              <ErrorOutlineOutlinedIcon sx={{ fontSize: "80px", color: 'orange' }} />
+              <Typography variant="h6" >{showAlert}</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button variant="contained" color="error" onClick={handleClose}>ok</Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
       </>
     </Box>
   );

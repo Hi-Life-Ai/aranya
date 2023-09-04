@@ -4,7 +4,7 @@ import { StyledTableRow, StyledTableCell } from "../components/Table";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { SERVICE } from '../services/Baseservice';
-import { AuthContext } from '../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../context/Appcontext';
 import { userStyle } from '../pages/PageStyle';
 import { ExportXL, ExportCSV } from '../pages/Export';
 import { FaPrint, FaFilePdf } from 'react-icons/fa';
@@ -14,13 +14,15 @@ import autoTable from 'jspdf-autotable';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 
-function Dashtopselling({isLocations, isLocationChange}) {
+function Dashtopselling({ isLocations, isLocationChange }) {
 
   const getcmonth = new Date();
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
   const valnmonth = monthNames[getcmonth.getMonth()];
+
+
 
   //Datatable
   const [page, setPage] = useState(1);
@@ -31,35 +33,43 @@ function Dashtopselling({isLocations, isLocationChange}) {
   const { auth, setngs } = useContext(AuthContext);
   const [exceldata, setExceldata] = useState([]);
 
+  const { isUserRoleAccess } = useContext(UserRoleAccessContext);
+
+
   const getmonthnum = getcmonth.getMonth() + 1;
 
   const fetchPos = async () => {
     try {
-      let res = await axios.get(SERVICE.POS, {
+      let res = await axios.post(SERVICE.POS, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid),
+        userassignedlocation: [isUserRoleAccess.businesslocation],
+        role: String(isUserRoleAccess.role),
       });
-      let posresult = res.data.pos1.filter((data, index) => {
-        if(isLocationChange){
-          return data.assignbusinessid == setngs.businessid  && isLocations == data.location
-        }else{
-          return data.assignbusinessid == setngs.businessid
+      let posresult = res?.data?.pos1?.filter((data, index) => {
+        if (isLocationChange) {
+          return data.businesslocation == setngs.locationid && isLocations == data.location
+        } else {
+          return data.businesslocation == setngs.locationid
         }
       })
 
 
-
-      let mergepos = posresult.filter((data) => {
+      let mergepos = posresult?.filter((data) => {
         let splittedMonth = data.createdAt.split("-")
+
         if (splittedMonth[1] == getmonthnum)
-          return data
+          return data;
+
+
       });
-      let allpos = [];
-      mergepos.map(item => {
-        item.goods.map(value => {
-          allpos.push(value);
-          const final = [...allpos.reduce((r, o) => {
+      let allposdata = [];
+      mergepos?.map(item => {
+        item?.goods?.map(value => {
+          allposdata?.push(value);
+          const final = [...allposdata.reduce((r, o) => {
             const key = o.productid;
             const items = r.get(key) || Object.assign({}, o, {
               quantity: 0
@@ -72,20 +82,87 @@ function Dashtopselling({isLocations, isLocationChange}) {
           setLabel(sorted);
         })
       })
+
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
 
+
+
+
+
+  // const fetchPos = async () => {
+  //   if (isLocationChange) {
+  //     try {
+  //       // let res = await axios.post(SERVICE.POS_GOODSITEM, {
+  //       //   businessid: String(setngs.businessid),
+  //       //   userassignedlocation: [isUserRoleAccess.businesslocation],
+  //       //   role: String(isUserRoleAccess.role),
+  //       //   location: String(isLocations)
+  //       // });
+  //       let res = await axios.post(SERVICE.POS, {
+  //         headers: {
+  //           'Authorization': `Bearer ${auth.APIToken}`
+  //         },
+  //         businessid: String(setngs.businessid),
+  //         userassignedlocation: [isUserRoleAccess.businesslocation],
+  //         role: String(isUserRoleAccess.role),
+  //       });
+  //       let posresult = res?.data?.pos1?.filter((data, index) => {
+  //         if (isLocationChange) {
+  //           return data.assignbusinessid == setngs.businessid && isLocations == data.location
+  //         } else {
+  //           return data.assignbusinessid == setngs.businessid
+  //         }
+  //       })
+  //       console.log(posresult, "fdgrdt");
+
+
+
+  //       let allposdata = [];
+  //       let res_data = res?.data?.pos1?.map(item => {
+  //         item.goods.map(value => {
+  //           allposdata.push(value)
+  //           const final = [...allposdata.reduce((r, o) => {
+  //             const key = o.productname;
+  //             const items = r.get(key) || Object.assign({}, o, {
+  //               quantity: 0
+  //             })
+  //             items.quantity += +o.quantity
+  //             return r.set(key, items);
+  //           }, new Map).values()
+  //           ];
+  //           let sorted = final.sort(({ quantity: a }, { quantity: b }) => b - a);
+  //           setLabel(sorted);
+  //         })
+
+
+  //       })
+
+  //       console.log(allposdata, "ryfyrtyt")
+  //     } catch (err) {
+  //       const messages = err?.response?.data?.message;
+  //       if (messages) {
+  //         toast.error(messages);
+  //       } else {
+  //         toast.error("Something went wrong!")
+  //       }
+  //     }
+  //   }
+
+  // };
+
+
   useEffect(
     () => {
       fetchPos();
-    }, [isLocations, label]);
+    }, [isLocations, isLocationChange]);
 
 
 
@@ -243,10 +320,10 @@ function Dashtopselling({isLocations, isLocationChange}) {
         </Grid>
         <Grid container sx={userStyle.gridcontainer}>
           <Grid>
-                <ExportCSV csvData={exceldata} fileName={fileName} />
-                <ExportXL csvData={exceldata} fileName={fileName} />
-                <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
-                <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
+            <ExportCSV csvData={exceldata} fileName={fileName} />
+            <ExportXL csvData={exceldata} fileName={fileName} />
+            <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
+            <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
           </Grid>
         </Grid><br />
         <TableContainer component={Paper}>

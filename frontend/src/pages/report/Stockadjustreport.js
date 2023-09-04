@@ -19,6 +19,7 @@ import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import Selects from 'react-select';
+import { ThreeDots } from 'react-loader-spinner';
 
 function Stockadjustreportlist() {
 
@@ -26,6 +27,7 @@ function Stockadjustreportlist() {
     const [locations, setLocations] = useState([]);
     const [exceldata, setExceldata] = useState([]);
     const { auth, setngs } = useContext(AuthContext);
+    const [isLoader, setIsLoader] = useState(false);
 
     //popup model
     const [isErrorOpen, setIsErrorOpen] = useState(false);
@@ -46,7 +48,7 @@ function Stockadjustreportlist() {
     var yyyy = today.getFullYear();
     today = yyyy + '-' + mm + '-' + dd;
     const [dateFilter, setDateFilter] = useState({
-        startdate: today, enddate: today, location: ""
+        startdate: "", enddate: "", location: ""
     })
 
     // Access
@@ -54,20 +56,15 @@ function Stockadjustreportlist() {
 
     const fetchLocation = async () => {
         try {
-            let req = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let req = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = req.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate ==true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate ==true
-                    }
-                }
-            })
+            let result = req.data.businesslocationsactive
             setLocations(
                 result?.map((d) => ({
                     ...d,
@@ -75,106 +72,99 @@ function Stockadjustreportlist() {
                     value: d.name,
                 }))
             );
-
+            setIsLoader(true)
         } catch (err) {
+         
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
+
 
     useEffect(() => {
         fetchLocation();
     }, []);
 
 
-    const fetchTransfer = async () => {
+
+
+
+
+    const fetchDatalocation = async () => {
 
         try {
-            let response = await axios.get(SERVICE.TRANSFERS, {
+            let req = await axios.post(SERVICE.ADJUST_REPORTS, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
-            });
-
-            //get all transfer data date filter function
-            let alldataresult = response.data.transfers.filter((data, index)=>{
-                // convert string ('dd-mm-yyyy') to date format ('yyyy-mm-dd')
-                const dateString = data.date;
-                const parts = dateString.split('-');
-                const date = new Date(parts[2], parts[1] - 1, parts[0]); // month is 0-indexed in Date constructor      
-                let dateTrim = moment(date).format('YYYY-MM-DD')
-
-                if (dateFilter.startdate == today && dateFilter.enddate == today) {
-                    return data
-                } else if (dateFilter.startdate <= dateTrim && dateFilter.enddate + 1 >= dateTrim) {
-                    return data
-                }
-                else if (dateFilter.startdate <= dateTrim && dateFilter.enddate == "") {
-                    return data
-                }
-                else if (dateFilter.startdate == "" && dateFilter.enddate + 1 >= dateTrim) {
-                    return data
-                }
-            })
-
-            //stock transfer data
-            //admin
-            let transferresult = alldataresult.filter((data, index)=>{
-                if (data.tobusinesslocations.includes(dateFilter.location)) {
-                    return data.assignbusinessid == setngs.businessi && data.status == true && data.reject == false
-                }
-                
-            })  
-            //other user  
-            let transferDatatransfer = alldataresult.filter((data, index)=>{
-                return data.assignbusinessid == setngs.businessid && data.status == true && data.reject == false
-            })
-            // let transferData = response.data.transfers
-            let userLocations = isUserRoleAccess.businesslocation
-            let filteredDataTransfer = []
-            transferDatatransfer.forEach((data, index)=> {
-                let products = []
-                // let actualProducts = data.products[0]
-                data.products.forEach((product)=> {
-                    let quantity = {}
-                    for (let key in product.quantity) {
-                        if (userLocations.includes(key)) {
-                            quantity[key] = product.quantity[key]
-                        }
-                    }
-                    let locations = product.locations.filter((data, index)=> {
-                        if (userLocations.includes(data) && dateFilter.location == data) {
-                            return true;
-                        }
-                    })
-                    if (locations.length != 0) {
-                        products.push({...product, quantity, locations})
-
-                    }
-                    
-                })
-                if (products.length != 0) {
-                filteredDataTransfer.push({...data, products})
-
-                }
-            })
-
-            setStockAdjust(isUserRoleAccess.role == 'Admin' ? transferresult : filteredDataTransfer);
-
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                location: String(dateFilter.location),
+                startdate: String(dateFilter.startdate) ,
+                enddate :String(dateFilter.enddate) 
+            }); 
+            let result = req.data.adjustreports
+            setStockAdjust(result);
+            setIsLoader(true)  
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            }
+            else {
                 toast.error("Something went wrong!")
             }
         }
     }
 
+
+
+
+    const fetchtodayadjust = async () => {
+
+        try {
+            let req = await axios.post(SERVICE.TODAY_ADJUST, {
+                headers: {
+                    'Authorization': `Bearer ${auth.APIToken}`
+                },
+                businessid: String(setngs.businessid),
+               
+            }); 
+            let result = req.data.todayadjusts
+            setStockAdjust(result);
+            setIsLoader(true)
+                   
+        } catch (err) {
+            setIsLoader(true)
+            const messages = err?.response?.data?.message;
+            if (messages) {
+                toast.error(messages);
+            }
+            else {
+                toast.error("Something went wrong!")
+            }
+        }
+    }
+
+
+
+
+useEffect(()=>{
+    fetchtodayadjust()
+}, [])
+
+
+
+
+
+
+   
     const handleSubmit = () => {
         if (dateFilter.location == "") {
             setShowAlert(
@@ -204,7 +194,7 @@ function Stockadjustreportlist() {
             handleClickOpenalert()
         }
         else {
-            fetchTransfer()
+            fetchDatalocation()
         }
     }
 
@@ -252,7 +242,7 @@ function Stockadjustreportlist() {
         setSorting({ column, direction });
     };
 
-    const sortedData = stockAdjust.sort((a, b) => {
+    const sortedData = stockAdjust?.sort((a, b) => {
         if (sorting.direction === 'asc') {
             return a[sorting.column] > b[sorting.column] ? 1 : -1;
         } else if (sorting.direction === 'desc') {
@@ -317,14 +307,14 @@ function Stockadjustreportlist() {
         )
     );
 
-    const filteredData = filteredDatas.slice((page - 1) * pageSize, page * pageSize);
+    const filteredData = filteredDatas?.slice((page - 1) * pageSize, page * pageSize);
 
-    const totalPages = Math.ceil(stockAdjust.length / pageSize);
+    const totalPages = Math?.ceil(stockAdjust?.length / pageSize);
 
-    const visiblePages = Math.min(totalPages, 3);
+    const visiblePages = Math?.min(totalPages, 3);
 
-    const firstVisiblePage = Math.max(1, page - 1);
-    const lastVisiblePage = Math.min(firstVisiblePage + visiblePages - 1, totalPages);
+    const firstVisiblePage = Math?.max(1, page - 1);
+    const lastVisiblePage = Math?.min(firstVisiblePage + visiblePages - 1, totalPages);
 
     const pageNumbers = [];
 
@@ -406,7 +396,7 @@ function Stockadjustreportlist() {
                                 <MenuItem value={25}>25</MenuItem>
                                 <MenuItem value={50}>50</MenuItem>
                                 <MenuItem value={100}>100</MenuItem>
-                                <MenuItem value={(stockAdjust.length)}>All</MenuItem>
+                                <MenuItem value={(stockAdjust?.length)}>All</MenuItem>
                             </Select>
                             <label htmlFor="pageSizeSelect">&ensp;entries</label>
                         </Box>
@@ -454,8 +444,8 @@ function Stockadjustreportlist() {
                                     </StyledTableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {filteredData.length > 0 ?
-                                        (filteredData.map((row, index) => (
+                                    {filteredData?.length > 0 ?
+                                        (filteredData?.map((row, index) => (
                                             <StyledTableRow key={index}>
                                                 <StyledTableCell align="left">{row.date}</StyledTableCell>
                                                 <StyledTableCell align="left">{row.fromlocation + ", "}</StyledTableCell>
@@ -472,7 +462,7 @@ function Stockadjustreportlist() {
                         <br /><br />
                         <Box style={userStyle.dataTablestyle}>
                             <Box>
-                                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, stockAdjust.length)} of {stockAdjust.length} entries
+                                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, stockAdjust?.length)} of {stockAdjust?.length} entries
                             </Box>
                             <Box>
                                 <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
@@ -512,8 +502,8 @@ function Stockadjustreportlist() {
                                     </StyledTableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {stockAdjust.length > 0 ?
-                                        (stockAdjust.map((row, index) => (
+                                    {stockAdjust?.length > 0 ?
+                                        (stockAdjust?.map((row, index) => (
                                             <StyledTableRow key={index}>
                                                 <StyledTableCell align="left">{row.date}</StyledTableCell>
                                                 <StyledTableCell align="left">{row.fromlocation + ", "}</StyledTableCell>

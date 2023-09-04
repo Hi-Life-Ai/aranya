@@ -59,6 +59,7 @@ function Rolecreatelist() {
         pdfdepartment: false,
         edepartment: false,
         ddepartment: false,
+        vdepartment: false,
 
         // Product Module
         productmanagement: false,
@@ -69,8 +70,11 @@ function Rolecreatelist() {
         acategory: false,
         ecategory: false,
         dcategory: false,
+        excelcategory: false,
+        csvcategory: false,
         printcategory: false,
         pdfcategory: false,
+
 
         // Unit
         allunit: false,
@@ -424,13 +428,14 @@ function Rolecreatelist() {
                 pdfdepartment: !role.pdfdepartment,
                 edepartment: !role.edepartment,
                 ddepartment: !role.ddepartment,
+                vdepartment: !role.vdepartment,
             }
         })
     }
 
     const categoryAllSelect = () => {
         setRole((prevData) => {
-            return { ...prevData, checkallcategory: !role.checkallcategory, acategory: !role.acategory, ecategory: !role.ecategory, dcategory: !role.dcategory, printcategory: !role.printcategory, pdfcategory: !role.pdfcategory }
+            return { ...prevData, checkallcategory: !role.checkallcategory, acategory: !role.acategory, ecategory: !role.ecategory, dcategory: !role.dcategory, printcategory: !role.printcategory, pdfcategory: !role.pdfcategory, excelcategory: !role.excelcategory, csvcategory: !role.csvcategory }
         })
     }
 
@@ -821,6 +826,7 @@ function Rolecreatelist() {
                 pdfdepartment: Boolean(role.pdfdepartment),
                 edepartment: Boolean(role.edepartment),
                 ddepartment: Boolean(role.ddepartment),
+                vdepartment: Boolean(role.vdepartment),
 
                 // Product
                 productmanagement: Boolean(role.productmanagement),
@@ -830,8 +836,11 @@ function Rolecreatelist() {
                 acategory: Boolean(role.acategory),
                 ecategory: Boolean(role.ecategory),
                 dcategory: Boolean(role.dcategory),
+                excelcategory: Boolean(role.excelcategory),
+                csvcategory: Boolean(role.csvcategory),
                 printcategory: Boolean(role.printcategory),
                 pdfcategory: Boolean(role.pdfcategory),
+
                 // Unit
                 allunit: Boolean(role.allunit),
                 checkallunit: Boolean(role.checkallunit),
@@ -1159,42 +1168,42 @@ function Rolecreatelist() {
         }
         catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
     }
 
-    
-  // Roles
-  const fetchHandler = async () => {
-    try {
-      let role = await axios.get(`${SERVICE.ROLE}`, {
-        headers: {
-          'Authorization': `Bearer ${auth.APIToken}`
-        }
-      });
-      let result = role.data.roles.map((data, index) => {
-        return data.rolename
-      })
-      setIsRoles(result)
-    } catch (err) {
-        const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
+
+    // Roles
+    const fetchHandler = async () => {
+        try {
+            let role = await axios.get(`${SERVICE.ROLE_SINGLE}`, {
+                headers: {
+                    'Authorization': `Bearer ${auth.APIToken}`
+                }
+            });
+            let result = role.data.roles.map((data, index) => {
+                return data.rolename
+            })
+            setIsRoles(result)
+        } catch (err) {
+            const messages = err?.response?.data?.message;
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
-  }
 
-  useEffect(
-    ()=>{
-        fetchHandler();
-    },[]
-  )
+    useEffect(
+        () => {
+            fetchHandler();
+        }, []
+    )
 
 
     const handleSubmit = (e) => {
@@ -1384,6 +1393,11 @@ function Rolecreatelist() {
                                 </Grid>
                                 <Grid>
                                     <FormGroup>
+                                        <FormControlLabel control={<Checkbox checked={role.vdepartment} onChange={(e) => setRole({ ...role, vdepartment: !role.vdepartment })} />} label="View Department" />
+                                    </FormGroup>
+                                </Grid>
+                                <Grid>
+                                    <FormGroup>
                                         <FormControlLabel control={<Checkbox checked={role.exceldepartment} onChange={(e) => setRole({ ...role, exceldepartment: !role.exceldepartment })} />} label="Excel Department" />
                                     </FormGroup>
                                 </Grid>
@@ -1438,6 +1452,16 @@ function Rolecreatelist() {
                                 <Grid>
                                     <FormGroup>
                                         <FormControlLabel control={<Checkbox checked={role.dcategory} onChange={(e) => setRole({ ...role, dcategory: !role.dcategory })} />} label="Delete category" />
+                                    </FormGroup>
+                                </Grid>
+                                <Grid>
+                                    <FormGroup>
+                                        <FormControlLabel control={<Checkbox checked={role.excelcategory} onChange={(e) => setRole({ ...role, excelcategory: !role.excelcategory })} />} label="Excel category" />
+                                    </FormGroup>
+                                </Grid>
+                                <Grid>
+                                    <FormGroup>
+                                        <FormControlLabel control={<Checkbox checked={role.csvcategory} onChange={(e) => setRole({ ...role, csvcategory: !role.csvcategory })} />} label="CSV category" />
                                     </FormGroup>
                                 </Grid>
                                 <Grid>
@@ -2337,8 +2361,8 @@ function Rolecreatelist() {
                             </Grid><br /><hr /><br />
                         </Grid>
 
-                         {/* Location Wise Profit Total*/}
-                         <Grid item md={4}>
+                        {/* Location Wise Profit Total*/}
+                        <Grid item md={4}>
                             <FormGroup>
                                 <FormControlLabel control={<Checkbox checked={role.alllocationwisetotalprofit} onChange={(e) => setRole({ ...role, alllocationwisetotalprofit: !role.alllocationwisetotalprofit })} />} label="Location Wise Profit Total" />
                             </FormGroup>

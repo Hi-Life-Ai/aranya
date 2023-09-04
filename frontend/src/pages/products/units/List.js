@@ -21,6 +21,9 @@ import { UserRoleAccessContext } from '../../../context/Appcontext';
 import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
 import Headtitle from '../../../components/header/Headtitle';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import { ThreeDots } from 'react-loader-spinner';
+
 
 function Unitslisttable() {
 
@@ -33,6 +36,7 @@ function Unitslisttable() {
   const [pageSize, setPageSize] = useState(1);
   const [sorting, setSorting] = useState({ column: '', direction: '' });
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoader, setIsLoader] = useState(false);
 
   // Access
   const { isUserRoleCompare } = useContext(UserRoleAccessContext);
@@ -41,28 +45,29 @@ function Unitslisttable() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [unitdld, setUnitld] = useState({});
   // Modal open
-  const handleClickOpen = () => {  setIsDeleteOpen(true); };
+  const handleClickOpen = () => { setIsDeleteOpen(true); };
   const handleClose = () => { setIsDeleteOpen(false); };
 
   // Units
   const fetchUnit = async () => {
     try {
-      let response = await axios.get(SERVICE.UNIT, {
+      let response = await axios.post(SERVICE.UNIT, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid)
+
       });
-      let result = response.data.units.filter((data, index) => {
-        return data.assignbusinessid == setngs.businessid
-      })
-      setUnits(result);
+      setUnits(response?.data?.units);
+      setIsLoader(true);
     } catch (err) {
+      setIsLoader(true);
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -77,10 +82,10 @@ function Unitslisttable() {
       setUnitld(response.data.sunit);
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   }
@@ -98,10 +103,10 @@ function Unitslisttable() {
       handleClose();
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
@@ -115,7 +120,7 @@ function Unitslisttable() {
   // Export Excel
   const fileName = 'Units'
   const getexcelDatas = async () => {
-    var data = units.map(t => ({ 'Unit Name': t.unit, 'Short Name': t.shortname,}));
+    var data = units.map(t => ({ 'Unit Name': t.unit, 'Short Name': t.shortname, }));
     setExceldata(data);
   }
 
@@ -132,6 +137,9 @@ function Unitslisttable() {
     documentTitle: 'ARANYA HERBALS | UNITS',
     pageStyle: 'print'
   });
+
+
+
 
   // PDF
   const downloadPdf = () => {
@@ -276,87 +284,99 @@ function Unitslisttable() {
             </Grid>
           </Box>
         </Grid><br /><br />
-        <Grid container sx={userStyle.gridcontainer}>
-          {isUserRoleCompare[0].excelunit && (
-            <>
-              <ExportCSV csvData={exceldata} fileName={fileName} />
-            </>
-          )}
-          {isUserRoleCompare[0].csvunit && (
-            <>
-              <ExportXL csvData={exceldata} fileName={fileName} />
-            </>
-          )}
-          {isUserRoleCompare[0].printunit && (
-            <>
-              <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
-            </>
-          )}
-          {isUserRoleCompare[0].pdfunit && (
-            <>
-              <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
-            </>
-          )}
-          <Grid>
-          </Grid>
-        </Grid><br /><br />
-        <Box>
-          <TableContainer component={Paper}>
-            <Table sx={{ minWidth: 700 }} aria-label="customized table">
-              <TableHead>
-                <StyledTableRow>
-                  <StyledTableCell>Action</StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('shortname')}><Box sx={userStyle.tableheadstyle}><Box>Short name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('shortname')}</Box></Box></StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody align="left">
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell>
-                        <Grid sx={{ display: 'flex' }}>
-                          {isUserRoleCompare[0].eunit && (
-                            <>
-                              <Link to={`/product/unit/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
-                            </>
-                          )}
-                          {isUserRoleCompare[0].dunit && (
-                            <>
-                              <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
-                            </>
-                          )}
-                        </Grid>
-                      </StyledTableCell>
-                      <StyledTableCell component="th" scope="row">{row.unit}</StyledTableCell>
-                      <StyledTableCell>{row.shortname}</StyledTableCell>
-                    </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={3} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-            </Table>
-          </TableContainer><br /><br />
-          <Box style={userStyle.dataTablestyle}>
-            <Box>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, units.length)} of {units.length} entries
-            </Box>
-            <Box>
-              <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Prev
-              </Button>
-              {pageNumbers?.map((pageNumber) => (
-                <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
-                  {pageNumber}
+        {isLoader ? <>
+          <Grid container sx={userStyle.gridcontainer}>
+            {isUserRoleCompare[0].excelunit && (
+              <>
+                <ExportCSV csvData={exceldata} fileName={fileName} />
+              </>
+            )}
+            {isUserRoleCompare[0].csvunit && (
+              <>
+                <ExportXL csvData={exceldata} fileName={fileName} />
+              </>
+            )}
+            {isUserRoleCompare[0].printunit && (
+              <>
+                <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
+              </>
+            )}
+            {isUserRoleCompare[0].pdfunit && (
+              <>
+                <Button sx={userStyle.buttongrp} onClick={() => downloadPdf()}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
+              </>
+            )}
+            <Grid>
+            </Grid>
+          </Grid><br /><br />
+          <Box>
+            <TableContainer component={Paper}>
+              <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                <TableHead>
+                  <StyledTableRow>
+                    <StyledTableCell>Action</StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('shortname')}><Box sx={userStyle.tableheadstyle}><Box>Short name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('shortname')}</Box></Box></StyledTableCell>
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody align="left">
+                  {filteredData.length > 0 ?
+                    (filteredData.map((row, index) => (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell>
+                          <Grid sx={{ display: 'flex' }}>
+                            {isUserRoleCompare[0].eunit && (
+                              <>
+                                <Link to={`/product/unit/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
+                              </>
+                            )}
+                            {isUserRoleCompare[0].eunit && (
+                              <>
+                                <Link to={`/product/unit/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                              </>
+                            )}
+                            {isUserRoleCompare[0].dunit && (
+                              <>
+                                <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
+                              </>
+                            )}
+                          </Grid>
+                        </StyledTableCell>
+                        <StyledTableCell component="th" scope="row">{row.unit}</StyledTableCell>
+                        <StyledTableCell>{row.shortname}</StyledTableCell>
+                      </StyledTableRow>
+                    )))
+                    : <StyledTableRow><StyledTableCell colSpan={3} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                  }
+                </TableBody>
+              </Table>
+            </TableContainer><br /><br />
+            <Box style={userStyle.dataTablestyle}>
+              <Box>
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, units.length)} of {units.length} entries
+              </Box>
+              <Box>
+                <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Prev
                 </Button>
-              ))}
-              {lastVisiblePage < totalPages && <span>...</span>}
-              <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Next
-              </Button>
+                {pageNumbers?.map((pageNumber) => (
+                  <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
+                    {pageNumber}
+                  </Button>
+                ))}
+                {lastVisiblePage < totalPages && <span>...</span>}
+                <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Next
+                </Button>
+              </Box>
             </Box>
           </Box>
-        </Box>
+        </> : <>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+          </Box>
+        </>}
+
       </Box>
       {/* content end */}
       {/* Print layout */}

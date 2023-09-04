@@ -38,7 +38,7 @@ const Quotationlisttable = () => {
     const [searchQuery, setSearchQuery] = useState("");
 
     // User Access
-    const { isUserRoleCompare } = useContext(UserRoleAccessContext);
+    const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
 
     // Delete model
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -48,22 +48,26 @@ const Quotationlisttable = () => {
     // Quotations
     const fetchQuotation = async () => {
         try {
-            let response = await axios.get(SERVICE.QUOTATION, {
+            let response = await axios.post(SERVICE.QUOTATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = response.data.quotations.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setQuotations(result);
+            // let result = response.data.quotations.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setQuotations(response?.data?.quotations);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -84,11 +88,11 @@ const Quotationlisttable = () => {
             setDeleteqot(res.data.squotation);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -105,9 +109,9 @@ const Quotationlisttable = () => {
             handleClose();
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -118,9 +122,9 @@ const Quotationlisttable = () => {
     // get particular columns for export excel
     const getexcelDatas = async () => {
         var data = quotations.map(t => ({
-            'Date': moment(t.date).utc().format('DD-MM-YYYY'), 'Invoice No': t.referenceno, 'Company': t.company,'Company Address': t.companyaddress,'Company GSTN': t.gstn,'Bank Name': t.bankname,'Acc No': t.accountnumber,'IFSC Code': t.ifsccode,'Company contact person Name': t.companycontactpersonname,'Company Contact Person No': t.companycontactpersonnumber,
-             'Delivery': t.location,'Delivery Address': t.deliveryaddress,'Delivery GSTN': t.deliverygstn,'Delivery Contact Person Name': t.deliverycontactpersonname,'Delivery Contact Person No': t.deliverycontactpersonnumber,'Driver Name': t.drivername,'Driver No': t.drivername,'Driver Phone No': t.drivernphonenumber,'Sales Person Name': t.salesman, 'Sales Person Contact No': t.salesmannumber,
-            'Grand Total': t.grandtotal, 'Total Quantity':t.totalproducts,'Total Items': t.totalitems, 'Added By': t.userbyadd
+            'Date': moment(t.date).utc().format('DD-MM-YYYY'), 'Invoice No': t.referenceno, 'Company': t.company, 'Company Address': t.companyaddress, 'Company GSTN': t.gstn, 'Bank Name': t.bankname, 'Acc No': t.accountnumber, 'IFSC Code': t.ifsccode, 'Company contact person Name': t.companycontactpersonname, 'Company Contact Person No': t.companycontactpersonnumber,
+            'Delivery': t.location, 'Delivery Address': t.deliveryaddress, 'Delivery GSTN': t.deliverygstn, 'Delivery Contact Person Name': t.deliverycontactpersonname, 'Delivery Contact Person No': t.deliverycontactpersonnumber, 'Driver Name': t.drivername, 'Driver No': t.drivername, 'Driver Phone No': t.drivernphonenumber, 'Sales Person Name': t.salesman, 'Sales Person Contact No': t.salesmannumber,
+            'Grand Total': t.grandtotal, 'Total Quantity': t.totalproducts, 'Total Items': t.totalitems, 'Added By': t.userbyadd
         }));
         setExceldata(data);
     }

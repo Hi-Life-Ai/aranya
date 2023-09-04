@@ -20,34 +20,6 @@ const transferSchema = new Schema({
             type:String,
             required: false
         },
-        sellingpricetax:{
-            type:String,
-            required: false
-        },
-        category:{
-            type:String,
-            required: false
-        },
-        subcategory:{
-            type:String,
-            required: false
-        },
-        companyrate: {
-            type: Number,
-            required: false
-        },
-        superstockrate: {
-            type: Number,
-            required: false
-        },
-        dealerrate: {
-            type: Number,
-            required: false
-        },
-        mrp: {
-            type: Number,
-            required: false
-        },
         currentstock:{
             type:Number,
             required: false

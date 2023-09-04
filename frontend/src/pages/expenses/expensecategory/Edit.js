@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Box, Grid, FormControl, InputLabel, OutlinedInput, Button, Typography, Dialog, DialogContent, DialogActions} from '@mui/material';
+import { Box, Grid, FormControl, InputLabel, OutlinedInput, Button, Typography, Dialog, DialogContent, DialogActions } from '@mui/material';
 import { userStyle } from '../../PageStyle';
 import Navbar from '../../../components/header/Navbar';
 import Footer from '../../../components/footer/Footer';
@@ -9,17 +9,18 @@ import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { toast } from 'react-toastify';
 import { SERVICE } from "../../../services/Baseservice";
 import { AuthContext } from '../../../context/Appcontext';
+import Headtitle from '../../../components/header/Headtitle'
 
 function Expensecategoryeditlist() {
 
     const [expenseCategoryForm, setExpenseCategoryForm] = useState({});
     const { auth, setngs } = useContext(AuthContext);
     const backLPage = useNavigate();
-      // Popup model
-      const [isErrorOpen, setIsErrorOpen] = useState(false);
-      const [showAlert, setShowAlert] = useState()
-      const handleClickOpen = () => { setIsErrorOpen(true); };
-      const handleClose = () => { setIsErrorOpen(false); };
+    // Popup model
+    const [isErrorOpen, setIsErrorOpen] = useState(false);
+    const [showAlert, setShowAlert] = useState()
+    const handleClickOpen = () => { setIsErrorOpen(true); };
+    const handleClose = () => { setIsErrorOpen(false); };
 
     const sendRequest = async () => {
         try {
@@ -29,17 +30,17 @@ function Expensecategoryeditlist() {
                 },
                 categoryname: String(expenseCategoryForm.categoryname),
                 categorycode: String(expenseCategoryForm.categorycode),
-                });
-                setExpenseCategoryForm(expensecateedit.data);
-                toast.success(expensecateedit.data.message, {
-                    position: toast.POSITION.TOP_CENTER
-                });
-                backLPage('/expense/expensecategory/list');
+            });
+            setExpenseCategoryForm(expensecateedit.data);
+            toast.success(expensecateedit.data.message, {
+                position: toast.POSITION.TOP_CENTER
+            });
+            backLPage('/expense/expensecategory/list');
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -49,22 +50,22 @@ function Expensecategoryeditlist() {
 
     //  Expense category
     const fetchHandler = async () => {
-        try { 
-          let response = await axios.get(`${SERVICE.EXPENSE_CATEGORY_SINGLE}/${id}`,{
-            headers: {
-                'Authorization': `Bearer ${auth.APIToken}`
-            },
-          });
-          setExpenseCategoryForm(response.data.sexcategory);
+        try {
+            let response = await axios.get(`${SERVICE.EXPENSE_CATEGORY_SINGLE}/${id}`, {
+                headers: {
+                    'Authorization': `Bearer ${auth.APIToken}`
+                },
+            });
+            setExpenseCategoryForm(response.data.sexcategory);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
-      };
+    };
 
     useEffect(() => {
         fetchHandler();
@@ -72,25 +73,26 @@ function Expensecategoryeditlist() {
 
     const editExpCateSubmit = (e) => {
         e.preventDefault();
-        if(expenseCategoryForm.categoryname == ""){
+        if (expenseCategoryForm.categoryname == "") {
             setShowAlert("Please enter categoty name!");
             handleClickOpen();
-        }else if(expenseCategoryForm.categorycode == ""){
+        } else if (expenseCategoryForm.categorycode == "") {
             setShowAlert("Please enter categoty code!");
             handleClickOpen();
-        }else {
+        } else {
             sendRequest();
         }
     }
 
     return (
         <Box>
+            <Headtitle title={'View Expense Category'} />
             <Typography sx={userStyle.HeaderText}> Edit Expense Category </Typography>
             <form onSubmit={editExpCateSubmit}>
                 <Box sx={userStyle.container}>
                     <Grid container spacing={2}>
                         <Grid item md={6} sm={12} xs={12}>
-                            <InputLabel htmlFor="component-outlined">Category name <b style={{color:'red'}}>*</b></InputLabel>
+                            <InputLabel htmlFor="component-outlined">Category name <b style={{ color: 'red' }}>*</b></InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
                                     id="component-outlined"
@@ -102,7 +104,7 @@ function Expensecategoryeditlist() {
                             </FormControl>
                         </Grid>
                         <Grid item md={6} sm={12} xs={12}>
-                            <InputLabel htmlFor="component-outlined">Category Code<b style={{color:'red'}}>*</b></InputLabel>
+                            <InputLabel htmlFor="component-outlined">Category Code<b style={{ color: 'red' }}>*</b></InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
                                     id="component-outlined"
@@ -148,7 +150,7 @@ const Expensecategoryedit = () => {
             <Box>
                 <Navbar />
                 <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                    <Box component="main"sx={{ paddingRight: '60px',paddingLeft: '60px',paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
+                    <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
                         <Expensecategoryeditlist /><br /><br /><br />
                         <Footer />
                     </Box>

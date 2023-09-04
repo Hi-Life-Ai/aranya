@@ -9,12 +9,14 @@ import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
 import { FaPlus } from 'react-icons/fa';
 import { AiOutlineClose } from 'react-icons/ai';
+import { UserRoleAccessContext } from '../../../context/Appcontext';
+
 
 function CreatecateMod({ setFetchCate }) {
 
   const [catemodal, setCateModal] = useState(false);
   const cateModOpen = () => { setCateModal(true); };
-  const cateModClose = () => { setCateModal(false); setCateForm({ ...cateForm, categoryname: "", categorycode: "", categorydescription: "" }); setShowAlert("") };
+  const cateModClose = () => { setCateModal(false); setCateForm({ ...cateForm, categoryname: "", categorycode: "", categorydescription: "" }); setFirstSubCate({ ...firstSubCate, subcategryname: "", subcategrycode: "" }); setIsSubCategory([]); setShowAlert("") };
   const { auth, setngs } = useContext(AuthContext);
   const [isRemovefirstSubcategory, setIsRemovefirstSubcategory] = useState(false)
   const [firstSubCate, setFirstSubCate] = useState({ subcategryname: "", subcategrycode: "" });
@@ -25,36 +27,30 @@ function CreatecateMod({ setFetchCate }) {
   const [cateForm, setCateForm] = useState({ categoryname: "", categorycode: "", categorydescription: "" });
   const [isSubCategory, setIsSubCategory] = useState([])
   const [isFirstSubCateView, setIsFirstSubCateView] = useState(false)
+  const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
 
   //popup model
   const [showAlert, setShowAlert] = useState()
 
   const fetchData = async () => {
     try {
-      let res = await axios.get(SERVICE.CATEGORIES, {
+      let res = await axios.post(SERVICE.CATEGORIES, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation]
       });
-      let resultcode = res.data.categories.map((data, index) => {
-        if (data.assignbusinessid == setngs.businessid) {
-          return data.categorycode
-        }
-      })
-      let resultname = res.data.categories.map((data, index) => {
-        if (data.assignbusinessid == setngs.businessid) {
-          return data.categoryname
-        }
-      })
-      setCateCode(resultcode);
-      setCateName(resultname);
+      setCateCode(res?.data?.categories);
+      setCateName(res?.data?.categories);
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -103,11 +99,11 @@ function CreatecateMod({ setFetchCate }) {
       cateModClose();
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -183,38 +179,40 @@ function CreatecateMod({ setFetchCate }) {
             border: '1px solid #b97df0',
           },
         }}
+        maxWidth="lg"
       >
         <form>
-          <DialogTitle id="customized-dialog-title1" onClose={cateModClose}>
+          <DialogTitle id="customized-dialog-title1" onClose={cateModClose} sx={{ backgroundColor: '#e0e0e0', color: "#000", display: "flex" }}>
             Add Category
           </DialogTitle>
-          <DialogContent dividers>
+          <DialogContent dividers style={{
+            minWidth: '750px', height: 'auto',
+          }}
+          >
             <Grid container spacing={3}>
               <Grid item md={12} sm={12} xs={12}>
                 <p style={{ color: 'red' }}>{showAlert}</p>
+                <InputLabel htmlFor="component-outlined">Category Name <b style={{ color: 'red' }}>*</b></InputLabel>
                 <FormControl size="small" fullWidth>
-                  <InputLabel htmlFor="component-outlined">Category Name <b style={{ color: 'red' }}>*</b></InputLabel>
                   <OutlinedInput
                     sx={userStyle.alertOutline}
                     id="component-outlined"
                     value={cateForm.categoryname}
                     onChange={(e) => { setCateForm({ ...cateForm, categoryname: e.target.value }) }}
-                    label="Category Name"
                   />
                 </FormControl>
-              </Grid>
+              </Grid><br />
               <Grid item md={12} sm={12} xs={12}>
+                <InputLabel htmlFor="component-outlined">Category Code </InputLabel>
                 <FormControl size="small" fullWidth>
-                  <InputLabel htmlFor="component-outlined">Category Code </InputLabel>
                   <OutlinedInput
                     sx={userStyle.alertOutline}
                     id="component-outlined"
                     value={cateForm.categorycode}
                     onChange={(e) => { setCateForm({ ...cateForm, categorycode: e.target.value }) }}
-                    label="Category Code"
                   />
                 </FormControl>
-              </Grid>
+              </Grid><br />
               <Grid item md={12} sm={12} xs={12}>
                 <InputLabel htmlFor="component-outlined">Description </InputLabel>
                 <FormControl size="small" fullWidth>
@@ -226,7 +224,7 @@ function CreatecateMod({ setFetchCate }) {
                   />
                 </FormControl><br />
               </Grid>
-            </Grid>
+            </Grid><br />
             <Grid item md={12} sm={12} xs={12}>
               {!isFirstSubCateView &&
                 (

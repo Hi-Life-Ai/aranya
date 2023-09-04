@@ -39,12 +39,8 @@ const ForgotVerifyPwd = () => {
         setForgotAuth(response);
         }
         catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+        const messages = err.response.data.message;
+        toast.error(messages);
         backPage('/forgetverifypwd');
         }
     }

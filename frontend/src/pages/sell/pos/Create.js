@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useContext, } from "react";
+import ReactDOM from 'react-dom';
 import { userStyle } from "../../PageStyle";
 import { makeStyles } from "@material-ui/core/styles";
-import { Box, Grid, Tabs, Tab, DialogTitle, InputLabel, FormControl, OutlinedInput, FormControlLabel, Card,Select, MenuItem, Checkbox, FormGroup, Paper, TextField, TableCell, Typography, Drawer, Button, Table, Tooltip, IconButton, TableContainer, TableHead, TableRow, TableBody, DialogActions, DialogContent, Dialog, TableFooter, } from "@mui/material";
+import { Box, Grid, Tabs, Tab, DialogTitle, InputLabel, FormControl, OutlinedInput, FormControlLabel, Card, Select, MenuItem, Checkbox, FormGroup, Paper, TextField, TableCell, Typography, Drawer, Button, Table, Tooltip, IconButton, TableContainer, TableHead, TableRow, TableBody, DialogActions, DialogContent, Dialog, TableFooter, } from "@mui/material";
 import { FaClock, FaMoneyBillAlt, FaRegWindowClose, } from "react-icons/fa";
 import { AiOutlineClose } from "react-icons/ai";
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
@@ -33,6 +34,11 @@ import { toast } from 'react-toastify';
 import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
 import moment from 'moment';
+// import InvoiceComponent from './InvoiceComponent';
+import InvoiceHeader from './InvoiceHeader';
+import LogoSection from "./LogoSection";
+import ContentSection from "./ContentSection";
+import SignatureSection from "./SignatureSection";
 
 // right Navbar overlap width
 const drawerWidth = 250;
@@ -95,8 +101,14 @@ function a11yProps(index) {
     };
 }
 
+
+
+
 const Poscreate = () => {
 
+    // const componentRef = useRef();
+    const componentRef = useRef(null);
+    const [copiesRendered, setCopiesRendered] = useState(false);
     const { auth, setngs } = useContext(AuthContext);
 
     // Access
@@ -106,15 +118,16 @@ const Poscreate = () => {
 
     // pos inside products array data
     const productInputs = {
-        companyrate:"",superstockrate:"",dealerrate:"",ratetype:"",sellingvalue:"", hsn:"", discountcheck:false, productid: "", productname: "", subtax: [], quantity: "", sellingpricetax: "", taxtareval: "", subtotal: "", applicabletax: "", discountamt: 0,
+        companyrate: "", superstockrate: "", dealerrate: "", ratetype: "", sellingvalue: "", hsn: "", discountcheck: false, productid: "", productname: "", subtax: [], quantity: "", sellingpricetax: "", taxtareval: "", subtotal: "", applicabletax: "", discountamt: 0,
         mrp: "", afterdiscount: 0, netrate: "", expirydate: "", category: "", subcategory: "",
     }
 
     // pos db store data 
     const [posAdd, setPosAdd] = useState({
-        company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-        salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-        accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+        company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+        salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+        accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", deliverycontactpersonemail: "", deliverycontactpersondistrict: "", deliverycontactpersonpincode: "",
+        drivername: "", drivernumber: "", drivernphonenumber: "",
 
     });
 
@@ -147,6 +160,9 @@ const Poscreate = () => {
     const handleDrawerOpen = () => { setOpen1(true); };
     const handleDrawerClose = () => { setOpen1(false); };
 
+    // const isMobile = window.innerWidth <= 600; // Set the breakpoint for mobile view
+    const [isMobile, setIsMobile] = useState(false);
+
     //Navbarsub drawer open for sub category
     const handleDrawerOpen1 = () => { setOpen2(true); };
     const handleDrawerClose1 = () => { setOpen2(false); };
@@ -168,7 +184,7 @@ const Poscreate = () => {
             else if (posAdd.location == "") {
                 setShowAlert("Please select any one of location!");
                 alertOpen();
-            }else if (tableData.length == 0) {
+            } else if (tableData.length == 0) {
                 setShowAlert("Please select any one of product details!");
                 alertOpen();
             } else {
@@ -179,13 +195,13 @@ const Poscreate = () => {
     const handleClosepay = () => { setIsPay(false); };
 
 
-    // Print
-    const componentRef = useRef();
-    const handleprint = useReactToPrint({
-        content: () => componentRef.current,
-        documentTitle: 'ARANYA HERBALS | INVOICE',
-        pageStyle: 'print'
-    });
+    // // Print
+
+    // const handlePrint = useReactToPrint({
+    //     content: () => componentRef.current,
+    //     documentTitle: 'ARANYA HEALTH CARE | INVOICE',
+    //     pageStyle: 'print'
+    // });
 
     // Show Ledger Alert
     const [isErrorOpen, setIsErrorOpen] = useState(false);
@@ -212,9 +228,23 @@ const Poscreate = () => {
     let GST = 0;
     let IGST = 0;
 
+    useEffect(() => {
+        const handleResize = () => {
+            setIsMobile(window.innerWidth <= 899);
+        };
+
+        handleResize(); // Call the handleResize function once to set the initial state
+
+        window.addEventListener('resize', handleResize); // Listen for window resize events
+
+        return () => {
+            window.removeEventListener('resize', handleResize); // Clean up the event listener on component unmount
+        };
+    }, []);
+
     //fetch settings company 
     const fetchCompany = () => {
-        setCompany(setngs.company.map((t) => ({
+        setCompany(setngs?.company?.map((t) => ({
             ...t,
             label: t.companyname,
             value: t.companyname
@@ -224,20 +254,20 @@ const Poscreate = () => {
     // fetch all products for category/brand/sub category onclick with particular data
     const fetchProd = async (e) => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setMergeprod(result);
+            setMergeprod(response?.data?.products);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -246,20 +276,19 @@ const Poscreate = () => {
     // get taxvrate data for products
     const taxrateRequest = async () => {
         try {
-            let response = await axios.get(SERVICE.TAXRATE, {
+            let response = await axios.post(SERVICE.TAXRATE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+
             });
-            let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setTaxrates(taxRateData);
+            setTaxrates(response?.data?.taxrates);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -268,71 +297,73 @@ const Poscreate = () => {
     // fetch all products for get particular product in product select give products
     const fetchProductsall = async () => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setProducts(result);
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setProducts(response?.data?.products);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     // get all stock data
     const fetchHandleStock = async () => {
         try {
-            var response = await axios.get(SERVICE.PRODUCT, {
+            var response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setProductsList(result.map((t) => ({
+            setProductsList(response?.data?.products?.map((t) => ({
                 ...t,
                 label: t.productname,
                 value: t.productname
             })))
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            setShowAlert(messages);
-            alertOpen();
-        }else{
-            setShowAlert("Something went wrong!");
-            alertOpen();
-        }
+            if (messages) {
+                setShowAlert(messages);
+                alertOpen();
+            } else {
+                setShowAlert("Something went wrong!");
+                alertOpen();
+            }
         }
     }
 
     // fetch categories
     const fetchcategory = async (e) => {
         try {
-            let response = await axios.get(SERVICE.CATEGORIES, {
+            let response = await axios.post(SERVICE.CATEGORIES, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
-            });
-            let result = response.data.categories.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setCategory(result);
+                businessid: String(setngs.businessid),
 
+            });
+            setCategory(response?.data?.categories);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -341,24 +372,21 @@ const Poscreate = () => {
     // fetch subcategory
     const fetchSubcategory = async (e) => {
         try {
-            let req = await axios.get(SERVICE.CATEGORIES, {
+            let req = await axios.post(SERVICE.CATEGORIES, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
             });
-            let result = req.data.categories.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let reqdata = result.filter(item => {
+            let reqdata = req?.data?.categories?.filter(item => {
                 return item.subcategories
             })
             setSubCategory(reqdata);
-
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -390,33 +418,26 @@ const Poscreate = () => {
             fetchtable(res.data.sproduct)
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
     const fetchlocated = async () => {
         try {
-            var response = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            var response = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
 
-            let result = response.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate == true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate == true
-                    }
-                }
-            })
-
-            setBusiOptions(result?.map((data) => ({
+            setBusiOptions(response?.data?.busilocations?.map((data) => ({
                 ...data,
                 label: data.name,
                 value: data.name
@@ -424,26 +445,26 @@ const Poscreate = () => {
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
     const fetchSalesman = async () => {
         try {
-            let res = await axios.get(`${SERVICE.USER_TERMSFALSE}`, {
+            let res = await axios.post(`${SERVICE.USER_TERMSFALSE}`, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
             });
 
             let result = res.data.usersterms.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid && data.role == "Salesman"
+                return data.role == "Salesman"
             })
-
             setSalesmans(result?.map((d) => ({
                 ...d,
                 label: d.staffname,
@@ -452,11 +473,11 @@ const Poscreate = () => {
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -505,8 +526,8 @@ const Poscreate = () => {
                     superstockrate: e.superstockrate,
                     dealerrate: e.dealerrate,
                     mrp: e.mrp,
-                    ratetype:"",
-                    sellingvalue:e.mrp,
+                    ratetype: "",
+                    sellingvalue: e.mrp,
                     category: e.category,
                     subcategory: e.subcategory,
                     productid: e.sku,
@@ -549,9 +570,9 @@ const Poscreate = () => {
                 else if (reference == "percentage" && inputvalue == false) {
                     let afterdisval = Number(value?.netrate) - Number(value.discountamt)
                     return { ...value, [productInputName]: inputvalue, afterdiscount: afterdisval, subtotal: (Number(afterdisval) * Number(value.taxtareval) / 100 + Number(afterdisval)) }
-                   
-                }else if (reference == "rateamount"){
-                    if(inputvalue == "companyrate"){
+
+                } else if (reference == "rateamount") {
+                    if (inputvalue == "companyrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.companyrate);
                         //after discount rate
@@ -559,15 +580,15 @@ const Poscreate = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
-                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost)); 
+                        //subtotal
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.companyrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
-                    }else  if(inputvalue == "superstockrate"){
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.companyrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
+                    } else if (inputvalue == "superstockrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.superstockrate);
                         //after discount rate
@@ -575,16 +596,16 @@ const Poscreate = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));  
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.superstockrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.superstockrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
                     }
-                    else  if(inputvalue == "dealarrate"){
+                    else if (inputvalue == "dealarrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.dealerrate);
                         //after discount rate
@@ -592,14 +613,14 @@ const Poscreate = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost)); 
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.dealerrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.dealerrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
                     }
                 }
                 else {
@@ -635,6 +656,62 @@ const Poscreate = () => {
         }
     }
 
+    // convert 
+    const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const teens = ['', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', 'Ten', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const thousands = ['', 'Thousand', 'Million', 'Billion'];
+
+    function numberToWords(num) {
+
+        if (num === 0) {
+            return 'Zero Rupees';
+        }
+
+        const words = [];
+
+        for (let i = 0; i < thousands.length; i++) {
+            if (num % 1000 !== 0) {
+                const wordSegment = numberToWordsHundred(num % 1000);
+                words.push(wordSegment + ' ' + thousands[i]);
+            }
+            num = Math.floor(num / 1000);
+            if (num === 0) {
+                break;
+            }
+        }
+
+        return words.reverse().join(', ');
+    }
+
+    function numberToWordsHundred(num) {
+        const hundred = Math.floor(num / 100);
+        const remainder = num % 100;
+
+        const words = [];
+
+        if (hundred !== 0) {
+            words.push(units[hundred] + ' Hundred');
+        }
+
+        if (remainder !== 0) {
+            if (remainder < 10) {
+                words.push(units[remainder]);
+            } else if (remainder >= 11 && remainder <= 19) {
+                words.push(teens[remainder - 10]);
+            } else {
+                const tensDigit = Math.floor(remainder / 10);
+                const unitsDigit = remainder % 10;
+                words.push(tens[tensDigit] + (unitsDigit !== 0 ? ' ' + units[unitsDigit] : ''));
+            }
+        }
+
+        return words.join(' ');
+    }
+
+    const totalNetCost = Number(totalNetCostCalcSub()).toFixed(2);
+    const totalNetCostInWords = numberToWords(Number(totalNetCost)) + ' Rupees Only';
+
     //subtotal
     function totalNetRate() {
         let totalnetrate = 0;
@@ -652,24 +729,44 @@ const Poscreate = () => {
     }, [])
 
 
-    tableData?.map((item) => {
-        item?.subtax?.filter((data) => {
-            cgst += Number(data.taxratecgst == undefined ? 0 : data.taxratecgst);
-            gst += Number(data.taxrategst == undefined ? 0 : data.taxrategst);
-            igst += Number(data.taxrateigst == undefined ? 0 : data.taxrateigst);
-        })
-    })
 
-    CGST = cgst
-    GST = gst
-    IGST = igst
+    // tableData?.map((item) => {
+    //     item?.subtax?.filter((data) => {
+    //         cgst += Number(data.taxratecgst == undefined ? 0 : data.taxratecgst);
+    //         gst += Number(data.taxrategst == undefined ? 0 : data.taxrategst);
+    //         igst += Number(data.taxrateigst == undefined ? 0 : data.taxrateigst);
+    //     })
+    // })
+
+    // CGST = cgst
+    // GST = gst
+    // IGST = igst
+
+    // Initialize tax variables
+    let cgstTotal = 0;
+    let gstTotal = 0;
+    let igstTotal = 0;
+
+    // Iterate through tableData to calculate tax values
+    tableData?.forEach((item) => {
+        item?.subtax?.forEach((data) => {
+            const quantity = Number(item.quantity); // Quantity of the current product
+            const taxRateCGST = Number(data.taxratecgst || 0);
+            const taxRateSGST = Number(data.taxrategst || 0);
+            const taxRateIGST = Number(data.taxrateigst || 0);
+
+            cgstTotal += (quantity * taxRateCGST);
+            gstTotal += (quantity * taxRateSGST);
+            igstTotal += (quantity * taxRateIGST);
+        });
+    });
 
     //total taxvalue calc for invoice
     const totalTaxValCal = () => {
         let totaltaxvalue = 0;
         if (tableData?.length > 0) {
             tableData?.forEach((value) => {
-                totaltaxvalue += Math.abs((((value.taxtareval == "" || value.taxtareval == undefined ? 0 : value.taxtareval)/100) * (value.mrp == "" || value.mrp == undefined ? 0 : value.mrp))) * Number(value.quantity)
+                totaltaxvalue += Math.abs((((value.taxtareval == "" || value.taxtareval == undefined ? 0 : value.taxtareval) / 100) * (value.mrp == "" || value.mrp == undefined ? 0 : value.mrp))) * Number(value.quantity)
             })
             return totaltaxvalue;
         }
@@ -701,18 +798,18 @@ const Poscreate = () => {
     // fetch pos forrecent transction
     const fetchPos = async () => {
         try {
-            let req = await axios.get(SERVICE.POS, {
+            let req = await axios.post(SERVICE.POS, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = req.data.pos1.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let posresult = result.map((data, index) => {
+            let posresult = req?.data?.pos1?.map((data, index) => {
                 return data.referenceno
             })
-            let getrecent = result.filter((data) => {
+            let getrecent = req?.data?.pos1?.filter((data) => {
                 let dataDate = moment(data.date).utc().format('DD-MM-YYYY')
                 let today = moment(new Date()).utc().format('DD-MM-YYYY')
                 if (dataDate == today) {
@@ -720,13 +817,13 @@ const Poscreate = () => {
                 }
             })
             setLocationData(posresult);
-            setPos(result);
+            setPos(req?.data?.pos1);
             setPosRecent(getrecent)
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -735,30 +832,30 @@ const Poscreate = () => {
     // fetch quotation for recent quotation
     const fetchQot = async () => {
         try {
-            let req = await axios.get(SERVICE.QUOTATION, {
+            let req = await axios.post(SERVICE.QUOTATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = req.data.quotations.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let getrecent = result.filter((data) => {
+            let getrecent = req?.data?.quotations.filter((data) => {
                 let dataDate = moment(data.date).utc().format('DD-MM-YYYY')
                 let today = moment(new Date()).utc().format('DD-MM-YYYY')
                 if (dataDate == today) {
                     return data
                 }
             })
-            setQuotations(result);
+            setQuotations(req?.data?.quotations);
             setQuotationRecent(getrecent)
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -903,21 +1000,24 @@ const Poscreate = () => {
                 companycontactpersonname: String(posAdd.companycontactpersonname == undefined || null ? "" : posAdd.companycontactpersonname),
                 companycontactpersonnumber: Number(posAdd.companycontactpersonnumber == undefined || null ? 0 : posAdd.companycontactpersonnumber),
                 location: String(posAdd.location),
-                deliveryaddress:String(posAdd.deliveryaddress == undefined || null ? "": posAdd.deliveryaddress),
-                deliverygstn:String(posAdd.deliverygstn == undefined | null ? "" : posAdd.deliverygstn),
-                deliverycontactpersonname:String(posAdd.deliverycontactpersonname == undefined || null ? "" : posAdd.deliverycontactpersonname),
-                deliverycontactpersonnumber:Number(posAdd.deliverycontactpersonnumber == undefined || null ? 0 : posAdd.deliverycontactpersonnumber),
-                drivernumber:String(posAdd.drivernumber == undefined || null ? "":posAdd.drivernumber),
-                drivername:String(posAdd.drivername == undefined || null ? "" : posAdd.drivername),
-                drivernphonenumber:Number(posAdd.drivernphonenumber == undefined || null ? 0 : posAdd.drivernphonenumber),
+                deliveryaddress: String(posAdd.deliveryaddress == undefined || null ? "" : posAdd.deliveryaddress),
+                deliverygstn: String(posAdd.deliverygstn == undefined || null ? "" : posAdd.deliverygstn),
+                deliverycontactpersonname: String(posAdd.deliverycontactpersonname == undefined || null ? "" : posAdd.deliverycontactpersonname),
+                deliverycontactpersonnumber: Number(posAdd.deliverycontactpersonnumber == undefined || null ? 0 : posAdd.deliverycontactpersonnumber),
+                deliverycontactpersonemail: String(posAdd.deliverycontactpersonemail == undefined || null ? "" : posAdd.deliverycontactpersonemail),
+                deliverycontactpersondistrict: String(posAdd.deliverycontactpersondistrict == undefined || null ? "" : posAdd.deliverycontactpersondistrict),
+                deliverycontactpersonpincode: String(posAdd.deliverycontactpersonpincode == undefined || null ? "" : posAdd.deliverycontactpersonpincode),
+                drivernumber: String(posAdd.drivernumber == undefined || null ? "" : posAdd.drivernumber),
+                drivername: String(posAdd.drivername == undefined || null ? "" : posAdd.drivername),
+                drivernphonenumber: Number(posAdd.drivernphonenumber == undefined || null ? 0 : posAdd.drivernphonenumber),
                 salesman: String(posAdd.salesman == undefined || null ? "" : posAdd.salesman),
                 salesmannumber: Number(posAdd.salesmannumber == undefined || null ? 0 : posAdd.salesmannumber),
-                salescommission: Number(posAdd.salescommission == undefined ? 0 :  posAdd.salescommission),
+                salescommission: Number(posAdd.salescommission == undefined ? 0 : posAdd.salescommission),
                 date: String(purchaseDateTime),
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
-                totalnettax:Number(totalTaxValCal().toFixed(2)),
+                totalnettax: Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
@@ -926,8 +1026,8 @@ const Poscreate = () => {
                 userbyadd: String(isUserRoleAccess.staffname),
                 signature: String(setngs.signature),
             });
-            handleprint();
-            // handleSubmitclear();
+            // handlePrint();           
+            handleSubmitclear();
             handleClosepay();
             await fetchQot();
             await fetchDraft();
@@ -960,13 +1060,13 @@ const Poscreate = () => {
             // });
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            setShowAlert(messages);
-            alertOpen();
-        }else{
-            setShowAlert("Something went wrong!");
-            alertOpen();
-        }
+            if (messages) {
+                setShowAlert(messages);
+                alertOpen();
+            } else {
+                setShowAlert("Something went wrong!");
+                alertOpen();
+            }
         }
     };
 
@@ -990,21 +1090,24 @@ const Poscreate = () => {
                 companycontactpersonname: String(posAdd.companycontactpersonname == undefined || null ? "" : posAdd.companycontactpersonname),
                 companycontactpersonnumber: Number(posAdd.companycontactpersonnumber == undefined || null ? 0 : posAdd.companycontactpersonnumber),
                 location: String(posAdd.location),
-                deliveryaddress:String(posAdd.deliveryaddress == undefined || null ? "": posAdd.deliveryaddress),
-                deliverygstn:String(posAdd.deliverygstn == undefined | null ? "" : posAdd.deliverygstn),
-                deliverycontactpersonname:String(posAdd.deliverycontactpersonname == undefined || null ? "" : posAdd.deliverycontactpersonname),
-                deliverycontactpersonnumber:Number(posAdd.deliverycontactpersonnumber == undefined || null ? 0 : posAdd.deliverycontactpersonnumber),
-                drivernumber:String(posAdd.drivernumber == undefined || null ? "":posAdd.drivernumber),
-                drivername:String(posAdd.drivername == undefined || null ? "" : posAdd.drivername),
-                drivernphonenumber:Number(posAdd.drivernphonenumber == undefined || null ? 0 : posAdd.drivernphonenumber),
+                deliveryaddress: String(posAdd.deliveryaddress == undefined || null ? "" : posAdd.deliveryaddress),
+                deliverygstn: String(posAdd.deliverygstn == undefined | null ? "" : posAdd.deliverygstn),
+                deliverycontactpersonname: String(posAdd.deliverycontactpersonname == undefined || null ? "" : posAdd.deliverycontactpersonname),
+                deliverycontactpersonnumber: Number(posAdd.deliverycontactpersonnumber == undefined || null ? 0 : posAdd.deliverycontactpersonnumber),
+                deliverycontactpersonemail: String(posAdd.deliverycontactpersonemail == undefined || null ? "" : posAdd.deliverycontactpersonemail),
+                deliverycontactpersondistrict: String(posAdd.deliverycontactpersondistrict == undefined || null ? "" : posAdd.deliverycontactpersondistrict),
+                deliverycontactpersonpincode: String(posAdd.deliverycontactpersonpincode == undefined || null ? "" : posAdd.deliverycontactpersonpincode),
+                drivernumber: String(posAdd.drivernumber == undefined || null ? "" : posAdd.drivernumber),
+                drivername: String(posAdd.drivername == undefined || null ? "" : posAdd.drivername),
+                drivernphonenumber: Number(posAdd.drivernphonenumber == undefined || null ? 0 : posAdd.drivernphonenumber),
                 salesman: String(posAdd.salesman == undefined || null ? "" : posAdd.salesman),
                 salesmannumber: Number(posAdd.salesmannumber == undefined || null ? 0 : posAdd.salesmannumber),
-                salescommission: Number(posAdd.salescommission == undefined ? 0 :  posAdd.salescommission),
+                salescommission: Number(posAdd.salescommission == undefined ? 0 : posAdd.salescommission),
                 date: String(purchaseDateTime),
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
-                totalnettax:Number(totalTaxValCal().toFixed(2)),
+                totalnettax: Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
@@ -1020,22 +1123,428 @@ const Poscreate = () => {
                 position: toast.POSITION.TOP_CENTER
             });
             setPosAdd({
-                company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-                salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-                accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+                company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+                salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+                accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", drivername: "", drivernumber: "", drivernphonenumber: "",
             });
             setTableData(clearvalall);
             backLPage('/sell/pos/create');
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
     };
+
+
+
+    // Fetch and prepare your invoice data
+    const invoiceData = {
+        invoiceLogo: setngs?.businesslogo,
+        invoiceNumber: newvalpos,
+        invoiceDate: moment(purchaseDateTime).format('DD-MM-YYYY'),
+        invoiceDelLocation: posAdd.location,
+        invoiceDelAddress: posAdd.deliveryaddress,
+        invoiceDelGstn: posAdd.deliverygstn,
+        invoiceDelConPerName: posAdd.deliverycontactpersonname,
+        invoiceDelConPerNumber: posAdd.deliverycontactpersonnumber,
+        invoiceSalesman: posAdd.salesman,
+        invoiceSalesmanNumber: posAdd.salesmannumber,
+        invoiceCompany: posAdd.company,
+        invoiceCompAddress: posAdd.companyaddress,
+        invoiceCompGstno: posAdd.gstno,
+        invoiceCompConPerName: posAdd.companycontactpersonname,
+        invoiceCompConPerNumber: posAdd.companycontactpersonnumber,
+        invoiceDriverName: posAdd.drivername,
+        invoiceDriverNumber: posAdd.drivernumber,
+        invoiceDriverPhoneNumber: posAdd.drivernphonenumber,
+        invoiceBankName: posAdd.bankname,
+        invoiceAccNumber: posAdd.accountnumber,
+        invoiceIFSCCode: posAdd.ifsccode,
+        invoiceSignature: setngs.signature,
+        invoiceTableData: tableData,
+    };
+
+
+    // const renderAndAppendInvoiceCopy = (invoiceData, copyTitle) => {
+    //     console.log(copyTitle);
+    //     const copyContainer = document.createElement('div');
+    //     copyContainer.style.pageBreakAfter = 'always';
+
+    //     // Render the copy title
+    //     const copyTitleElement = document.createElement('h2');
+    //     copyTitleElement.innerText = copyTitle;
+    //     copyContainer.appendChild(copyTitleElement);
+
+    //     // Render the invoice layout of InvoiceComponent
+    //     ReactDOM.render(
+    //         <InvoiceComponent data={invoiceData} title={copyTitle} />,
+    //         copyContainer
+    //     );
+
+    //     // Append the copy to the print container
+    //     componentRef.current.appendChild(copyContainer);
+    // }
+
+    function paginateTableData(data, itemsPerPage) {
+        const pages = [];
+        for (let i = 0; i < data.length; i += itemsPerPage) {
+            pages.push(data.slice(i, i + itemsPerPage));
+        }
+        return pages;
+    }
+
+    // const handlePrint = useReactToPrint({
+    //     content: () => componentRef.current,
+    //     documentTitle: '',
+    //     pageStyle: 'print'
+    // });
+
+    // const handlePrint = useReactToPrint({
+    //     content: () => componentRef.current,
+    //     documentTitle: '',
+    //     pageStyle: 'print',
+    //     onAfterPrint: () => {
+    //         if (!copiesRendered) {
+    //             const paginatedData = paginateTableData(tableData, 10); // Change '10' to the desired number of products per page
+
+    //             for (const pageData of paginatedData) {
+    //                 const copyTitle = `ARANYA HEALTH CARE | DUPLICATE`;
+    //                 renderAndAppendInvoiceCopy({ ...invoiceData, tableData: pageData }, copyTitle);
+    //             }
+
+    //             setCopiesRendered(true);
+    //         }
+    //     }
+    // });
+
+
+    // const handlePrint = useReactToPrint({
+    //     content: () => componentRef.current,
+    //     documentTitle: '',
+    //     pageStyle: 'print',
+    //     onBeforeGetContent: () => {
+    //         const copies = [];
+
+    //         const originalCopies = Math.ceil(tableData.length / 12); // Calculate copies based on tableData length
+    //         for (let i = 0; i < originalCopies; i++) {
+    //             copies.push({ title: 'ARANYA HEALTH CARE | ORIGINAL', data: invoiceData });
+    //         }
+
+    //         const duplicateCopies = Math.ceil(data.invoiceTableData.length / 12); // Calculate copies based on data.invoiceTableData length
+    //         for (let i = 0; i < duplicateCopies; i++) {
+    //             copies.push({ title: 'ARANYA HEALTH CARE | DUPLICATE', data: invoiceData });
+    //             copies.push({ title: 'ARANYA HEALTH CARE | CUSTOMER', data: invoiceData });
+    //         }
+
+    //         for (const copy of copies) {
+    //             const copyContainer = document.createElement('div');
+    //             copyContainer.style.pageBreakAfter = 'always';
+
+    //             ReactDOM.render(
+    //                 <InvoiceComponent data={copy.data} title={copy.title} />,
+    //                 copyContainer
+    //             );
+    //             componentRef.current.appendChild(copyContainer);
+    //         }
+    //     }
+    // });
+
+    // const originalCopies = Math.ceil(tableData.length / 12);
+    // const copies = [];
+    // for (let i = 0; i < originalCopies; i++) {
+    //     copies.push(
+    //         <Box key={i} ref={componentRef} id="aranysinvoice">
+    //             <Box >
+    //                 <Grid container >
+    //                     <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+    //                         {setngs.businesslogo ? (
+    //                             <>
+    //                                 <img src={setngs?.businesslogo} alt="Aranya Herbals" width="100px" height="50px" /><br />
+    //                             </>
+    //                         ) : (
+    //                             <></>
+    //                         )}
+    //                     </Grid>
+    //                     <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
+    //                         <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}>ARANYA HEALTH CARE | INVOICE</Typography>
+    //                         <Grid container>
+    //                             <Grid item lg={6} md={6} sm={6} xs={6}>
+    //                                 <Typography sx={{ fontSize: '10px', fontWeight: "1000", }}><b>Invoice Number:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', fontWeight: "1000", }}><b>Invoice Date:</b></Typography>
+    //                             </Grid>
+    //                             <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+    //                                 <Typography sx={{ fontSize: '10px', }} >{newvalpos}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }} >{moment(purchaseDateTime).format('DD-MM-YYYY')}</Typography>
+    //                             </Grid>
+    //                         </Grid>
+    //                     </Grid>
+    //                 </Grid><br />
+    //                 <Grid container >
+    //                     <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+    //                         <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>DELIVERY DETAILS:</b><br /></Typography>
+    //                         <Grid container>
+    //                             <Grid item md={4} sm={4} xs={4}>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Name:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Address:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>GSTN:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Contact person:</b></Typography>
+    //                             </Grid>
+    //                             <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.location}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.deliveryaddress}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.deliverygstn}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.deliverycontactpersonname + '/' + posAdd.deliverycontactpersonnumber}</Typography>
+    //                             </Grid>
+    //                         </Grid><br />
+    //                         <Grid container>
+    //                             <Grid item md={4} sm={4} xs={4}>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Order Number:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Order Date:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Salesman:</b></Typography>
+    //                             </Grid>
+    //                             <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{newvalpos}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{moment(purchaseDateTime).format('DD-MM-YYYY')}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.salesman + '/' + posAdd.salesmannumber}</Typography>
+    //                             </Grid>
+    //                         </Grid><br />
+    //                     </Grid>
+    //                     <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
+    //                         <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>COMPANY DETAILS:</b> <br /></Typography>
+    //                         <Grid container>
+    //                             <Grid item md={4} sm={4} xs={4}>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Name:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Address:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>GSTN:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Contact person:</b></Typography>
+    //                             </Grid>
+    //                             <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.company}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.companyaddress}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.gstno}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.companycontactpersonname + '/' + posAdd.companycontactpersonnumber}</Typography>
+    //                             </Grid>
+    //                         </Grid><br />
+    //                         <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>TRANSPORT DETAILS:</b> <br /></Typography>
+    //                         <Grid container>
+    //                             <Grid item md={4} sm={4} xs={4}>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Driver Name:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>No:</b></Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}><b>Contact No:</b></Typography>
+    //                             </Grid>
+    //                             <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.drivername}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.drivernumber}</Typography>
+    //                                 <Typography sx={{ fontSize: '10px', }}>{posAdd.drivernphonenumber}</Typography>
+    //                             </Grid>
+    //                         </Grid><br />
+    //                     </Grid>
+    //                 </Grid>
+    //                 <Box style={{ borderWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}></Box>
+    //                 <TableContainer component={Paper} sx={{ boxShadow: 'none', border: 'none' }}>
+    //                     <Table aria-label="simple table" >
+    //                         <TableHead >
+    //                             <TableRow sx={{ borderBottom: 'none' }}>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>ITEM</TableCell>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>HSN</TableCell>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>UNIT PRICE</TableCell>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>QUANTITY</TableCell>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>NET PRICE</TableCell>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>GST</TableCell>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>MRP</TableCell>
+    //                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>TOTAL</TableCell>
+    //                             </TableRow>
+    //                         </TableHead>
+    //                         <TableBody >
+    //                             {tableData.length > 0 &&
+    //                                 tableData.map((data, i) => {
+    //                                     return (
+    //                                         <>
+    //                                             <TableRow sx={{ paddingTop: '5px' }}>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }} key={i}>{data?.productname}</TableCell>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.hsn}</TableCell>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.sellingvalue}</TableCell>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.quantity}</TableCell>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.netrate}</TableCell>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.taxtareval + "%"}</TableCell>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.mrp}</TableCell>
+    //                                                 <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{Number(data?.subtotal).toFixed(2)}</TableCell>
+    //                                             </TableRow>
+    //                                         </>
+    //                                     );
+    //                                 })}
+    //                         </TableBody>
+    //                         <TableFooter >
+    //                             <TableRow >
+    //                                 <TableCell align="center" colSpan={7} sx={{ borderBottom: 'none !important' }}><Typography sx={{ fontSize: '15px', fontWeight: 'bold' }}><b>Net Total</b></Typography></TableCell>
+    //                                 <TableCell sx={{ borderBottom: 'none !important' }}><Typography sx={{ fontSize: '15px', fontWeight: 'bold' }}><b>{Number(totalNetCostCalcSub()).toFixed(2)}</b></Typography></TableCell>
+    //                             </TableRow>
+    //                         </TableFooter>
+    //                     </Table>
+    //                 </TableContainer>
+    //                 <Box sx={{ bottom: '0px', marginBottom: '0px' }}>
+    //                     <Grid container>
+    //                         <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left' }}>
+    //                             <Table >
+    //                                 <TableHead>
+    //                                     <TableRow >
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Cgst</b></TableCell>
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Sgst</b></TableCell>
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Igst</b></TableCell>
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '30px' }}><b>Taxable Value</b></TableCell>
+    //                                     </TableRow>
+    //                                 </TableHead>
+    //                                 <TableBody>
+    //                                     <TableRow>
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{cgstTotal + "%"}</b></TableCell>
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{gstTotal + "%"}</b></TableCell>
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{igstTotal + "%"}</b></TableCell>
+    //                                         <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{Number(totalTaxValCal()).toFixed(2)}</b></TableCell>
+    //                                     </TableRow>
+    //                                 </TableBody>
+    //                             </Table>
+    //                         </Grid>
+    //                         <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'center', borderRight: '1px solid black', borderTop: '1px solid black', borderBottom: '1px solid black', }}>
+    //                             <br />
+    //                             <Grid container>
+    //                                 <Grid item md={7.5} sm={7.5} xs={7.5} sx={{ textAlign: "right" }}>
+    //                                     <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>Net Amount</b></Typography>
+    //                                     <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>No. Of Items</b></Typography>
+    //                                     <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>Total Items</b></Typography>
+    //                                 </Grid>
+    //                                 <Grid item md={0.5} sm={0.5} xs={0.5} sx={{ textAlign: "center", borderRight: '1px solid black' }}></Grid>
+    //                                 <Grid item md={4} sm={4} xs={4} sx={{ textAlign: "center" }}>
+    //                                     <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{Number(totalNetCostCalcSub()).toFixed(2)}</b></Typography>
+    //                                     <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{tableData.length}</b></Typography>
+    //                                     <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{totalQuantityCalc()}</b></Typography>
+    //                                 </Grid>
+    //                             </Grid>
+    //                         </Grid>
+    //                     </Grid>
+    //                     {/* <Box style={{ borderWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}></Box><br /> */}
+    //                     <Grid item md={12} sm={12} xs={12}>
+    //                         <Typography align="left" sx={{ fontSize: '10px', fontWeight: '400' }}>Amount Chargeable (in words)</Typography>
+    //                         <Typography align="left" sx={{ fontSize: '14px', fontWeight: 'bold' }}>{totalNetCostInWords}</Typography>
+    //                     </Grid><br />
+    //                     <Grid container spacing={1} sx={{ border: '1px solid black' }}>
+    //                         <Grid item md={5.5} sm={5.5} xs={5.5} sx={{ textAlign: 'left' }}>
+    //                             <Typography sx={{ textDecoration: "underline", paddingLeft: '10px', fontSize: '10px', fontWeight: '1000' }}><b>Declaration</b></Typography>
+    //                             <Typography sx={{ textAlign: 'left', paddingLeft: '10px', fontSize: '10px', fontWeight: '1000' }}>Any loss or breakage in goods supplied against this invoice should be intimated whithin 10 days of receipt of goods with documentary evidence.</Typography>
+    //                         </Grid>
+    //                         <Grid item md={0.5} sm={0.5} xs={0.5} sx={{ textAlign: 'center', borderRight: '1px solid black' }}></Grid>
+    //                         <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+    //                             <Grid container >
+    //                                 <Grid item md={12} sm={12} xs={12} sx={{ paddingLeft: '10px' }}>
+    //                                     <Typography sx={{ fontSize: '10px' }}>Company's Bank Details</Typography>
+    //                                     <Grid container sx={{ '& .MuiGrid-item': { padding: '0px' } }}>
+    //                                         <Grid item md={5.5} sm={5.5} xs={5.5}>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>Bank Name</Typography>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>Acc No</Typography>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>IFSC Code</Typography>
+    //                                         </Grid>
+    //                                         <Grid item md={0.5} sm={0.5} xs={0.5}>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>:</Typography>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>:</Typography>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>:</Typography>
+    //                                         </Grid>
+    //                                         <Grid item md={6} sm={6} xs={6}>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{posAdd.bankname}</b></Typography>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{posAdd.accountnumber}</b></Typography>
+    //                                             <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{posAdd.ifsccode}</b></Typography>
+    //                                         </Grid>
+    //                                     </Grid><br />
+    //                                 </Grid>
+    //                                 <Grid item md={12} sm={12} xs={12} sx={{ textAlign: 'right', borderTop: '1px solid black', paddingRight: '10px' }}>
+    //                                     <br />
+    //                                     {setngs.signature ? (
+    //                                         <>
+    //                                             <Typography align='right'><img src={setngs.signature} width="80px" height="45px" /></Typography>
+    //                                         </>
+    //                                     ) : (
+    //                                         <></>
+    //                                     )}
+    //                                     <Typography align='right'><b>Authorized Signatory</b></Typography>
+    //                                 </Grid>
+    //                             </Grid>
+    //                         </Grid>
+    //                     </Grid>
+    //                 </Box>
+    //             </Box>
+    //         </Box>
+    //     );
+    // }
+
+
+    // const handlePrint = useReactToPrint({
+    //     content: () => componentRef.current,
+    //     documentTitle: '',
+    //     pageStyle: 'print',
+    //     // onBeforeGetContent: () => {
+    //     //     const copies = [];
+
+    //     //     const originalCopies = Math.ceil(tableData.length / 12); // Calculate copies based on tableData length
+    //     //     for (let i = 0; i < originalCopies; i++) {
+    //     //         copies.push({ title: 'ARANYA HEALTH CARE | ORIGINAL', data: invoiceData });
+    //     //     }
+
+
+
+    //     //     const duplicateCopies = Math.ceil(invoiceData.invoiceTableData.length / 12); // Calculate copies based on invoiceData.invoiceTableData length
+    //     //     for (let i = 0; i < duplicateCopies; i++) {
+    //     //         copies.push({ title: 'ARANYA HEALTH CARE | DUPLICATE', data: invoiceData });
+    //     //         copies.push({ title: 'ARANYA HEALTH CARE | CUSTOMER', data: invoiceData });
+    //     //     }
+
+    //     //     for (const copy of copies) {
+    //     //         const copyContainer = document.createElement('div');
+    //     //         copyContainer.style.pageBreakAfter = 'always';
+
+    //     //         ReactDOM.render(
+    //     //             <InvoiceComponent data={copy.data} title={copy.title} />,
+    //     //             copyContainer
+    //     //         );
+    //     //         componentRef.current.appendChild(copyContainer);
+    //     //     }
+    //     // }
+    // });
+    const originalRef = useRef(null);
+    const duplicateRef = useRef(null);
+    const customerRef = useRef(null);
+    // Calculate page data for each copy type
+    const rowsPerPage = 20;
+    const numberOfCopies = 3;
+    // const originalPageData = calculatePageData(invoiceData.invoiceTableData, rowsPerPage);
+    // const duplicatePageData = calculatePageData(invoiceData.invoiceTableData, rowsPerPage);
+    // const customerPageData = calculatePageData(invoiceData.invoiceTableData, rowsPerPage);
+    // const pageData = calculatePageData(invoiceData.invoiceTableData, rowsPerPage);
+    const originalPageData = calculatePageData(invoiceData.invoiceTableData, rowsPerPage);
+    const duplicatePageData = calculatePageData(invoiceData.invoiceTableData, rowsPerPage);
+    const customerPageData = calculatePageData(invoiceData.invoiceTableData, rowsPerPage);
+    const handlePrint = useReactToPrint({
+        // content: () => (
+        //     <div>
+        //         <div ref={originalRef}>
+        //             <InvoiceComponent copyType="Original" data={invoiceData} tableData={tableData} />
+        //         </div>
+        //         <div ref={duplicateRef}>
+        //             <InvoiceComponent copyType="Duplicate" data={invoiceData} tableData={tableData} />
+        //         </div>
+        //         <div ref={customerRef}>
+        //             <InvoiceComponent copyType="Customer" data={invoiceData} tableData={tableData} />
+        //         </div>
+        //     </div>
+        // ),
+        content: () => componentRef.current,
+        documentTitle: 'ARANYA HEALTH CARE | INVOICE ',
+        pageStyle: 'print',
+
+
+    });
 
     const handlePosSubmit = (e) => {
         e.preventDefault();
@@ -1054,8 +1563,93 @@ const Poscreate = () => {
             setShowAlert("Please select location");
             alertOpen();
         }
+        else if (posAdd.companycontactpersonname == "") {
+            setShowAlert("Please enter company contact person name");
+            alertOpen();
+        }
+        else if (posAdd.companycontactpersonnumber == "") {
+            setShowAlert("Please enter company contact person number");
+            alertOpen();
+        }
+        else if (posAdd.deliverycontactpersonname == "") {
+            setShowAlert("Please enter delivery contact person name");
+            alertOpen();
+        }
+        else if (posAdd.deliveryaddress == "") {
+            setShowAlert("Please enter delivery contact person address");
+            alertOpen();
+        }
+        else if (posAdd.deliverycontactpersonnumber == "") {
+            setShowAlert("Please enter delivery contact person number");
+            alertOpen();
+        }
+        else if (posAdd.deliverycontactpersonemail == "") {
+            setShowAlert("Please enter delivery contact person email");
+            alertOpen();
+        }
+        else if (posAdd.deliverycontactpersondistrict == "") {
+            setShowAlert("Please enter delivery contact person district");
+            alertOpen();
+        }
+        else if (posAdd.deliverycontactpersonpincode == "") {
+            setShowAlert("Please enter delivery contact person pincode");
+            alertOpen();
+        }
+        else if (posAdd.drivername == "") {
+            setShowAlert("Please enter driver name");
+            alertOpen();
+        }
+        else if (posAdd.drivernumber == "") {
+            setShowAlert("Please enter driver number");
+            alertOpen();
+        }
+        else if (posAdd.drivernphonenumber == "") {
+            setShowAlert("Please enter driver contact number");
+            alertOpen();
+        }
         else {
-            sendRequest();
+            // sendRequest();
+            // // Render and append invoice copies
+            // renderAndAppendInvoiceCopies(invoiceData);
+
+            // // Trigger the print functionality after appending all copies
+            // handlePrint();
+
+
+            // second
+            // if (!copiesRendered) {
+            //     sendRequest();
+            //     // Render and append invoice copies
+            //     renderAndAppendInvoiceCopies(invoiceData);
+            //     setCopiesRendered(true); // Set the flag to true to avoid rendering more copies
+            //     // Trigger the print functionality after appending all copies
+            //     handlePrint();
+            // }
+
+            // if (!copiesRendered) {
+            //     // sendRequest();
+            //     // Render and append the second copy (InvoiceComponent layout)
+            //     renderAndAppendInvoiceCopy(invoiceData, 'ARANYA HEALTH CARE | DUPLICATE');
+
+            //     // Render and append the third copy (InvoiceComponent layout)
+            //     renderAndAppendInvoiceCopy(invoiceData, 'ARANYA HEALTH CARE | CUSTOMER');
+
+            //     setCopiesRendered(true); // Set the flag to true to avoid rendering more copies
+            // Trigger the print functionality after appending all copies
+            handlePrint();
+            // }
+
+            // if (!copiesRendered) {
+            //     sendRequest();
+
+            //     // Render and append the copies using the copyTitles array
+            //     copyTitles.forEach(title => {
+            //         renderAndAppendInvoiceCopy(invoiceData, title);
+            //     });
+
+            //     setCopiesRendered(true);
+            //     handlePrint();
+            // }
         }
     }
 
@@ -1085,21 +1679,24 @@ const Poscreate = () => {
                     companycontactpersonname: String(posAdd.companycontactpersonname == undefined || null ? "" : posAdd.companycontactpersonname),
                     companycontactpersonnumber: Number(posAdd.companycontactpersonnumber == undefined || null ? 0 : posAdd.companycontactpersonnumber),
                     location: String(posAdd.location),
-                    deliveryaddress:String(posAdd.deliveryaddress == undefined || null ? "": posAdd.deliveryaddress),
-                    deliverygstn:String(posAdd.deliverygstn == undefined | null ? "" : posAdd.deliverygstn),
-                    deliverycontactpersonname:String(posAdd.deliverycontactpersonname == undefined || null ? "" : posAdd.deliverycontactpersonname),
-                    deliverycontactpersonnumber:Number(posAdd.deliverycontactpersonnumber == undefined || null ? 0 : posAdd.deliverycontactpersonnumber),
-                    drivernumber:String(posAdd.drivernumber == undefined || null ? "":posAdd.drivernumber),
-                    drivername:String(posAdd.drivername == undefined || null ? "" : posAdd.drivername),
-                    drivernphonenumber:Number(posAdd.drivernphonenumber == undefined || null ? 0 : posAdd.drivernphonenumber),
+                    deliveryaddress: String(posAdd.deliveryaddress == undefined || null ? "" : posAdd.deliveryaddress),
+                    deliverygstn: String(posAdd.deliverygstn == undefined | null ? "" : posAdd.deliverygstn),
+                    deliverycontactpersonname: String(posAdd.deliverycontactpersonname == undefined || null ? "" : posAdd.deliverycontactpersonname),
+                    deliverycontactpersonnumber: Number(posAdd.deliverycontactpersonnumber == undefined || null ? 0 : posAdd.deliverycontactpersonnumber),
+                    deliverycontactpersonemail: String(posAdd.deliverycontactpersonemail == undefined || null ? "" : posAdd.deliverycontactpersonemail),
+                    deliverycontactpersondistrict: String(posAdd.deliverycontactpersondistrict == undefined || null ? "" : posAdd.deliverycontactpersondistrict),
+                    deliverycontactpersonpincode: String(posAdd.deliverycontactpersonpincode == undefined || null ? "" : posAdd.deliverycontactpersonpincode),
+                    drivernumber: String(posAdd.drivernumber == undefined || null ? "" : posAdd.drivernumber),
+                    drivername: String(posAdd.drivername == undefined || null ? "" : posAdd.drivername),
+                    drivernphonenumber: Number(posAdd.drivernphonenumber == undefined || null ? 0 : posAdd.drivernphonenumber),
                     salesman: String(posAdd.salesman == undefined || null ? "" : posAdd.salesman),
                     salesmannumber: Number(posAdd.salesmannumber == undefined || null ? 0 : posAdd.salesmannumber),
-                    salescommission: Number(posAdd.salescommission == undefined ? 0 :  posAdd.salescommission),
+                    salescommission: Number(posAdd.salescommission == undefined ? 0 : posAdd.salescommission),
                     date: String(purchaseDateTime),
                     goods: [...tableData],
                     totalitems: Number(tableData.length),
                     totalproducts: Number(totalQuantityCalc()),
-                    totalnettax:Number(totalTaxValCal().toFixed(2)),
+                    totalnettax: Number(totalTaxValCal().toFixed(2)),
                     taxcgst: Number(CGST ? CGST : 0),
                     taxigst: Number(IGST ? IGST : 0),
                     taxsgst: Number(GST ? GST : 0),
@@ -1107,7 +1704,7 @@ const Poscreate = () => {
                     totalbillamt: Number(totalNetCostCalcSub()),
                     userbyadd: String(isUserRoleAccess.staffname),
                     signature: String(setngs.signature),
-                   
+
                 });
                 await fetchQot();
                 await fetchDraft();
@@ -1116,19 +1713,19 @@ const Poscreate = () => {
                     position: toast.POSITION.TOP_CENTER
                 });
                 setPosAdd({
-                    company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-                    salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-                    accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+                    company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+                    salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+                    accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", drivername: "", drivernumber: "", drivernphonenumber: "",
                 });
                 setTableData(clearvalall);
                 backLPage('/sell/pos/create');
             } catch (err) {
                 const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+                if (messages) {
+                    toast.error(messages);
+                } else {
+                    toast.error("Something went wrong!")
+                }
             }
         }
 
@@ -1148,9 +1745,9 @@ const Poscreate = () => {
 
     const handleSubmitclear = (e) => {
         setPosAdd({
-            company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-        salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-        accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+            company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+            salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+            accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", drivername: "", drivernumber: "", drivernphonenumber: "",
         });
         setTableData(clearvalall);
     };
@@ -1184,8 +1781,8 @@ const Poscreate = () => {
                     superstockrate: e.superstockrate,
                     dealerrate: e.dealerrate,
                     mrp: e.mrp,
-                    ratetype:"",
-                    sellingvalue:e.mrp,
+                    ratetype: "",
+                    sellingvalue: e.mrp,
                     category: e.category,
                     subcategory: e.subcategory,
                     productid: e.sku,
@@ -1210,28 +1807,28 @@ const Poscreate = () => {
     // fetch draft for recent draft
     const fetchDraft = async () => {
         try {
-            let response = await axios.get(SERVICE.DRAFT, {
+            let response = await axios.post(SERVICE.DRAFT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.drafts.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let getrecent = result.filter((data) => {
+            let getrecent = response?.data?.drafts.filter((data) => {
                 let dataDate = moment(data.date).utc().format('DD-MM-YYYY')
                 let today = moment(new Date()).utc().format('DD-MM-YYYY')
                 if (dataDate == today) {
                     return data
                 }
             })
-            setDrafts(result);
+            setDrafts(response?.data?.drafts);
             setDraftRecent(getrecent)
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -1262,417 +1859,841 @@ const Poscreate = () => {
         >
             <Headtitle title={'Pos Add'} />
             <form >
-                {/* Navbar Start */}
-                <Box sx={{ padding: "5px", '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }}>
-                    <Grid container spacing={1} >
-                        <Grid item lg={2} md={2} sm={6} xs={12}>
-                            <Box sx={{ float: "left" }}>
-                            {setngs.businesslogo ? (
-                                        <>
-                                       <Link to="/">
-                                            <img src={setngs?.businesslogo} alt="logo" style={{ width: '150px', height: '70px', paddingLeft: 'px' }}></img>
-                                        </Link>
-                                        </>
-                                    ) : (
-                                        <></>
-                                )}
-                            </Box>
-                        </Grid>
-                        <Grid item md={2} sm={6} xs={12} lg={2} sx={{ marginTop: "17px" }}>
-                            <Grid sx={{ display: "flex" }}>
-                                <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
-                                    <SearchOutlinedIcon />
+                {isMobile ? (
+                    <>
+                        <Box sx={{ padding: "5px", '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }}>
+                            <Grid container spacing={1} >
+                                <Grid item lg={2} md={2} sm={12} xs={12}>
+                                    <Box sx={{ float: "left" }}>
+                                        {setngs.businesslogo ? (
+                                            <>
+                                                <Link to="/">
+                                                    <img src={setngs?.businesslogo} alt="logo" style={{ width: '150px', height: '70px', paddingLeft: 'px' }}></img>
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                    </Box>
                                 </Grid>
-                                <FormControl size="small" fullWidth>
-                                    <Selects
-                                        sx={{ '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }}
-                                        options={company}
-                                        placeholder="Select Company"
-                                        onChange={(e) => {
-                                            setPosAdd({ ...posAdd, company: e.companyname, companyaddress: e.companyaddress, gstno: e.gstno, bankname: e.bankname, accountnumber: e.accountnumber, ifsccode: e.ifsccode });
-                                        }}
-                                    />
-                                </FormControl>
-                            </Grid>
-                        </Grid>
-                        <Grid item md={3} sm={6} xs={12} lg={3} sx={{ marginTop: "17px" }}>
-                            <Grid sx={{ display: "flex" }}>
-                                <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
-                                    <SearchOutlinedIcon />
-                                </Grid>
-                                <FormControl size="small" fullWidth>
-                                    <Selects
-                                        options={busioptions}
-                                        placeholder="Select Business Location"
-                                        onChange={(e) => { setPosAdd({ ...posAdd, location: e.value,  deliveryaddress:e.address, deliverygstn:e.gstnno, deliverycontactpersonname:e.contactpersonname, deliverycontactpersonnumber:e.contactpersonnum }); }}
-                                    />
-                                </FormControl>
-                            </Grid>
-                        </Grid>
-                        <Grid item md={2} sm={6} xs={12} lg={2} sx={{ marginTop: "17px" }}>
-                            <Grid sx={{ display: "flex" }}>
-                                <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
-                                    <SearchOutlinedIcon />
-                                </Grid>
-                                <FormControl size="small" fullWidth>
-                                    <Selects
-                                        options={salesmans}
-                                        placeholder="Select Salesman"
-                                        onChange={(e) => { setPosAdd({ ...posAdd, salesman: e.value, salescommission: e.salescommission, salesmannumber:e.phonenum }); }}
-                                    />
-                                </FormControl>
-                            </Grid>
-                        </Grid>
-                        <Grid item md={1} sm={1} xs={1} sx={{ marginTop: "17px" }}>
-                            <Button onClick={(e) => { openFullscreen() }}><FullscreenOutlinedIcon style={{ fontsize: 'large' }} /></Button>
-                        </Grid>
-                        <Grid item md={2} sm={6} xs={12} sx={{ marginTop: "17px" }}>
-                            <FormControl>
-                                <LocalizationProvider dateAdapter={AdapterDayjs} >
-                                    <DateTimePicker
-                                        renderInput={(props) => <TextField size='small' {...props} />}
-                                        sx={userStyle.posNavbarInput}
-                                        value={purchaseDateTime}
-                                        onChange={(newValue) => {
-                                            setPurchaseDateTime(newValue);
-                                        }}
-                                    />
-                                </LocalizationProvider>
-                            </FormControl>
-                        </Grid>
-                    </Grid>
-                </Box>
-                {/* Navbar Ends */}
-                <Grid container sx={{ backgroundColor: "#f0f2ff", '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }} >
-                    <Grid item xs={12} sm={12} md={7} lg={7} sx={{ paddingRight: '3px', backgroundColor: '#fff' }} >
-                        <Grid container spacing={3}>
-                            <Grid item xs={12} sm={12} md={12} lg={12} >
-                                {/* Table start */}
-                                <TableContainer sx={{ paddingLeft: 1, height: '450px' }}  >
-                                    <Table style={{ marginTop: "10px", borderRight: "1px solid rgba(224, 224, 224, 1)", }}
-                                        aria-label="customized table" padding='none'>
-                                        <TableHead >
-                                            <TableRow sx={userStyle.tableHead1}>
-                                                <TableCell style={{ marginLeft: '5px', paddingLeft: "10px", width: '155px', }}> Product Name </TableCell>
-                                                <TableCell style={{ width: '55px' }}>Rate Type</TableCell>
-                                                <TableCell style={{ width: '55px' }}>Qty</TableCell>
-                                                <TableCell style={{ width: '95px' }}>MRP</TableCell>
-                                                <TableCell style={{ width: '95px' }}>Net Rate</TableCell>
-                                                <TableCell style={{ width: '175px' }}>Discount
-                                                    <Tooltip arrow
-                                                        title="Click checkbox to discount calculate as percentage">
-                                                        <IconButton size="small">
-                                                            <FcInfo />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </TableCell>
-                                                <TableCell style={{ width: '155px' }}>After Discount </TableCell>
-                                                <TableCell style={{ width: '55px' }}>GST</TableCell>
-                                                <TableCell style={{ width: '155px' }}>Subtotal</TableCell>
-                                                <TableCell sx={{ paddingTop: "5px", width: '55px' }} ><DeleteOutlineOutlinedIcon style={{fontSize: 'large'}}/></TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {tableData.length > 0 &&
-                                                tableData.map((data, i) => {
-                                                    return (
-                                                        <>
-                                                            <TableRow >
-                                                                <TableCell sx={{ fontSize: '12px', }} key={i}>{data?.productname}</TableCell>
-                                                                <TableCell sx={{ fontSize: '12px'}}>
-                                                                    <Select
-                                                                     isClearable
-                                                                     labelId="demo-select-small"
-                                                                     variant="standard"
-                                                                     id="demo-select-small"
-                                                                        value={data?.ratetype}
-                                                                        sx={{ fontSize: '12px', }}
-                                                                        onChange={(e) => handleProductchange(i, 'rateamount', 'ratetype', e.target.value)}
-                                                                        fullWidth
-                                                                    >
-                                                                        <MenuItem value="companyrate" >Company rate</MenuItem>
-                                                                        <MenuItem value="superstockrate" >Super stocky rate</MenuItem>
-                                                                        <MenuItem value="dealarrate" >Dealar rate</MenuItem>
-                                                                    </Select>
-                                                                </TableCell>
-                                                                <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.quantity}</Typography></TableCell>
-                                                                <TableCell ><Typography sx={{ fontSize: '12px' }}> {data?.mrp}</Typography></TableCell>
-                                                                <TableCell><Typography sx={{ fontSize: '12px' }}>{data?.netrate}</Typography></TableCell>
-                                                                <TableCell>
-                                                                    <Grid sx={{ display: 'flex', margin: '1px', width: 'auto' }}>
-                                                                        <FormControl size="small">
-                                                                            <OutlinedInput
-                                                                                style={{ height: '25px', marginTop: '8px', fontSize: '15px' }}
-                                                                                sx={userStyle.input}
-                                                                                size="small"
-                                                                                type="number"
-                                                                                onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
-                                                                                onChange={(e) => {
-                                                                                    handleProductchange(i, 'amount', 'discountamt', e.target.value);
-                                                                                    data.valdis = e.target.value
-                                                                                }}
-
-                                                                            />
-                                                                        </FormControl>
-                                                                        <Grid>
-                                                                            <FormGroup>
-                                                                                <FormControlLabel size="small" sx={{ marginLeft: "1em", }} control={<Checkbox checked={data?.discountcheck}
-                                                                                    onClick={(e) => { data.discountcheck = !data.discountcheck; handleProductchange(i, 'percentage', 'discountcheck', e.target.checked) }}
-                                                                                />}
-                                                                                />
-                                                                            </FormGroup>
-                                                                        </Grid>
-                                                                    </Grid>
-                                                                </TableCell>
-                                                                <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.afterdiscount}</Typography></TableCell>
-                                                                <TableCell><Typography sx={{ fontSize: '12px' }}>{data?.taxtareval}</Typography></TableCell>
-                                                                <TableCell><Typography sx={{ fontSize: '12px' }}><b>{data?.subtotal.toFixed(2)}</b></Typography></TableCell>
-                                                                <TableCell sx={{ color: 'red', fontWeight: '900', cursor: 'pointer', fontSize: '15px !important' }}><AiOutlineClose onClick={(e) => { deleteRow(i, e); }} /></TableCell>
-                                                            </TableRow>
-                                                        </>
-                                                    );
-                                                })}
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer>
-                                {/* Table Ends */}
-                            </Grid>
-                            <Grid item xs={12} sm={12} md={12} lg={12} sx={{ marginTop: '50px' }}>
-                                <Grid container spacing={1}>
-                                    <Grid item md={7} sm={6} xs={12} sx={{ display: 'flex' }}>
-                                            <Typography sx={{ marginLeft: '15px' }}>
-                                                <b> Total Items :</b>&ensp;{tableData.length}
-                                            </Typography>
-                                            <Typography sx={{ marginLeft: '15px', }}>
-                                                <b>Total Quantity:</b>&ensp;{totalQuantityCalc()}
-                                            </Typography>
-                                    </Grid>
-                                    <Grid item md={5} sm={6} xs={12} sx={{ paddingLeft: '4px', paddingRight: '1px', marginTop: '-4px' }}>
-                                        <Button fullWidth variant="text" sx={{ marginTop: "5px", boxShadow: "inset 0px 0px 10px #1976d2", }}>
-                                            <b>GRAND TOTAL :</b>&ensp;{totalNetCostCalcSub()}
-                                        </Button>
-                                    </Grid>
-                                </Grid>
-                                <Grid container>
-                                    <Grid item md={2} sm={6} xs={12}>
-                                        <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
-                                            <b>CGST:</b>&ensp;{CGST ? CGST : 0}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item md={2} sm={6} xs={12}>
-                                        <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
-                                            <b>SGST:</b>&ensp;{GST ? GST : 0}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid item md={2} sm={6} xs={12}>
-                                        <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
-                                            <b>IGST:</b>&ensp;{IGST ? IGST : 0}
-                                        </Typography>
-                                    </Grid>
-                                </Grid>
-                            </Grid>
-                        </Grid>
-                    </Grid>
-                    <Grid item xs={12} sm={12} md={5} lg={5} sx={{ p: 1, backgroundColor: '#fff', }}>
-                        <Grid container spacing={1} >
-                            <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
-                                <Button fullWidth sx={userStyle.posselecbtn} style={{ boxShadow: "inset 0px 0px 5px green", }}
-                                    onClick={(e) => { fetchProd(e); }}
-                                >
-                                    All
-                                </Button>
-                            </Grid>
-                            <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
-                                <Button
-                                    fullWidth
-                                    sx={userStyle.posselecbtn}
-                                    style={{ boxShadow: "inset 0px 0px 5px green", }}
-                                    onClick={(e) => { handleDrawerOpen(); fetchcategory() }}
-                                >
-                                    Category
-                                </Button>
-                                <Drawer
-                                    className={classes.drawer}
-                                    variant="persistent"
-                                    anchor="right"
-                                    open={open1}
-                                    classes={{
-                                        paper: classes.drawerPaper
-                                    }}
-                                >
-                                    {/* Navbar sub-category */}
-                                    <div className={classes.closeicon}>
-                                        <IconButton sx={userStyle.closeicon} onClick={handleDrawerClose}>
-                                            <CloseIcon />
-                                        </IconButton>
-                                        <Typography style={{ fontSize: '20px', marginLeft: '0.5em', marginBottom: '1em', fontFamily: "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif", color: '#5CB85C', fontWeight: 'bolder' }}>List of Category</Typography>
-                                        <Grid item md={12} sm={12} xs={12}>
-                                            <Grid style={{ marginLeft: '3em', "&:hover": { backgroundColor: 'red' } }}>
-                                                <img src={noimage} onClick={(e) => { fetchProd(e); }} style={{ width: '110px', height: '130px', cursor: 'pointer' }} />
-                                                <Typography style={{}}><b>All Category</b></Typography>
-                                            </Grid>
-                                            {category && (
-                                                category.map((row, index) => (
-                                                    <>
-                                                        <br />
-                                                        <div key={index} style={{ curser: 'pointer' }}>
-                                                            <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { singleId(row.categoryname) }} style={{ width: '100px', height: '100px', marginLeft: '3em', border: 'none' }} />
-                                                            <Typography style={{ marginLeft: '3em' }}>{row.categoryname}</Typography>
-                                                        </div>
-                                                    </>
-                                                ))
-                                            )}
+                                <Grid item md={2.5} sm={12} xs={12} lg={2} >
+                                    <InputLabel >Company Name <b style={{ color: "red" }}> *</b></InputLabel>
+                                    <Grid sx={{ display: "flex" }}>
+                                        <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                            <SearchOutlinedIcon />
                                         </Grid>
-                                    </div>
-                                </Drawer>
-                            </Grid>
-                            <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
-                                <Button
-                                    fullWidth
-                                    sx={userStyle.posselecbtn}
-                                    style={{ boxShadow: "inset 0px 0px 5px green", p: '5px' }}
-                                    onClick={(e) => { handleDrawerOpen1(); fetchSubcategory(); }}
-                                >
-                                    SubCategory
-                                </Button>
-                                <Drawer
-                                    className={classes.drawer}
-                                    variant="persistent"
-                                    anchor="right"
-                                    open={open2}
-                                    classes={{
-                                        paper: classes.drawerPaper
-                                    }}
-                                >
-                                    {/* Navbar sub-category */}
-
-                                    <div className={classes.closeicon}>
-                                        <IconButton onClick={handleDrawerClose1}>
-                                            <CloseIcon />
-                                        </IconButton>
-                                        <Typography style={{ fontSize: '16px', marginLeft: '0.5em', marginBottom: '1em', fontFamily: "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif", color: '#5CB85C', fontWeight: 'bolder' }}>List of Sub-Category</Typography>
-                                        <Grid item md={12} sm={12} xs={12}>
-                                            <Grid style={{ marginLeft: '3em', "&:hover": { backgroundColor: 'red' } }}>
-                                                <img src={noimage} onClick={(e) => { fetchProd(e) }} style={{ width: '110px', height: '130px', cursor: 'pointer' }} />
-                                                <Typography ><b>All Subcategory</b></Typography>
-                                            </Grid>
-                                            {subcategory && (
-                                                subcategory?.map((row, index) => (
-                                                    row.subcategories.map(((meta, i) => {
-                                                        subitems.push(meta);
-                                                    }))
-                                                ))
-                                            )}
-                                            {subitems.map((item, i) => {
-                                                return (
-                                                    <>
-                                                        <br />
-                                                        <div key={i} style={{ curser: 'pointer' }}>
-                                                            <img src={noimage} alt="image" onClick={(e) => { singlesub(item.subcategryname) }} style={{ width: '100px', height: '100px', marginLeft: '3em', border: 'none' }} />
-                                                            <Typography style={{ marginLeft: '3em' }}>{item.subcategryname}</Typography>
-                                                        </div>
-                                                    </>
-                                                )
-                                            })}
-                                        </Grid>
-                                    </div>
-                                </Drawer>
-                            </Grid>
-
-                            <br /><br /><br />
-                            <Grid item md={12} sm={12} xs={12} sx={{ marginLeft: '25px' }}>
-                                <Grid sx={{ display: "flex" }}>
-                                    <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
-                                        <SearchOutlinedIcon />
+                                        <FormControl size="small" fullWidth>
+                                            <Selects
+                                                sx={{ '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }}
+                                                options={company}
+                                                placeholder="Select"
+                                                onChange={(e) => {
+                                                    setPosAdd({ ...posAdd, company: e.companyname, companyaddress: e.companyaddress, gstno: e.gstno, bankname: e.bankname, accountnumber: e.accountnumber, ifsccode: e.ifsccode });
+                                                }}
+                                            />
+                                        </FormControl>
                                     </Grid>
-                                    <FormControl size="small" fullWidth>
-                                        <Selects
-                                            options={productsList}
-                                            placeholder="Products"
-                                            onChange={(e) => {
-                                                fetchDataProd(e);
-                                                totalQuantityCalc();
-                                                setPosAdd({ ...posAdd, grandtotal: Number(totalNetCostCalcSub()) })
-                                                totalNetRate();
-
-                                            }}
-                                        />
+                                </Grid>
+                                <Grid item md={2.5} sm={12} xs={12} lg={3} >
+                                    <InputLabel >Business Location <b style={{ color: "red" }}> *</b></InputLabel>
+                                    <Grid sx={{ display: "flex" }}>
+                                        <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                            <SearchOutlinedIcon />
+                                        </Grid>
+                                        <FormControl size="small" fullWidth>
+                                            <Selects
+                                                options={busioptions}
+                                                placeholder="Select"
+                                                onChange={(e) => { setPosAdd({ ...posAdd, location: e.value, deliveryaddress: e.address, deliverygstn: e.gstnno, deliverycontactpersonname: e.contactpersonname, deliverycontactpersonnumber: e.contactpersonnum, deliverycontactpersonemail: e.email, deliverycontactpersondistrict: e.city, deliverycontactpersonpincode: e.zipcde }); }}
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+                                <Grid item md={2.5} sm={12} xs={12} lg={2}>
+                                    <InputLabel >Salesman<b style={{ color: "red" }}> *</b></InputLabel>
+                                    <Grid sx={{ display: "flex" }}>
+                                        <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                            <SearchOutlinedIcon />
+                                        </Grid>
+                                        <FormControl size="small" fullWidth>
+                                            <Selects
+                                                options={salesmans}
+                                                placeholder="Select"
+                                                onChange={(e) => { setPosAdd({ ...posAdd, salesman: e.value, salescommission: e.salescommission, salesmannumber: e.phonenum }); }}
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+                                <Grid item md={0.5} sm={1} xs={1} sx={{ marginTop: "25px" }}>
+                                    <Button onClick={(e) => { openFullscreen() }}><FullscreenOutlinedIcon style={{ fontsize: 'large' }} /></Button>
+                                </Grid>
+                                <Grid item md={2} sm={11} xs={11} >
+                                    <InputLabel >Date</InputLabel>
+                                    <FormControl>
+                                        <LocalizationProvider dateAdapter={AdapterDayjs} >
+                                            <DateTimePicker
+                                                renderInput={(props) => <TextField size='small' {...props} />}
+                                                sx={userStyle.posNavbarInput}
+                                                value={purchaseDateTime}
+                                                onChange={(newValue) => {
+                                                    setPurchaseDateTime(newValue);
+                                                }}
+                                            />
+                                        </LocalizationProvider>
                                     </FormControl>
                                 </Grid>
                             </Grid>
-                            <Grid item md={12} sm={12} xs={12}>
-                                <br />
-                                <Grid container sx={{ display: 'flex' }}>
-                                    <br />
-                                    <>
-                                        <Grid container>
-                                            {comparecate && (
-                                                comparecate.map((row, index) => (
-                                                    <Grid item md={3} key={index} sx={{ justifyContent: 'space-between', boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)', height: 150, margin: '5px' }}>
-                                                        <Grid >
-                                                            <p style={{ fontSize: '14px', marginLeft: '3em', color: 'black' }}><b>{row.sku + "/" + row.currentstock}</b></p>
-                                                            <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { rowData(row._id); }} width="100px" height="100px" style={{ margin: '0px  17px' }} />
-                                                            <p style={{ fontSize: '14px', marginLeft: '4em', color: '#5CB85C' }}><b>{row.category}</b></p>
-                                                        </Grid>
+                        </Box>
+                        {/* Navbar Ends */}
+                        <Grid container sx={{ backgroundColor: "#f0f2ff", '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }} >
+                            <Grid item xs={12} sm={12} md={5} lg={5} sx={{ p: 1, backgroundColor: '#fff', }}>
+                                <Grid container spacing={1} >
+                                    <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
+                                        <Button fullWidth sx={userStyle.posselecbtn} style={{ boxShadow: "inset 0px 0px 5px green", }}
+                                            onClick={(e) => { fetchProd(e); }}
+                                        >
+                                            All
+                                        </Button>
+                                    </Grid>
+                                    <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
+                                        <Button
+                                            fullWidth
+                                            sx={userStyle.posselecbtn}
+                                            style={{ boxShadow: "inset 0px 0px 5px green", }}
+                                            onClick={(e) => { handleDrawerOpen(); fetchcategory() }}
+                                        >
+                                            Category
+                                        </Button>
+                                        <Drawer
+                                            className={classes.drawer}
+                                            variant="persistent"
+                                            anchor="right"
+                                            open={open1}
+                                            classes={{
+                                                paper: classes.drawerPaper
+                                            }}
+                                        >
+                                            {/* Navbar sub-category */}
+                                            <div className={classes.closeicon}>
+                                                <IconButton sx={userStyle.closeicon} onClick={handleDrawerClose}>
+                                                    <CloseIcon />
+                                                </IconButton>
+                                                <Typography style={{ fontSize: '20px', marginLeft: '0.5em', marginBottom: '1em', fontFamily: "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif", color: '#5CB85C', fontWeight: 'bolder' }}>List of Category</Typography>
+                                                <Grid item md={12} sm={12} xs={12}>
+                                                    <Grid style={{ marginLeft: '3em', "&:hover": { backgroundColor: 'red' } }}>
+                                                        <img src={noimage} onClick={(e) => { fetchProd(e); }} style={{ width: '110px', height: '130px', cursor: 'pointer' }} />
+                                                        <Typography style={{}}><b>All Category</b></Typography>
                                                     </Grid>
-                                                )))}
-                                        </Grid>
-                                    </>
+                                                    {category && (
+                                                        category.map((row, index) => (
+                                                            <>
+                                                                <br />
+                                                                <div key={index} style={{ curser: 'pointer' }}>
+                                                                    <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { singleId(row.categoryname) }} style={{ width: '100px', height: '100px', marginLeft: '3em', border: 'none' }} />
+                                                                    <Typography style={{ marginLeft: '3em' }}>{row.categoryname}</Typography>
+                                                                </div>
+                                                            </>
+                                                        ))
+                                                    )}
+                                                </Grid>
+                                            </div>
+                                        </Drawer>
+                                    </Grid>
+                                    <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
+                                        <Button
+                                            fullWidth
+                                            sx={userStyle.posselecbtn}
+                                            style={{ boxShadow: "inset 0px 0px 5px green", p: '5px' }}
+                                            onClick={(e) => { handleDrawerOpen1(); fetchSubcategory(); }}
+                                        >
+                                            SubCategory
+                                        </Button>
+                                        <Drawer
+                                            className={classes.drawer}
+                                            variant="persistent"
+                                            anchor="right"
+                                            open={open2}
+                                            classes={{
+                                                paper: classes.drawerPaper
+                                            }}
+                                        >
+                                            {/* Navbar sub-category */}
 
-                                    <>
-                                        <Grid container>
-                                            {comparesub && (
-                                                comparesub.map((row, index) => (
-                                                    <Grid item md={3} key={index} sx={{ justifyContent: 'space-between', boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)', height: 150, margin: '5px' }}>
-                                                        <Grid >
-                                                            <p style={{ fontSize: '14px', marginLeft: '3em', color: 'black' }}><b>Qty: {row.currentstock}</b></p>
-                                                            <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { rowData(row._id); }} width="100px" height="100px" style={{ margin: '0px  17px', '@media (maxWidth: 400px)': { width: "70px", height: "100px", margin: '0px  0px', } }} />
-                                                        </Grid>
-                                                        <p style={{ fontSize: '14px', marginLeft: '4em', color: '#5CB85C' }}><b>₹ {row.mrp}</b></p>
+                                            <div className={classes.closeicon}>
+                                                <IconButton onClick={handleDrawerClose1}>
+                                                    <CloseIcon />
+                                                </IconButton>
+                                                <Typography style={{ fontSize: '16px', marginLeft: '0.5em', marginBottom: '1em', fontFamily: "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif", color: '#5CB85C', fontWeight: 'bolder' }}>List of Sub-Category</Typography>
+                                                <Grid item md={12} sm={12} xs={12}>
+                                                    <Grid style={{ marginLeft: '3em', "&:hover": { backgroundColor: 'red' } }}>
+                                                        <img src={noimage} onClick={(e) => { fetchProd(e) }} style={{ width: '110px', height: '130px', cursor: 'pointer' }} />
+                                                        <Typography ><b>All Subcategory</b></Typography>
                                                     </Grid>
-                                                )))}
+                                                    {subcategory && (
+                                                        subcategory?.map((row, index) => (
+                                                            row.subcategories.map(((meta, i) => {
+                                                                subitems.push(meta);
+                                                            }))
+                                                        ))
+                                                    )}
+                                                    {subitems.map((item, i) => {
+                                                        return (
+                                                            <>
+                                                                <br />
+                                                                <div key={i} style={{ curser: 'pointer' }}>
+                                                                    <img src={noimage} alt="image" onClick={(e) => { singlesub(item.subcategryname) }} style={{ width: '100px', height: '100px', marginLeft: '3em', border: 'none' }} />
+                                                                    <Typography style={{ marginLeft: '3em' }}>{item.subcategryname}</Typography>
+                                                                </div>
+                                                            </>
+                                                        )
+                                                    })}
+                                                </Grid>
+                                            </div>
+                                        </Drawer>
+                                    </Grid>
+
+                                    <br /><br /><br />
+                                    <Grid item md={12} sm={12} xs={12} sx={{ marginLeft: '25px' }}>
+                                        <Grid sx={{ display: "flex" }}>
+                                            <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                                <SearchOutlinedIcon />
+                                            </Grid>
+                                            <FormControl size="small" fullWidth>
+                                                <Selects
+                                                    options={productsList}
+                                                    placeholder="Products"
+                                                    onChange={(e) => {
+                                                        fetchDataProd(e);
+                                                        totalQuantityCalc();
+                                                        setPosAdd({ ...posAdd, grandtotal: Number(totalNetCostCalcSub()) })
+                                                        totalNetRate();
+
+                                                    }}
+                                                />
+                                            </FormControl>
                                         </Grid>
-                                    </>
+                                    </Grid>
+                                    <Grid item md={12} sm={12} xs={12}>
+                                        <br />
+                                        <Grid container sx={{ display: 'flex' }}>
+                                            <br />
+                                            <>
+                                                <Grid container>
+                                                    {comparecate && (
+                                                        comparecate.map((row, index) => (
+                                                            <Grid item md={3} key={index} sx={{ justifyContent: 'space-between', boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)', height: 150, margin: '5px' }}>
+                                                                <Grid >
+                                                                    <p style={{ fontSize: '14px', marginLeft: '3em', color: 'black' }}><b>{row.sku + "/" + row.currentstock}</b></p>
+                                                                    <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { rowData(row._id); }} width="100px" height="100px" style={{ margin: '0px  17px' }} />
+                                                                    <p style={{ fontSize: '14px', marginLeft: '4em', color: '#5CB85C' }}><b>{row.category}</b></p>
+                                                                </Grid>
+                                                            </Grid>
+                                                        )))}
+                                                </Grid>
+                                            </>
+                                            <>
+                                                <Grid container>
+                                                    {comparesub && (
+                                                        comparesub.map((row, index) => (
+                                                            <Grid item md={3} key={index} sx={{ justifyContent: 'space-between', boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)', height: 150, margin: '5px' }}>
+                                                                <Grid >
+                                                                    <p style={{ fontSize: '14px', marginLeft: '3em', color: 'black' }}><b>Qty: {row.currentstock}</b></p>
+                                                                    <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { rowData(row._id); }} width="100px" height="100px" style={{ margin: '0px  17px', '@media (maxWidth: 400px)': { width: "70px", height: "100px", margin: '0px  0px', } }} />
+                                                                </Grid>
+                                                                <p style={{ fontSize: '14px', marginLeft: '4em', color: '#5CB85C' }}><b>₹ {row.mrp}</b></p>
+                                                            </Grid>
+                                                        )))}
+                                                </Grid>
+                                            </>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                            <Grid item xs={12} sm={12} md={7} lg={7} sx={{ paddingRight: '3px', backgroundColor: '#fff' }} >
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} sm={12} md={12} lg={12} >
+                                        {/* Table start */}
+                                        <TableContainer sx={{ paddingLeft: 1, height: '450px' }}  >
+                                            <Table style={{ marginTop: "10px", borderRight: "1px solid rgba(224, 224, 224, 1)", }}
+                                                aria-label="customized table" padding='none'>
+                                                <TableHead >
+                                                    <TableRow sx={userStyle.tableHead1}>
+                                                        <TableCell style={{ marginLeft: '5px', paddingLeft: "10px", width: '155px', }}> Product Name </TableCell>
+                                                        <TableCell style={{ width: '55px' }}>Rate Type</TableCell>
+                                                        <TableCell style={{ width: '55px' }}>Qty</TableCell>
+                                                        <TableCell style={{ width: '95px' }}>MRP</TableCell>
+                                                        <TableCell style={{ width: '95px' }}>Net Rate</TableCell>
+                                                        <TableCell style={{ width: '175px' }}>Discount
+                                                            <Tooltip arrow
+                                                                title="Click checkbox to discount calculate as percentage">
+                                                                <IconButton size="small">
+                                                                    <FcInfo />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </TableCell>
+                                                        <TableCell style={{ width: '155px' }}>After Discount </TableCell>
+                                                        <TableCell style={{ width: '55px' }}>GST</TableCell>
+                                                        <TableCell style={{ width: '155px' }}>Subtotal</TableCell>
+                                                        <TableCell sx={{ paddingTop: "5px", width: '55px' }} ><DeleteOutlineOutlinedIcon style={{ fontSize: 'large' }} /></TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {tableData.length > 0 &&
+                                                        tableData.map((data, i) => {
+                                                            return (
+                                                                <>
+                                                                    <TableRow >
+                                                                        <TableCell sx={{ fontSize: '12px', }} key={i}>{data?.productname}</TableCell>
+                                                                        <TableCell sx={{ fontSize: '12px' }}>
+                                                                            <Select
+                                                                                isClearable
+                                                                                labelId="demo-select-small"
+                                                                                variant="standard"
+
+                                                                                value={data?.ratetype}
+                                                                                sx={{ fontSize: '12px', }}
+                                                                                onChange={(e) => handleProductchange(i, 'rateamount', 'ratetype', e.target.value)}
+                                                                                fullWidth
+                                                                            >
+                                                                                <MenuItem value="companyrate" >Company rate</MenuItem>
+                                                                                <MenuItem value="superstockrate" >Super stocky rate</MenuItem>
+                                                                                <MenuItem value="dealarrate" >Dealar rate</MenuItem>
+                                                                            </Select>
+                                                                        </TableCell>
+                                                                        <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.quantity}</Typography></TableCell>
+                                                                        <TableCell ><Typography sx={{ fontSize: '12px' }}> {data?.mrp}</Typography></TableCell>
+                                                                        <TableCell><Typography sx={{ fontSize: '12px' }}>{data?.netrate}</Typography></TableCell>
+                                                                        <TableCell>
+                                                                            <Grid sx={{ display: 'flex', margin: '1px', width: 'auto' }}>
+                                                                                <FormControl size="small">
+                                                                                    <OutlinedInput
+                                                                                        style={{ height: '25px', marginTop: '8px', fontSize: '15px' }}
+                                                                                        sx={userStyle.input}
+                                                                                        size="small"
+                                                                                        type="number"
+                                                                                        onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
+                                                                                        onChange={(e) => {
+                                                                                            handleProductchange(i, 'amount', 'discountamt', e.target.value);
+                                                                                            data.valdis = e.target.value
+                                                                                        }}
+
+                                                                                    />
+                                                                                </FormControl>
+                                                                                <Grid>
+                                                                                    <FormGroup>
+                                                                                        <FormControlLabel size="small" sx={{ marginLeft: "1em", }} control={<Checkbox checked={data?.discountcheck}
+                                                                                            onClick={(e) => { data.discountcheck = !data.discountcheck; handleProductchange(i, 'percentage', 'discountcheck', e.target.checked) }}
+                                                                                        />}
+                                                                                        />
+                                                                                    </FormGroup>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </TableCell>
+                                                                        <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.afterdiscount}</Typography></TableCell>
+                                                                        <TableCell><Typography sx={{ fontSize: '12px' }}>{data?.taxtareval}</Typography></TableCell>
+                                                                        <TableCell><Typography sx={{ fontSize: '12px' }}><b>{data?.subtotal.toFixed(2)}</b></Typography></TableCell>
+                                                                        <TableCell sx={{ color: 'red', fontWeight: '900', cursor: 'pointer', fontSize: '15px !important' }}><AiOutlineClose onClick={(e) => { deleteRow(i, e); }} /></TableCell>
+                                                                    </TableRow>
+                                                                </>
+                                                            );
+                                                        })}
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
+                                        {/* Table Ends */}
+                                    </Grid>
+                                    <Grid item xs={12} sm={12} md={12} lg={12} sx={{ marginTop: '50px' }}>
+                                        <Grid container spacing={1}>
+                                            <Grid item md={7} sm={6} xs={12} sx={{ display: 'flex' }}>
+                                                <Typography sx={{ marginLeft: '15px' }}>
+                                                    <b> Total Items :</b>&ensp;{tableData.length}
+                                                </Typography>
+                                                <Typography sx={{ marginLeft: '15px', }}>
+                                                    <b>Total Quantity:</b>&ensp;{totalQuantityCalc()}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item md={5} sm={6} xs={12} sx={{ paddingLeft: '4px', paddingRight: '1px', marginTop: '-4px' }}>
+                                                <Button fullWidth variant="text" sx={{ marginTop: "5px", boxShadow: "inset 0px 0px 10px #1976d2", }}>
+                                                    <b>GRAND TOTAL :</b>&ensp;{totalNetCostCalcSub()}
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid container>
+                                            <Grid item md={2} sm={6} xs={12}>
+                                                <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
+                                                    <b>CGST:</b>&ensp;{CGST ? CGST : 0}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item md={2} sm={6} xs={12}>
+                                                <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
+                                                    <b>SGST:</b>&ensp;{GST ? GST : 0}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item md={2} sm={6} xs={12}>
+                                                <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
+                                                    <b>IGST:</b>&ensp;{IGST ? IGST : 0}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
                                 </Grid>
                             </Grid>
                         </Grid>
-                    </Grid>
-                </Grid>
-                <br />
-                <br />
-                <Grid container sx={userStyle.btnGrid}>
-                    <Grid item md={8} sm={8} xs={12} sx={{ display: "flex", color: 'black' }}>
-                        <Button disableRipple sx={userStyle.btnBack} type="submit" onClick={handleSubmit}>
-                            <EditOutlinedIcon style={{ fontSize: "large" }} />
-                            &ensp;Draft
-                        </Button>
-                        <Button disableRipple sx={userStyle.btnPause} type="submit" onClick={handleSubmitquotation}>
-                            <EditOutlinedIcon style={{ fontSize: "large" }} />
-                            &ensp;Quotation
-                        </Button>
+                        <br />
+                        <br />
+                        <Grid container sx={userStyle.btnGrid}>
+                            <Grid item md={8} sm={8} xs={12} sx={{ display: "flex", color: 'black' }}>
+                                <Button disableRipple sx={userStyle.btnBack} type="submit" onClick={handleSubmit}>
+                                    <EditOutlinedIcon style={{ fontSize: "large" }} />
+                                    &ensp;Draft
+                                </Button>
+                                <Button disableRipple sx={userStyle.btnPause} type="submit" onClick={handleSubmitquotation}>
+                                    <EditOutlinedIcon style={{ fontSize: "large" }} />
+                                    &ensp;Quotation
+                                </Button>
 
-                        <Button disableRipple sx={userStyle.btnCash} onClick={handleClickOpenpay} >
-                            <FaMoneyBillAlt />
-                            &ensp;Cash
-                        </Button>
-                        <Button disableRipple sx={userStyle.btnCancel} onClick={handleSubmitclear}>
-                            <FaRegWindowClose />
-                            &ensp;Cancel
-                        </Button>
-                        <Typography value={posAdd.totalbillamt}
-                            sx={{ marginLeft: '15px', color: 'grey', fontSize: "20px" }}>
-                            <b>Total:</b> <span style={{ color: 'green' }}>{totalNetCostCalcSub()}</span>
-                        </Typography>
-                    </Grid>
-                    <Grid item md={4} sm={4} xs={12}>
-                        <Box sx={{ float: "right" }}>
-                            <Button disableRipple sx={userStyle.btnRec} onClick={recentTranModOpen}>
-                                <FaClock />
-                                &ensp;Recent Transactions
-                            </Button>
+                                <Button disableRipple sx={userStyle.btnCash} onClick={handleClickOpenpay} >
+                                    <FaMoneyBillAlt />
+                                    &ensp;Cash
+                                </Button>
+                                <Button disableRipple sx={userStyle.btnCancel} onClick={handleSubmitclear}>
+                                    <FaRegWindowClose />
+                                    &ensp;Cancel
+                                </Button>
+                                <Typography value={posAdd.totalbillamt}
+                                    sx={{ marginLeft: '15px', color: 'grey', fontSize: "20px" }}>
+                                    <b>Total:</b> <span style={{ color: 'green' }}>{totalNetCostCalcSub()}</span>
+                                </Typography>
+                            </Grid>
+                            <Grid item md={4} sm={4} xs={12}>
+                                <Box sx={{ float: "right" }}>
+                                    <Button disableRipple sx={userStyle.btnRec} onClick={recentTranModOpen}>
+                                        <FaClock />
+                                        &ensp;Recent Transactions
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </>
+                ) : (
+                    <>
+                        {/* Navbar Start */}
+                        <Box sx={{ padding: "5px", '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }}>
+                            <Grid container spacing={1} >
+                                <Grid item lg={2} md={2} sm={12} xs={12}>
+                                    <Box sx={{ float: "left" }}>
+                                        {setngs.businesslogo ? (
+                                            <>
+                                                <Link to="/">
+                                                    <img src={setngs?.businesslogo} alt="logo" style={{ width: '150px', height: '70px', paddingLeft: 'px' }}></img>
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                    </Box>
+                                </Grid>
+                                <Grid item md={2.5} sm={12} xs={12} lg={2} >
+                                    <InputLabel >Company Name <b style={{ color: "red" }}> *</b></InputLabel>
+                                    <Grid sx={{ display: "flex" }}>
+                                        <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                            <SearchOutlinedIcon />
+                                        </Grid>
+                                        <FormControl size="small" fullWidth>
+                                            <Selects
+                                                sx={{ '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }}
+                                                options={company}
+                                                placeholder="Select"
+                                                onChange={(e) => {
+                                                    setPosAdd({ ...posAdd, company: e.companyname, companyaddress: e.companyaddress, gstno: e.gstno, bankname: e.bankname, accountnumber: e.accountnumber, ifsccode: e.ifsccode });
+                                                }}
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+                                <Grid item md={2.5} sm={12} xs={12} lg={3} >
+                                    <InputLabel >Business Location <b style={{ color: "red" }}> *</b></InputLabel>
+                                    <Grid sx={{ display: "flex" }}>
+                                        <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                            <SearchOutlinedIcon />
+                                        </Grid>
+                                        <FormControl size="small" fullWidth>
+                                            <Selects
+                                                options={busioptions}
+                                                placeholder="Select"
+                                                onChange={(e) => { setPosAdd({ ...posAdd, location: e.value, deliveryaddress: e.address, deliverygstn: e.gstnno, deliverycontactpersonname: e.contactpersonname, deliverycontactpersonnumber: e.contactpersonnum, deliverycontactpersonemail: e.email, deliverycontactpersondistrict: e.city, deliverycontactpersonpincode: e.zipcde }); }}
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+                                <Grid item md={2.5} sm={12} xs={12} lg={2}>
+                                    <InputLabel >Salesman<b style={{ color: "red" }}> *</b></InputLabel>
+                                    <Grid sx={{ display: "flex" }}>
+                                        <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                            <SearchOutlinedIcon />
+                                        </Grid>
+                                        <FormControl size="small" fullWidth>
+                                            <Selects
+                                                options={salesmans}
+                                                placeholder="Select"
+                                                onChange={(e) => { setPosAdd({ ...posAdd, salesman: e.value, salescommission: e.salescommission, salesmannumber: e.phonenum }); }}
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                </Grid>
+                                <Grid item md={0.5} sm={1} xs={1} sx={{ marginTop: "25px" }}>
+                                    <Button onClick={(e) => { openFullscreen() }}><FullscreenOutlinedIcon style={{ fontsize: 'large' }} /></Button>
+                                </Grid>
+                                <Grid item md={2} sm={11} xs={11} >
+                                    <InputLabel >Date</InputLabel>
+                                    <FormControl>
+                                        <LocalizationProvider dateAdapter={AdapterDayjs} >
+                                            <DateTimePicker
+                                                renderInput={(props) => <TextField size='small' {...props} />}
+                                                sx={userStyle.posNavbarInput}
+                                                value={purchaseDateTime}
+                                                onChange={(newValue) => {
+                                                    setPurchaseDateTime(newValue);
+                                                }}
+                                            />
+                                        </LocalizationProvider>
+                                    </FormControl>
+                                </Grid>
+                            </Grid>
                         </Box>
-                    </Grid>
-                </Grid>
+                        {/* Navbar Ends */}
+                        <Grid container sx={{ backgroundColor: "#f0f2ff", '& .MuiOutlinedInput-notchedOutline': { border: '1px solid #4A7BF7 !important' } }} >
+                            <Grid item xs={12} sm={12} md={7} lg={7} sx={{ paddingRight: '3px', backgroundColor: '#fff' }} >
+                                <Grid container spacing={3}>
+                                    <Grid item xs={12} sm={12} md={12} lg={12} >
+                                        {/* Table start */}
+                                        <TableContainer sx={{ paddingLeft: 1, height: '450px' }}  >
+                                            <Table style={{ marginTop: "10px", borderRight: "1px solid rgba(224, 224, 224, 1)", }}
+                                                aria-label="customized table" padding='none'>
+                                                <TableHead >
+                                                    <TableRow sx={userStyle.tableHead1}>
+                                                        <TableCell style={{ marginLeft: '5px', paddingLeft: "10px", width: '155px', }}> Product Name </TableCell>
+                                                        <TableCell style={{ width: '55px' }}>Rate Type</TableCell>
+                                                        <TableCell style={{ width: '55px' }}>Qty</TableCell>
+                                                        <TableCell style={{ width: '95px' }}>MRP</TableCell>
+                                                        <TableCell style={{ width: '95px' }}>Net Rate</TableCell>
+                                                        <TableCell style={{ width: '175px' }}>Discount
+                                                            <Tooltip arrow
+                                                                title="Click checkbox to discount calculate as percentage">
+                                                                <IconButton size="small">
+                                                                    <FcInfo />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </TableCell>
+                                                        <TableCell style={{ width: '155px' }}>After Discount </TableCell>
+                                                        <TableCell style={{ width: '55px' }}>GST</TableCell>
+                                                        <TableCell style={{ width: '155px' }}>Subtotal</TableCell>
+                                                        <TableCell sx={{ paddingTop: "5px", width: '55px' }} ><DeleteOutlineOutlinedIcon style={{ fontSize: 'large' }} /></TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {tableData.length > 0 &&
+                                                        tableData.map((data, i) => {
+                                                            return (
+                                                                <>
+                                                                    <TableRow >
+                                                                        <TableCell sx={{ fontSize: '12px', }} key={i}>{data?.productname}</TableCell>
+                                                                        <TableCell sx={{ fontSize: '12px' }}>
+                                                                            <Select
+                                                                                isClearable
+                                                                                labelId="demo-select-small"
+                                                                                variant="standard"
+
+                                                                                value={data?.ratetype}
+                                                                                sx={{ fontSize: '12px', }}
+                                                                                onChange={(e) => handleProductchange(i, 'rateamount', 'ratetype', e.target.value)}
+                                                                                fullWidth
+                                                                            >
+                                                                                <MenuItem value="companyrate" >Company rate</MenuItem>
+                                                                                <MenuItem value="superstockrate" >Super stocky rate</MenuItem>
+                                                                                <MenuItem value="dealarrate" >Dealar rate</MenuItem>
+                                                                            </Select>
+                                                                        </TableCell>
+                                                                        <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.quantity}</Typography></TableCell>
+                                                                        <TableCell ><Typography sx={{ fontSize: '12px' }}> {data?.mrp}</Typography></TableCell>
+                                                                        <TableCell><Typography sx={{ fontSize: '12px' }}>{data?.netrate}</Typography></TableCell>
+                                                                        <TableCell>
+                                                                            <Grid sx={{ display: 'flex', margin: '1px', width: 'auto' }}>
+                                                                                <FormControl size="small">
+                                                                                    <OutlinedInput
+                                                                                        style={{ height: '25px', marginTop: '8px', fontSize: '15px' }}
+                                                                                        sx={userStyle.input}
+                                                                                        size="small"
+                                                                                        type="number"
+                                                                                        onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
+                                                                                        onChange={(e) => {
+                                                                                            handleProductchange(i, 'amount', 'discountamt', e.target.value);
+                                                                                            data.valdis = e.target.value
+                                                                                        }}
+
+                                                                                    />
+                                                                                </FormControl>
+                                                                                <Grid>
+                                                                                    <FormGroup>
+                                                                                        <FormControlLabel size="small" sx={{ marginLeft: "1em", }} control={<Checkbox checked={data?.discountcheck}
+                                                                                            onClick={(e) => { data.discountcheck = !data.discountcheck; handleProductchange(i, 'percentage', 'discountcheck', e.target.checked) }}
+                                                                                        />}
+                                                                                        />
+                                                                                    </FormGroup>
+                                                                                </Grid>
+                                                                            </Grid>
+                                                                        </TableCell>
+                                                                        <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.afterdiscount}</Typography></TableCell>
+                                                                        <TableCell><Typography sx={{ fontSize: '12px' }}>{data?.taxtareval}</Typography></TableCell>
+                                                                        <TableCell><Typography sx={{ fontSize: '12px' }}><b>{data?.subtotal.toFixed(2)}</b></Typography></TableCell>
+                                                                        <TableCell sx={{ color: 'red', fontWeight: '900', cursor: 'pointer', fontSize: '15px !important' }}><AiOutlineClose onClick={(e) => { deleteRow(i, e); }} /></TableCell>
+                                                                    </TableRow>
+                                                                </>
+                                                            );
+                                                        })}
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
+                                        {/* Table Ends */}
+                                    </Grid>
+                                    <Grid item xs={12} sm={12} md={12} lg={12} sx={{ marginTop: '50px' }}>
+                                        <Grid container spacing={1}>
+                                            <Grid item md={7} sm={6} xs={12} sx={{ display: 'flex' }}>
+                                                <Typography sx={{ marginLeft: '15px' }}>
+                                                    <b> Total Items :</b>&ensp;{tableData.length}
+                                                </Typography>
+                                                <Typography sx={{ marginLeft: '15px', }}>
+                                                    <b>Total Quantity:</b>&ensp;{totalQuantityCalc()}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item md={5} sm={6} xs={12} sx={{ paddingLeft: '4px', paddingRight: '1px', marginTop: '-4px' }}>
+                                                <Button fullWidth variant="text" sx={{ marginTop: "5px", boxShadow: "inset 0px 0px 10px #1976d2", }}>
+                                                    <b>GRAND TOTAL :</b>&ensp;{totalNetCostCalcSub()}
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                        <Grid container>
+                                            <Grid item md={2} sm={6} xs={12}>
+                                                <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
+                                                    <b>CGST:</b>&ensp;{cgstTotal}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item md={2} sm={6} xs={12}>
+                                                <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
+                                                    <b>SGST:</b>&ensp;{gstTotal}
+                                                </Typography>
+                                            </Grid>
+                                            <Grid item md={2} sm={6} xs={12}>
+                                                <Typography sx={{ marginTop: "5px", marginLeft: '15px' }}>
+                                                    <b>IGST:</b>&ensp;{igstTotal}
+                                                </Typography>
+                                            </Grid>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                            <Grid item xs={12} sm={12} md={5} lg={5} sx={{ p: 1, backgroundColor: '#fff', }}>
+                                <Grid container spacing={1} >
+                                    <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
+                                        <Button fullWidth sx={userStyle.posselecbtn} style={{ boxShadow: "inset 0px 0px 5px green", }}
+                                            onClick={(e) => { fetchProd(e); }}
+                                        >
+                                            All
+                                        </Button>
+                                    </Grid>
+                                    <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
+                                        <Button
+                                            fullWidth
+                                            sx={userStyle.posselecbtn}
+                                            style={{ boxShadow: "inset 0px 0px 5px green", }}
+                                            onClick={(e) => { handleDrawerOpen(); fetchcategory() }}
+                                        >
+                                            Category
+                                        </Button>
+                                        <Drawer
+                                            className={classes.drawer}
+                                            variant="persistent"
+                                            anchor="right"
+                                            open={open1}
+                                            classes={{
+                                                paper: classes.drawerPaper
+                                            }}
+                                        >
+                                            {/* Navbar sub-category */}
+                                            <div className={classes.closeicon}>
+                                                <IconButton sx={userStyle.closeicon} onClick={handleDrawerClose}>
+                                                    <CloseIcon />
+                                                </IconButton>
+                                                <Typography style={{ fontSize: '20px', marginLeft: '0.5em', marginBottom: '1em', fontFamily: "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif", color: '#5CB85C', fontWeight: 'bolder' }}>List of Category</Typography>
+                                                <Grid item md={12} sm={12} xs={12}>
+                                                    <Grid style={{ marginLeft: '3em', "&:hover": { backgroundColor: 'red' } }}>
+                                                        <img src={noimage} onClick={(e) => { fetchProd(e); }} style={{ width: '110px', height: '130px', cursor: 'pointer' }} />
+                                                        <Typography style={{}}><b>All Category</b></Typography>
+                                                    </Grid>
+                                                    {category && (
+                                                        category.map((row, index) => (
+                                                            <>
+                                                                <br />
+                                                                <div key={index} style={{ curser: 'pointer' }}>
+                                                                    <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { singleId(row.categoryname) }} style={{ width: '100px', height: '100px', marginLeft: '3em', border: 'none' }} />
+                                                                    <Typography style={{ marginLeft: '3em' }}>{row.categoryname}</Typography>
+                                                                </div>
+                                                            </>
+                                                        ))
+                                                    )}
+                                                </Grid>
+                                            </div>
+                                        </Drawer>
+                                    </Grid>
+                                    <Grid item md={4} sm={3} xs={6} sx={{ padding: '3px' }}>
+                                        <Button
+                                            fullWidth
+                                            sx={userStyle.posselecbtn}
+                                            style={{ boxShadow: "inset 0px 0px 5px green", p: '5px' }}
+                                            onClick={(e) => { handleDrawerOpen1(); fetchSubcategory(); }}
+                                        >
+                                            SubCategory
+                                        </Button>
+                                        <Drawer
+                                            className={classes.drawer}
+                                            variant="persistent"
+                                            anchor="right"
+                                            open={open2}
+                                            classes={{
+                                                paper: classes.drawerPaper
+                                            }}
+                                        >
+                                            {/* Navbar sub-category */}
+
+                                            <div className={classes.closeicon}>
+                                                <IconButton onClick={handleDrawerClose1}>
+                                                    <CloseIcon />
+                                                </IconButton>
+                                                <Typography style={{ fontSize: '16px', marginLeft: '0.5em', marginBottom: '1em', fontFamily: "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif", color: '#5CB85C', fontWeight: 'bolder' }}>List of Sub-Category</Typography>
+                                                <Grid item md={12} sm={12} xs={12}>
+                                                    <Grid style={{ marginLeft: '3em', "&:hover": { backgroundColor: 'red' } }}>
+                                                        <img src={noimage} onClick={(e) => { fetchProd(e) }} style={{ width: '110px', height: '130px', cursor: 'pointer' }} />
+                                                        <Typography ><b>All Subcategory</b></Typography>
+                                                    </Grid>
+                                                    {subcategory && (
+                                                        subcategory?.map((row, index) => (
+                                                            row.subcategories.map(((meta, i) => {
+                                                                subitems.push(meta);
+                                                            }))
+                                                        ))
+                                                    )}
+                                                    {subitems.map((item, i) => {
+                                                        return (
+                                                            <>
+                                                                <br />
+                                                                <div key={i} style={{ curser: 'pointer' }}>
+                                                                    <img src={noimage} alt="image" onClick={(e) => { singlesub(item.subcategryname) }} style={{ width: '100px', height: '100px', marginLeft: '3em', border: 'none' }} />
+                                                                    <Typography style={{ marginLeft: '3em' }}>{item.subcategryname}</Typography>
+                                                                </div>
+                                                            </>
+                                                        )
+                                                    })}
+                                                </Grid>
+                                            </div>
+                                        </Drawer>
+                                    </Grid>
+
+                                    <br /><br /><br />
+                                    <Grid item md={12} sm={12} xs={12} sx={{ marginLeft: '25px' }}>
+                                        <Grid sx={{ display: "flex" }}>
+                                            <Grid sx={userStyle.spanIcons} style={{ height: "38px" }}>
+                                                <SearchOutlinedIcon />
+                                            </Grid>
+                                            <FormControl size="small" fullWidth>
+                                                <Selects
+                                                    options={productsList}
+                                                    placeholder="Products"
+                                                    onChange={(e) => {
+                                                        fetchDataProd(e);
+                                                        totalQuantityCalc();
+                                                        setPosAdd({ ...posAdd, grandtotal: Number(totalNetCostCalcSub()) })
+                                                        totalNetRate();
+
+                                                    }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                    </Grid>
+                                    <Grid item md={12} sm={12} xs={12}>
+                                        <br />
+                                        <Grid container sx={{ display: 'flex' }}>
+                                            <br />
+                                            <>
+                                                <Grid container>
+                                                    {comparecate && (
+                                                        comparecate.map((row, index) => (
+                                                            <Grid item md={3} key={index} sx={{ justifyContent: 'space-between', boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)', height: 150, margin: '5px' }}>
+                                                                <Grid >
+                                                                    <p style={{ fontSize: '14px', marginLeft: '3em', color: 'black' }}><b>{row.sku + "/" + row.currentstock}</b></p>
+                                                                    <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { rowData(row._id); }} width="100px" height="100px" style={{ margin: '0px  17px' }} />
+                                                                    <p style={{ fontSize: '14px', marginLeft: '4em', color: '#5CB85C' }}><b>{row.category}</b></p>
+                                                                </Grid>
+                                                            </Grid>
+                                                        )))}
+                                                </Grid>
+                                            </>
+
+                                            <>
+                                                <Grid container>
+                                                    {comparesub && (
+                                                        comparesub.map((row, index) => (
+                                                            <Grid item md={3} key={index} sx={{ justifyContent: 'space-between', boxShadow: '0 4px 8px 0 rgba(0,0,0,0.2)', height: 150, margin: '5px' }}>
+                                                                <Grid >
+                                                                    <p style={{ fontSize: '14px', marginLeft: '3em', color: 'black' }}><b>Qty: {row.currentstock}</b></p>
+                                                                    <img src={row.productimage ? row.productimage : noimage} alt={row.category} onClick={(e) => { rowData(row._id); }} width="100px" height="100px" style={{ margin: '0px  17px', '@media (maxWidth: 400px)': { width: "70px", height: "100px", margin: '0px  0px', } }} />
+                                                                </Grid>
+                                                                <p style={{ fontSize: '14px', marginLeft: '4em', color: '#5CB85C' }}><b>₹ {row.mrp}</b></p>
+                                                            </Grid>
+                                                        )))}
+                                                </Grid>
+                                            </>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                        <br />
+                        <br />
+                        <Grid container sx={userStyle.btnGrid}>
+                            <Grid item md={8} sm={8} xs={12} sx={{ display: "flex", color: 'black' }}>
+                                <Button disableRipple sx={userStyle.btnBack} type="submit" onClick={handleSubmit}>
+                                    <EditOutlinedIcon style={{ fontSize: "large" }} />
+                                    &ensp;Draft
+                                </Button>
+                                <Button disableRipple sx={userStyle.btnPause} type="submit" onClick={handleSubmitquotation}>
+                                    <EditOutlinedIcon style={{ fontSize: "large" }} />
+                                    &ensp;Quotation
+                                </Button>
+
+                                <Button disableRipple sx={userStyle.btnCash} onClick={handleClickOpenpay} >
+                                    <FaMoneyBillAlt />
+                                    &ensp;Cash
+                                </Button>
+                                <Button disableRipple sx={userStyle.btnCancel} onClick={handleSubmitclear}>
+                                    <FaRegWindowClose />
+                                    &ensp;Cancel
+                                </Button>
+                                <Typography value={posAdd.totalbillamt}
+                                    sx={{ marginLeft: '15px', color: 'grey', fontSize: "20px" }}>
+                                    <b>Total:</b> <span style={{ color: 'green' }}>{totalNetCostCalcSub()}</span>
+                                </Typography>
+                            </Grid>
+                            <Grid item md={4} sm={4} xs={12}>
+                                <Box sx={{ float: "right" }}>
+                                    <Button disableRipple sx={userStyle.btnRec} onClick={recentTranModOpen}>
+                                        <FaClock />
+                                        &ensp;Recent Transactions
+                                    </Button>
+                                </Box>
+                            </Grid>
+                        </Grid>
+                    </>
+                )}
             </form>
             {/*  card details*/}
 
@@ -1687,36 +2708,36 @@ const Poscreate = () => {
                 <DialogTitle sx={{ padding: '10px', width: "500px" }}>
                     <Typography sx={userStyle.HeaderText}>Company Details</Typography>
                 </DialogTitle>
-                <DialogContent sx={{ padding: '0px', width: "500px" }}>
+                <DialogContent sx={{ padding: '0px', minWidth: '750px', height: 'auto', }}>
                     {/* Company details  */}
                     <Grid container sx={{ padding: '10px' }} spacing={3}>
                         <Grid item xs={12} sm={12} md={12} lg={12} sx={{ paddingLeft: '20px' }}>
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography ><b>Company Name:</b> {posAdd.company}</Typography><br />
-                                    <Grid sx={{display:'flex'}}>
-                                    <Grid>
-                                    <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
-                                    <FormControl size="small" sx={{ display: "flex"}} >
-                                        <OutlinedInput
-                                            id="component-outlined"
-                                            type="text"
-                                            value={posAdd.companycontactpersonname}
-                                            onChange={(e) => { setPosAdd({ ...posAdd, companycontactpersonname: e.target.value}) }}
-                                        />
-                                    </FormControl>
-                                    </Grid>
-                                    <Grid>
-                                    <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
-                                    <FormControl size="small"  sx={{ display: "flex"}} >
-                                        <OutlinedInput
-                                            id="component-outlined"
-                                            type="number"
-                                            value={posAdd.companycontactpersonnumber}
-                                            onChange={(e) => { setPosAdd({ ...posAdd, companycontactpersonnumber: e.target.value}) }}
-                                        />
-                                    </FormControl>
-                                    </Grid>
+                                    <Grid sx={{ display: 'flex' }}>
+                                        <Grid>
+                                            <InputLabel ><b>Contact Person Name</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="text"
+                                                    value={posAdd.companycontactpersonname}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, companycontactpersonname: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid>
+                                            <InputLabel ><b>Contact Person Number</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="number"
+                                                    value={posAdd.companycontactpersonnumber}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, companycontactpersonnumber: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
                                     </Grid>
                                 </Box>
                             </Card>
@@ -1728,26 +2749,72 @@ const Poscreate = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography ><b>Delivery Name:</b> {posAdd.location}</Typography><br />
-                                    <Grid sx={{display:'flex'}}>
+                                    <Grid sx={{ display: 'flex' }}>
                                         <Grid>
-                                            <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
-                                            <FormControl size="small" sx={{ display: "flex"}} >
+                                            <InputLabel ><b>Contact Person Name</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={posAdd.deliverycontactpersonname}
-                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliverycontactpersonname: e.target.value}) }}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliverycontactpersonname: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
-                                            <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <InputLabel ><b>Contact Person Address</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput required
+                                                    id="component-outlined"
+                                                    type="text"
+                                                    value={posAdd.deliveryaddress}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliveryaddress: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid>
+                                            <InputLabel ><b>Contact Person Number</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="number"
                                                     value={posAdd.deliverycontactpersonnumber}
-                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliverycontactpersonnumber: e.target.value}) }}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliverycontactpersonnumber: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                    </Grid><br />
+                                    <Grid sx={{ display: 'flex' }}>
+                                        <Grid>
+                                            <InputLabel ><b>Contact Person Email</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="email"
+                                                    value={posAdd.deliverycontactpersonemail}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliverycontactpersonemail: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid>
+                                            <InputLabel ><b>Contact Person District</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="text"
+                                                    value={posAdd.deliverycontactpersondistrict}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliverycontactpersondistrict: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid>
+                                            <InputLabel ><b>Contact Person Pincode</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="number"
+                                                    value={posAdd.deliverycontactpersonpincode}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, deliverycontactpersonpincode: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -1762,37 +2829,37 @@ const Poscreate = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography><b>Transport Details</b></Typography><br />
-                                    <Grid sx={{display:'flex'}}>
+                                    <Grid sx={{ display: 'flex' }}>
                                         <Grid>
-                                            <InputLabel id="demo-select-small"><b>Driver Name</b></InputLabel>
-                                            <FormControl size="small" sx={{ display: "flex"}} >
+                                            <InputLabel ><b>Driver Name</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={posAdd.drivername}
-                                                    onChange={(e) => { setPosAdd({ ...posAdd, drivername: e.target.value}) }}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, drivername: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
-                                            <InputLabel id="demo-select-small"><b>Driver Number</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <InputLabel ><b>Driver Number</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={posAdd.drivernumber}
-                                                    onChange={(e) => { setPosAdd({ ...posAdd, drivernumber: e.target.value}) }}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, drivernumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
-                                            <InputLabel id="demo-select-small"><b>Driver Contact No</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <InputLabel ><b>Driver Contact No</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="number"
                                                     value={posAdd.drivernphonenumber}
-                                                    onChange={(e) => { setPosAdd({ ...posAdd, drivernphonenumber: e.target.value}) }}
+                                                    onChange={(e) => { setPosAdd({ ...posAdd, drivernphonenumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -1926,84 +2993,92 @@ const Poscreate = () => {
             {/* invoice print layout     */}
 
             <>
-                <Box sx={userStyle.printcls} ref={componentRef} id="aranysinvoice">
-                    <Box sx={{ padding: '20px' }}>
-                    {setngs.businesslogo ? (
-                        <>
-                        <img src={setngs?.businesslogo} alt="Aranya Herbals" width="150px" height="70px" /><br />
-                        </>
-                    ) : (
-                        <></>
-                    )}
+                {/* sx={userStyle.printcls} */}
+                {/* <Box sx={userStyle.printcls} ref={componentRef} id="aranysinvoice">
+                    <Box >
                         <Grid container >
-                            <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
-                                <Typography><b>COMPANY DETAILS</b><br/></Typography>
+                            <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+                                {setngs.businesslogo ? (
+                                    <>
+                                        <img src={setngs?.businesslogo} alt="Aranya Herbals" width="100px" height="50px" /><br />
+                                    </>
+                                ) : (
+                                    <></>
+                                )}
+                            </Grid>
+                            <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
+                                <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}>ARANYA HEALTH CARE | INVOICE</Typography>
                                 <Grid container>
-                                    <Grid item md={4} sm={4} xs={4}>
-                                        <Typography><b>Name:</b></Typography>
-                                        <Typography><b>Address:</b></Typography>
-                                        <Typography><b>GSTN:</b></Typography>
-                                        <Typography><b>Contact person:</b></Typography>
+                                    <Grid item lg={6} md={6} sm={6} xs={6}>
+                                        <Typography sx={{ fontSize: '10px', fontWeight: "1000", }}><b>Invoice Number:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', fontWeight: "1000", }}><b>Invoice Date:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
-                                        <Typography>{posAdd.company}</Typography>
-                                        <Typography>{posAdd.companyaddress}</Typography>
-                                        <Typography>{posAdd.gstno}</Typography>
-                                        <Typography>{posAdd.companycontactpersonname+'/'+posAdd.companycontactpersonnumber}</Typography>
-                                    </Grid>
-                                </Grid><br /><br /><br /><br />
-                                <Grid container>
-                                    <Grid item md={4} sm={4} xs={4}>
-                                        <Typography><b>Order Number:</b></Typography>
-                                        <Typography><b>Order Date:</b></Typography>
-                                        <Typography><b>Salesman:</b></Typography>
-                                    </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
-                                        <Typography>{newvalpos}</Typography>
-                                        <Typography>{moment(purchaseDateTime).format('DD-MM-YYYY')}</Typography>
-                                        <Typography>{posAdd.salesman+'/'+posAdd.salesmannumber}</Typography>
+                                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                        <Typography sx={{ fontSize: '10px', }} >{newvalpos}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }} >{moment(purchaseDateTime).format('DD-MM-YYYY')}</Typography>
                                     </Grid>
                                 </Grid>
                             </Grid>
+                        </Grid><br />
+                        <Grid container >
+                            <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+                                <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>DELIVERY DETAILS:</b><br /></Typography>
+                                <Grid container>
+                                    <Grid item md={4} sm={4} xs={4}>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Name:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Address:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>GSTN:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Contact person:</b></Typography>
+                                    </Grid>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.location}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.deliveryaddress}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.deliverygstn}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.deliverycontactpersonname + '/' + posAdd.deliverycontactpersonnumber}</Typography>
+                                    </Grid>
+                                </Grid><br />
+                                <Grid container>
+                                    <Grid item md={4} sm={4} xs={4}>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Order Number:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Order Date:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Salesman:</b></Typography>
+                                    </Grid>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                        <Typography sx={{ fontSize: '10px', }}>{newvalpos}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{moment(purchaseDateTime).format('DD-MM-YYYY')}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.salesman + '/' + posAdd.salesmannumber}</Typography>
+                                    </Grid>
+                                </Grid><br />
+                            </Grid>
                             <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
-                            <Typography><b>DELIVERY DETAILS:</b> <br /></Typography>
+                                <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>COMPANY DETAILS:</b> <br /></Typography>
                                 <Grid container>
                                     <Grid item md={4} sm={4} xs={4}>
-                                        <Typography><b>Name:</b></Typography>
-                                        <Typography><b>Address:</b></Typography>
-                                        <Typography><b>GSTN:</b></Typography>
-                                        <Typography><b>Contact person:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Name:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Address:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>GSTN:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Contact person:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
-                                        <Typography>{posAdd.location}</Typography>
-                                        <Typography>{posAdd.deliveryaddress}</Typography>
-                                        <Typography>{posAdd.deliverygstn}</Typography>
-                                        <Typography>{posAdd.deliverycontactpersonname+'/'+posAdd.deliverycontactpersonnumber}</Typography>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.company}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.companyaddress}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.gstno}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.companycontactpersonname + '/' + posAdd.companycontactpersonnumber}</Typography>
                                     </Grid>
-                                </Grid><br /><br />
-                                <Typography><b>TRANSPORT DETAILS:</b> <br /></Typography>
+                                </Grid><br />
+                                <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>TRANSPORT DETAILS:</b> <br /></Typography>
                                 <Grid container>
                                     <Grid item md={4} sm={4} xs={4}>
-                                        <Typography><b>Driver Name:</b></Typography>
-                                        <Typography><b>No:</b></Typography>
-                                        <Typography><b>Contact No:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Driver Name:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>No:</b></Typography>
+                                        <Typography sx={{ fontSize: '10px', }}><b>Contact No:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
-                                        <Typography>{posAdd.drivername}</Typography>
-                                        <Typography>{posAdd.drivernumber}</Typography>
-                                        <Typography>{posAdd.drivernphonenumber}</Typography>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.drivername}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.drivernumber}</Typography>
+                                        <Typography sx={{ fontSize: '10px', }}>{posAdd.drivernphonenumber}</Typography>
                                     </Grid>
-                                </Grid><br /><br />
-                                <Grid container>
-                                    <Grid item lg={6} md={6} sm={6} xs={6}>
-                                        <Typography><b>Invoice Number:</b></Typography>
-                                        <Typography><b>Invoice Date:</b></Typography>
-                                    </Grid>
-                                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
-                                        <Typography>{newvalpos}</Typography>
-                                        <Typography>{moment(purchaseDateTime).format('DD-MM-YYYY')}</Typography>
-                                    </Grid>
-                                </Grid>
+                                </Grid><br />
                             </Grid>
                         </Grid>
                         <Box style={{ borderWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}></Box>
@@ -2011,14 +3086,14 @@ const Poscreate = () => {
                             <Table aria-label="simple table" >
                                 <TableHead >
                                     <TableRow sx={{ borderBottom: 'none' }}>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>ITEM</TableCell>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>MRP</TableCell>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>UNIT PRICE</TableCell>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>QUANTITY</TableCell>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>NET PRICE</TableCell>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>GST</TableCell>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>HSN</TableCell>
-                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}>TOTAL</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>ITEM</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>HSN</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>UNIT PRICE</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>QUANTITY</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>NET PRICE</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>GST</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>MRP</TableCell>
+                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: 'auto' }}>TOTAL</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody >
@@ -2027,14 +3102,14 @@ const Poscreate = () => {
                                             return (
                                                 <>
                                                     <TableRow sx={{ paddingTop: '5px' }}>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }} key={i}>{data?.productname}</TableCell>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }}>{data?.mrp}</TableCell>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }}>{data?.sellingvalue}</TableCell>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }}>{data?.quantity}</TableCell>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }}>{data?.netrate}</TableCell>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }}>{data?.taxtareval}</TableCell>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }}>{data?.hsn}</TableCell>
-                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '0px', borderBottom: "none" }}>{Number(data?.subtotal).toFixed(2)}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }} key={i}>{data?.productname}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.hsn}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.sellingvalue}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.quantity}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.netrate}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.taxtareval + "%"}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{data?.mrp}</TableCell>
+                                                        <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", width: 'auto' }}>{Number(data?.subtotal).toFixed(2)}</TableCell>
                                                     </TableRow>
                                                 </>
                                             );
@@ -2042,56 +3117,647 @@ const Poscreate = () => {
                                 </TableBody>
                                 <TableFooter >
                                     <TableRow >
-                                        <TableCell align="center" colSpan={7} sx={{ borderBottom: 'none !important' }}><Typography><b>Net Total</b></Typography></TableCell>
-                                        <TableCell sx={{ borderBottom: 'none !important' }}><Typography><b>{Number(totalNetCostCalcSub()).toFixed(2)}</b></Typography></TableCell>
+                                        <TableCell align="center" colSpan={7} sx={{ borderBottom: 'none !important' }}><Typography sx={{ fontSize: '15px', fontWeight: 'bold' }}><b>Net Total</b></Typography></TableCell>
+                                        <TableCell sx={{ borderBottom: 'none !important' }}><Typography sx={{ fontSize: '15px', fontWeight: 'bold' }}><b>{Number(totalNetCostCalcSub()).toFixed(2)}</b></Typography></TableCell>
                                     </TableRow>
                                 </TableFooter>
                             </Table>
                         </TableContainer>
-                        <Box style={{ borderWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}></Box><br /><br /><br />
-                        <Grid container>
-                            <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
-                                <Grid container>
-                                    <Grid item md={6} sm={6} xs={6}>
-                                        <Typography><b>Net Tax</b></Typography>
-                                        <Typography><b>No. Of Items</b></Typography>
-                                        <Typography><b>Total Items</b></Typography>
-                                    </Grid>
-                                    <Grid item md={6} sm={6} xs={6}>
-                                        <Typography>{Number(totalTaxValCal()).toFixed(2)}</Typography>
-                                        <Typography>{tableData.length}</Typography>
-                                        <Typography>{totalQuantityCalc()}</Typography>
-                                    </Grid>
-                                </Grid><br /><br />
-                                <Grid container>
-                                    <Grid item md={6} sm={6} xs={6}>
-                                        <Typography><b>Bank Name:</b></Typography>
-                                        <Typography><b>Acc No:</b></Typography>
-                                        <Typography><b>IFSC Code:</b></Typography>
-                                    </Grid>
-                                    <Grid item md={6} sm={6} xs={6}>
-                                        <Typography>{posAdd.bankname}</Typography>
-                                        <Typography>{posAdd.accountnumber}</Typography>
-                                        <Typography>{posAdd.ifsccode}</Typography>
+                        <Box sx={{ bottom: '0px', marginBottom: '0px' }}>
+                            <Grid container>
+                                <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left' }}>
+                                    <Table >
+                                        <TableHead>
+                                            <TableRow >
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Cgst</b></TableCell>
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Sgst</b></TableCell>
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Igst</b></TableCell>
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '30px' }}><b>Taxable Value</b></TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            <TableRow>
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{cgstTotal + "%"}</b></TableCell>
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{gstTotal + "%"}</b></TableCell>
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{igstTotal + "%"}</b></TableCell>
+                                                <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{Number(totalTaxValCal()).toFixed(2)}</b></TableCell>
+                                            </TableRow>
+                                        </TableBody>
+                                    </Table>
+                                </Grid>
+                                <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'center', borderRight: '1px solid black', borderTop: '1px solid black', borderBottom: '1px solid black', }}>
+                                    <br />
+                                    <Grid container>
+                                        <Grid item md={7.5} sm={7.5} xs={7.5} sx={{ textAlign: "right" }}>
+                                            <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>Net Amount</b></Typography>
+                                            <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>No. Of Items</b></Typography>
+                                            <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>Total Items</b></Typography>
+                                        </Grid>
+                                        <Grid item md={0.5} sm={0.5} xs={0.5} sx={{ textAlign: "center", borderRight: '1px solid black' }}></Grid>
+                                        <Grid item md={4} sm={4} xs={4} sx={{ textAlign: "center" }}>
+                                            <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{Number(totalNetCostCalcSub()).toFixed(2)}</b></Typography>
+                                            <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{tableData.length}</b></Typography>
+                                            <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{totalQuantityCalc()}</b></Typography>
+                                        </Grid>
                                     </Grid>
                                 </Grid>
                             </Grid>
-                            <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right' }}>
-                                <br /><br /><br /><br /><br /><br /><br />
-                                {setngs.signature ? (
-                                        <>
-                                        <Typography align='right'><img src={setngs.signature} width="80px" height="45px" /></Typography>
-                                        </>
-                                    ) : (
-                                        <></>
-                                )}
-                                <Typography align='right'><b>Authorized Signatory</b></Typography>
+                            <Grid item md={12} sm={12} xs={12}>
+                                <Typography align="left" sx={{ fontSize: '10px', fontWeight: '400' }}>Amount Chargeable (in words)</Typography>
+                                <Typography align="left" sx={{ fontSize: '14px', fontWeight: 'bold' }}>{totalNetCostInWords}</Typography>
+                            </Grid><br />
+                            <Grid container spacing={1} sx={{ border: '1px solid black' }}>
+                                <Grid item md={5.5} sm={5.5} xs={5.5} sx={{ textAlign: 'left' }}>
+                                    <Typography sx={{ textDecoration: "underline", paddingLeft: '10px', fontSize: '10px', fontWeight: '1000' }}><b>Declaration</b></Typography>
+                                    <Typography sx={{ textAlign: 'left', paddingLeft: '10px', fontSize: '10px', fontWeight: '1000' }}>Any loss or breakage in goods supplied against this invoice should be intimated whithin 10 days of receipt of goods with documentary evidence.</Typography>
+                                </Grid>
+                                <Grid item md={0.5} sm={0.5} xs={0.5} sx={{ textAlign: 'center', borderRight: '1px solid black' }}></Grid>
+                                <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+                                    <Grid container >
+                                        <Grid item md={12} sm={12} xs={12} sx={{ paddingLeft: '10px' }}>
+                                            <Typography sx={{ fontSize: '10px' }}>Company's Bank Details</Typography>
+                                            <Grid container sx={{ '& .MuiGrid-item': { padding: '0px' } }}>
+                                                <Grid item md={5.5} sm={5.5} xs={5.5}>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>Bank Name</Typography>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>Acc No</Typography>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>IFSC Code</Typography>
+                                                </Grid>
+                                                <Grid item md={0.5} sm={0.5} xs={0.5}>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>:</Typography>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>:</Typography>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}>:</Typography>
+                                                </Grid>
+                                                <Grid item md={6} sm={6} xs={6}>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{posAdd.bankname}</b></Typography>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{posAdd.accountnumber}</b></Typography>
+                                                    <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{posAdd.ifsccode}</b></Typography>
+                                                </Grid>
+                                            </Grid><br />
+                                        </Grid>
+                                        <Grid item md={12} sm={12} xs={12} sx={{ textAlign: 'right', borderTop: '1px solid black', paddingRight: '10px' }}>
+                                            <br />
+                                            {setngs.signature ? (
+                                                <>
+                                                    <Typography align='right'><img src={setngs.signature} width="80px" height="45px" /></Typography>
+                                                </>
+                                            ) : (
+                                                <></>
+                                            )}
+                                            <Typography align='right'><b>Authorized Signatory</b></Typography>
+                                        </Grid>
+                                    </Grid>
+                                </Grid>
                             </Grid>
-                        </Grid>
-                    </Box><br /><br /><br /><br />
-                </Box><br /><br />
+                        </Box>
+                    </Box>
+                </Box> */}
+                {/* {copies.map((copy, index) => (
+                    <div key={index}>{copy}</div>
+                ))} */}
+
+                {/* <Box ref={componentRef} id="aranysinvoice">
+                    <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | ORIGINAL" tableData={tableData} /><br /><br />
+                    <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | DUPLICATE" tableData={tableData} /><br /><br />
+                    <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | CUSTOMER" tableData={tableData} />
+                </Box> */}
+                {/* <Box ref={componentRef} id="aranysinvoice">
+                    <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | ORIGINAL" pageData={originalPageData} /><br /><br />
+                    <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | DUPLICATE" pageData={duplicatePageData} /><br /><br />
+                    <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | CUSTOMER" pageData={customerPageData} />
+                </Box> */}
+                {/* <Box ref={componentRef} sx={userStyle.printcls} id="aranysinvoice">
+                    <div className="copy-container">
+                        <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | ORIGINAL" pageData={originalPageData} />
+                    </div>
+                    <div className="copy-container">
+                        <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | DUPLICATE" pageData={duplicatePageData} />
+                    </div>
+                    <div className="copy-container">
+                        <InvoiceComponent data={invoiceData} title="ARANYA HEALTH CARE | CUSTOMER" pageData={customerPageData} />
+                    </div>
+                </Box> */}
+                {/* <Box ref={componentRef} sx={userStyle.printcls}>
+                    {pageData.map((pageRows, pageIndex) => (
+                        <div key={pageIndex} className="copy-container">
+                            <InvoiceComponent data={invoiceData} title={`ARANYA HEALTH CARE | COPY ${pageIndex + 1}`} pageRows={pageRows} />
+                        </div>
+                    ))}
+                </Box> */}
+
+                {/* <Box ref={componentRef} sx={userStyle.printcls}>
+                    {pageData.map((pageRows, pageIndex) => (
+                        <div key={pageIndex} className="copy-container">
+                            <InvoiceComponent data={invoiceData} title={pageIndex === 0 ? 'Original' : (pageIndex === 1 ? 'Duplicate' : 'Customer')} pageRows={pageRows} />
+                        </div>
+                    ))}
+                </Box> */}
+
+                <Box ref={componentRef} sx={userStyle.printcls}>
+                    {originalPageData.map((pageRows, pageIndex) => (
+                        <div key={pageIndex} className="copy-container">
+                            <InvoiceComponent data={invoiceData} title="Original" pageRows={pageRows} />
+                        </div>
+                    ))}
+                    {duplicatePageData.map((pageRows, pageIndex) => (
+                        <div key={pageIndex} className="copy-container">
+                            <InvoiceComponent data={invoiceData} title="Duplicate" pageRows={pageRows} />
+                        </div>
+                    ))}
+                    {customerPageData.map((pageRows, pageIndex) => (
+                        <div key={pageIndex} className="copy-container">
+                            <InvoiceComponent data={invoiceData} title="Customer" pageRows={pageRows} />
+                        </div>
+                    ))}
+                </Box>
+                {/* <InvoiceComponent
+                    data={invoiceData}
+                    title="ARANYA HEALTH CARE | ORIGINAL"
+                    tableData={tableData}
+                    copyType={1} // Original copy
+                />
+                <InvoiceComponent
+                    data={invoiceData}
+                    title="ARANYA HEALTH CARE | DUPLICATE"
+                    tableData={tableData}
+                    copyType={2} // Original copy
+                />
+                <InvoiceComponent
+                    data={invoiceData}
+                    title="ARANYA HEALTH CARE | CUSTOMER"
+                    tableData={tableData}
+                    copyType={3} // Original copy
+                /> */}
+
+                {/* <div style={{ display: 'none' }} ref={originalRef}>
+                    <InvoiceComponent copyType="Original" />
+                </div>
+
+               
+                <div style={{ display: 'none' }} ref={duplicateRef}>
+                    <InvoiceComponent copyType="Duplicate" />
+                </div>
+
+               
+                <div style={{ display: 'none' }} ref={customerRef}>
+                    <InvoiceComponent copyType="Customer" />
+                </div>  */}
+
+                {/* {chunkedTableData.map((chunk, index) => (
+                    <div
+                        key={index}
+                        ref={(el) => (componentRef.current[index] = el)}
+                    >
+                        <InvoiceComponent
+                            data={invoiceData}
+                            title={`ARANYA HEALTH CARE | ${copyTypes[index]}`}
+                            tableData={chunk}
+                        />
+                    </div>
+                ))} */}
             </>
-        </Box>
+        </Box >
     );
 };
+
+function chunkArray(arr, chunkSize) {
+    const chunkedArray = [];
+    for (let i = 0; i < arr.length; i += chunkSize) {
+        chunkedArray.push(arr.slice(i, i + chunkSize));
+    }
+    return chunkedArray;
+}
+
+// const calculatePageData = (tableData) => {
+//     const rowsPerPage = 10;
+//     const numPages = Math.ceil(tableData.length / rowsPerPage);
+//     const pageData = [];
+
+//     for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+//       const startIndex = pageIndex * rowsPerPage;
+//       const endIndex = startIndex + rowsPerPage;
+//       pageData.push(tableData.slice(startIndex, endIndex));
+//     }
+
+//     return pageData;
+//   };
+
+
+// Helper function to calculate page data
+// const calculatePageData = (tableData, rowsPerPage) => {
+//     const pageCount = Math.ceil(tableData.length / rowsPerPage);
+//     const pageData = [];
+
+//     for (let i = 0; i < pageCount; i++) {
+//         const startIndex = i * rowsPerPage;
+//         const endIndex = Math.min((i + 1) * rowsPerPage, tableData.length);
+//         const pageRows = tableData.slice(startIndex, endIndex);
+//         pageData.push(pageRows);
+//     }
+
+//     return pageData;
+// };
+
+// const calculatePageData = (tableData, rowsPerPage) => {
+//     const pageCount = Math.ceil(tableData.length / rowsPerPage);
+//     const pageData = [];
+
+//     for (let i = 0; i < pageCount; i++) {
+//         const startIndex = i * rowsPerPage;
+//         const endIndex = Math.min((i + 1) * rowsPerPage, tableData.length);
+//         const pageRows = tableData.slice(startIndex, endIndex);
+//         pageData.push(pageRows);
+//     }
+
+//     return pageData;
+// };
+
+// const calculatePageData = (tableData, rowsPerPage) => {
+//     const pageCount = Math.ceil(tableData.length / rowsPerPage);
+//     const pageData = [];
+
+//     for (let i = 0; i < pageCount; i++) {
+//         const startIndex = i * rowsPerPage;
+//         const endIndex = Math.min((i + 1) * rowsPerPage, tableData.length);
+//         const pageRows = tableData.slice(startIndex, endIndex);
+//         pageData.push(pageRows);
+//     }
+
+//     return pageData;
+// };
+
+const calculatePageData = (tableData, rowsPerPage) => {
+    const pageCount = Math.ceil(tableData.length / rowsPerPage);
+    const pageData = [];
+
+    for (let i = 0; i < pageCount; i++) {
+        const startIndex = i * rowsPerPage;
+        const endIndex = Math.min((i + 1) * rowsPerPage, tableData.length);
+        const pageRows = tableData.slice(startIndex, endIndex);
+        pageData.push(pageRows);
+    }
+
+    return pageData;
+};
+const InvoiceComponent = ({ data, title, pageRows, pageData }) => {
+
+    // const ITEMS_PER_PAGE = 10;
+    // const [currentPage, setCurrentPage] = useState(1);
+
+    // const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    // const endIndex = startIndex + ITEMS_PER_PAGE;
+
+    // const slicedTableData = tableData.slice(startIndex, endIndex);
+
+    // Initialize tax variables
+    let cgstTotal = 0;
+    let gstTotal = 0;
+    let igstTotal = 0;
+
+    // Iterate through tableData to calculate tax values
+    data.invoiceTableData?.forEach((item) => {
+        item?.subtax?.forEach((data) => {
+            const quantity = Number(item.quantity); // Quantity of the current product
+            const taxRateCGST = Number(data.taxratecgst || 0);
+            const taxRateSGST = Number(data.taxrategst || 0);
+            const taxRateIGST = Number(data.taxrateigst || 0);
+
+            cgstTotal += (quantity * taxRateCGST);
+            gstTotal += (quantity * taxRateSGST);
+            igstTotal += (quantity * taxRateIGST);
+        });
+    });
+
+    //subtotal
+    function totalNetCostCalcSubInvoice() {
+        let totalvalue = 0;
+        if (data.invoiceTableData?.length > 0) {
+            data.invoiceTableData?.forEach((value) => {
+                totalvalue += Number(value.subtotal)
+            })
+            return totalvalue.toFixed(0);
+        }
+    }
+
+    // total quantity calculation
+    const totalQuantityCalcInvoice = () => {
+        let totalquanvalue = 0;
+        if (data.invoiceTableData?.length > 0) {
+            data.invoiceTableData?.forEach((value) => {
+                totalquanvalue += Number(value.quantity)
+            })
+            return totalquanvalue.toFixed(0);
+        }
+    }
+
+    //total taxvalue calc for invoice
+    const totalTaxValCalInvoice = () => {
+        let totaltaxvalue = 0;
+        if (data.invoiceTableData?.length > 0) {
+            data.invoiceTableData?.forEach((value) => {
+                totaltaxvalue += Math.abs((((value.taxtareval == "" || value.taxtareval == undefined ? 0 : value.taxtareval) / 100) * (value.mrp == "" || value.mrp == undefined ? 0 : value.mrp))) * Number(value.quantity)
+            })
+            return totaltaxvalue;
+        }
+    }
+
+    // convert 
+    const units = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const teens = ['', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', 'Ten', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const thousands = ['', 'Thousand', 'Million', 'Billion'];
+
+    function numberToWords(num) {
+
+        if (num === 0) {
+            return 'Zero Rupees';
+        }
+
+        const words = [];
+
+        for (let i = 0; i < thousands.length; i++) {
+            if (num % 1000 !== 0) {
+                const wordSegment = numberToWordsHundred(num % 1000);
+                words.push(wordSegment + ' ' + thousands[i]);
+            }
+            num = Math.floor(num / 1000);
+            if (num === 0) {
+                break;
+            }
+        }
+
+        return words.reverse().join(', ');
+    }
+
+    function numberToWordsHundred(num) {
+        const hundred = Math.floor(num / 100);
+        const remainder = num % 100;
+
+        const words = [];
+
+        if (hundred !== 0) {
+            words.push(units[hundred] + ' Hundred');
+        }
+
+        if (remainder !== 0) {
+            if (remainder < 10) {
+                words.push(units[remainder]);
+            } else if (remainder >= 11 && remainder <= 19) {
+                words.push(teens[remainder - 10]);
+            } else {
+                const tensDigit = Math.floor(remainder / 10);
+                const unitsDigit = remainder % 10;
+                words.push(tens[tensDigit] + (unitsDigit !== 0 ? ' ' + units[unitsDigit] : ''));
+            }
+        }
+
+        return words.join(' ');
+    }
+
+    const totalNetCost = Number(totalNetCostCalcSubInvoice()).toFixed(2);
+    const totalNetCostInWords = numberToWords(Number(totalNetCost)) + ' Rupees Only';
+
+    return (
+
+        <Box >
+            {/* {pageData?.map((page, pageIndex) => (
+                <div key={pageIndex} className="page"> */}
+            <Box>
+                <Grid container >
+                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+                        {data.invoiceLogo ? (
+                            <>
+                                <img src={data.invoiceLogo} alt="Aranya Herbals" width="100px" height="50px" /><br />
+                            </>
+                        ) : (
+                            <></>
+                        )}
+                    </Grid>
+                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
+                        <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}>{`ARANYA HEALTH CARE | ${title}`}</Typography>
+                        <Grid container>
+                            <Grid item lg={6} md={6} sm={6} xs={6}>
+                                <Typography sx={{ fontSize: '10px', fontWeight: "1000", }}><b>Invoice Number:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', fontWeight: "1000", }}><b>Invoice Date:</b></Typography>
+                            </Grid>
+                            <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceNumber}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDate}</Typography>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                </Grid><br />
+                <Grid container >
+                    <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+                        <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>DELIVERY DETAILS:</b><br /></Typography>
+                        <Grid container>
+                            <Grid item md={4} sm={4} xs={4}>
+                                <Typography sx={{ fontSize: '10px', }}><b>Name:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>Address:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>GSTN:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>Contact person:</b></Typography>
+                            </Grid>
+                            <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDelLocation}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDelAddress}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDelGstn}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDelConPerName + '/' + data.invoiceDelConPerNumber}</Typography>
+                            </Grid>
+                        </Grid><br />
+                        <Grid container>
+                            <Grid item md={4} sm={4} xs={4}>
+                                <Typography sx={{ fontSize: '10px', }}><b>Order Number:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>Order Date:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>Salesman:</b></Typography>
+                            </Grid>
+                            <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceNumber}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDate}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceSalesman + '/' + data.invoiceSalesmanNumber}</Typography>
+                            </Grid>
+                        </Grid><br />
+                    </Grid>
+                    <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
+                        <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>COMPANY DETAILS:</b> <br /></Typography>
+                        <Grid container>
+                            <Grid item md={4} sm={4} xs={4}>
+                                <Typography sx={{ fontSize: '10px', }}><b>Name:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>Address:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>GSTN:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>Contact person:</b></Typography>
+                            </Grid>
+                            <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceCompany}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceCompAddress}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceCompGstno}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceCompConPerName + '/' + data.invoiceCompConPerNumber}</Typography>
+                            </Grid>
+                        </Grid><br />
+                        <Typography sx={{ fontSize: '12px', fontWeight: "1000", }}><b>TRANSPORT DETAILS:</b> <br /></Typography>
+                        <Grid container>
+                            <Grid item md={4} sm={4} xs={4}>
+                                <Typography sx={{ fontSize: '10px', }}><b>Driver Name:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>No:</b></Typography>
+                                <Typography sx={{ fontSize: '10px', }}><b>Contact No:</b></Typography>
+                            </Grid>
+                            <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDriverName}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDriverNumber}</Typography>
+                                <Typography sx={{ fontSize: '10px', }}>{data.invoiceDriverPhoneNumber}</Typography>
+                            </Grid>
+                        </Grid><br />
+                    </Grid>
+                </Grid>
+
+                <Box style={{ borderWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black' }}></Box>
+                <TableContainer component={Paper} sx={{ boxShadow: 'none', border: 'none' }}>
+                    <Table aria-label="simple table" >
+                        <TableHead >
+                            <TableRow sx={{ borderBottom: 'none' }}>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '300px' }}>ITEM</TableCell>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '100px' }}>HSN</TableCell>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '100px' }}>UNIT PRICE</TableCell>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '100px' }}>QUANTITY</TableCell>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '100px' }}>NET PRICE</TableCell>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '100px' }}>GST</TableCell>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '100px' }}>MRP</TableCell>
+                                <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", padding: '5px', borderTop: '0px', borderLeft: '0px', borderRight: '0px', borderBottomWidth: 0.3, borderStyle: 'dashed', borderRadius: 1, borderColor: 'black', width: '150px' }}>TOTAL</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody >
+                            {/* {data.invoiceTableData.length > 0 &&
+                           data.invoiceTableData.map((data, i) => { */}
+                            {/* {tableData.length > 0 &&
+                            tableData.map((data, i) => {
+                                return (
+                                    <> */}
+                            {/* {slicedTableData.map((data, i) => {
+                                        return ( */}
+                            {pageRows.map((data, i) => (
+                                <TableRow sx={{ paddingTop: '5px' }} key={i}>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }} key={i}>{data?.productname}</TableCell>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }}>{data?.hsn}</TableCell>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }}>{data?.sellingvalue}</TableCell>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }}>{data?.quantity}</TableCell>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }}>{data?.netrate}</TableCell>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }}>{data?.taxtareval + "%"}</TableCell>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }}>{data?.mrp}</TableCell>
+                                    <TableCell align="left" sx={{ fontSize: '10px', fontWeight: "1000", paddingLeft: '5px', paddingRight: "5px", paddingTop: '0px', paddingBottom: '0px', borderBottom: "none", }}>{Number(data?.subtotal).toFixed(2)}</TableCell>
+                                </TableRow>
+                            ))}
+                            {/* //     );
+                                    // })} */}
+                            {/* </>
+                                );
+                            })} */}
+                        </TableBody>
+                        {/* <TableFooter >
+                                    <TableRow >
+                                        <TableCell align="center" colSpan={7} sx={{ borderBottom: 'none !important' }}><Typography sx={{ fontSize: '15px', fontWeight: 'bold' }}><b>Net Total</b></Typography></TableCell>
+                                        <TableCell align="left" sx={{ borderBottom: 'none !important' }}><Typography sx={{ fontSize: '15px', fontWeight: 'bold' }}><b>{Number(totalNetCostCalcSubInvoice()).toFixed(2)}</b></Typography></TableCell>
+                                    </TableRow>
+                                </TableFooter> */}
+                    </Table>
+                </TableContainer>
+                <Box sx={{ position: 'fixed', bottom: 0, }}>
+                    <Grid container spacing={1}>
+                        <Grid item md={7.5} sm={7.5} xs={7.5}></Grid>
+                        <Grid item md={2} sm={2} xs={2}><Typography sx={{ fontSize: '15px' }}>Net Total</Typography></Grid>
+                        <Grid item md={2.5} sm={2.5} xs={2.5}><Typography sx={{ fontSize: '15px', textAlign: 'center' }}>{Number(totalNetCostCalcSubInvoice()).toFixed(2)}</Typography></Grid>
+                        {/* <Grid item md={0.5} sm={0.5} xs={0.5}></Grid> */}
+                    </Grid>
+                    <Grid container >
+                        <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left' }}>
+                            <Table >
+                                <TableHead>
+                                    <TableRow >
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Cgst</b></TableCell>
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Sgst</b></TableCell>
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Igst</b></TableCell>
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', width: '10px' }}><b>Taxable Value</b></TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    <TableRow>
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{cgstTotal + "%"}</b></TableCell>
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{gstTotal + "%"}</b></TableCell>
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{igstTotal + "%"}</b></TableCell>
+                                        <TableCell align="center" sx={{ border: '1px solid black', fontSize: '10px', fontWeight: '1000', }}><b>{Number(totalTaxValCalInvoice()).toFixed(2)}</b></TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </Grid>
+                        <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'center', borderRight: '1px solid black', borderTop: '1px solid black', borderBottom: '1px solid black', }}>
+                            <br />
+                            <Grid container>
+                                <Grid item md={7.5} sm={7.5} xs={7.5} sx={{ textAlign: "right" }}>
+                                    <Typography sx={{ fontSize: '10px', }}><b>Net Amount</b></Typography>
+                                    <Typography sx={{ fontSize: '10px', }}><b>No. Of Items</b></Typography>
+                                    <Typography sx={{ fontSize: '10px', }}><b>Total Items</b></Typography>
+                                </Grid>
+                                <Grid item md={0.5} sm={0.5} xs={0.5} sx={{ textAlign: "center", borderRight: '1px solid black' }}></Grid>
+                                <Grid item md={4} sm={4} xs={4} sx={{ textAlign: "center" }}>
+                                    <Typography sx={{ fontSize: '10px', }}><b>{Number(totalNetCostCalcSubInvoice()).toFixed(2)}</b></Typography>
+                                    <Typography sx={{ fontSize: '10px', }}><b>{data.invoiceTableData.length}</b></Typography>
+                                    <Typography sx={{ fontSize: '10px', }}><b>{totalQuantityCalcInvoice()}</b></Typography>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Grid>
+                    <Box sx={{ borderLeft: '1px solid black', borderRight: '1px solid black', padding: '10px !important' }}>
+                        <Typography align="left" sx={{ fontSize: '10px' }}>Amount Chargeable (in words)</Typography>
+                        <Typography align="left" sx={{ fontSize: '14px', fontWeight: 'bold' }}>{totalNetCostInWords}</Typography>
+                    </Box>
+                    <Box sx={{ border: '1px solid black' }}>
+                        <Grid container  >
+                            <Grid item md={5.5} sm={5.5} xs={5.5} >
+                                <Typography sx={{ textDecoration: "underline", paddingLeft: '10px', paddingLeft: '10px', fontSize: '10px', fontWeight: '1000' }}><b>Declaration</b></Typography>
+                                <Typography sx={{ textAlign: 'left', paddingLeft: '10px', fontSize: '10px' }}>Any loss or breakage in goods supplied against this invoice should be intimated whithin 10 days of receipt of goods with documentary evidence.</Typography>
+                            </Grid>
+                            <Grid item md={0.5} sm={0.5} xs={0.5} sx={{ textAlign: 'center', borderRight: '1px solid black' }}></Grid>
+                            <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
+                                <Grid container >
+                                    <Grid item md={12} sm={12} xs={12} sx={{ paddingLeft: '10px' }}>
+                                        <Typography sx={{ fontSize: '10px' }}>Company's Bank Details</Typography>
+                                        <Grid container sx={{ '& .MuiGrid-item': { padding: '0px' } }}>
+                                            <Grid item md={5.5} sm={5.5} xs={5.5}>
+                                                <Typography sx={{ fontSize: '10px' }}>Bank Name</Typography>
+                                                <Typography sx={{ fontSize: '10px' }}>Acc No</Typography>
+                                                <Typography sx={{ fontSize: '10px' }}>IFSC Code</Typography>
+                                            </Grid>
+                                            <Grid item md={0.5} sm={0.5} xs={0.5}>
+                                                <Typography sx={{ fontSize: '10px' }}>:</Typography>
+                                                <Typography sx={{ fontSize: '10px' }}>:</Typography>
+                                                <Typography sx={{ fontSize: '10px' }}>:</Typography>
+                                            </Grid>
+                                            <Grid item md={6} sm={6} xs={6}>
+                                                <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{data.invoiceBankName}</b></Typography>
+                                                <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{data.invoiceAccNumber}</b></Typography>
+                                                <Typography sx={{ fontSize: '10px', fontWeight: '1000' }}><b>{data.invoiceIFSCCode}</b></Typography>
+                                            </Grid>
+                                        </Grid><br />
+                                    </Grid>
+                                    <Grid item md={12} sm={12} xs={12} sx={{ textAlign: 'right', borderTop: '1px solid black', paddingRight: '10px' }}>
+                                        <br />
+                                        {data.invoiceSignature ? (
+                                            <>
+                                                <Typography align='right'><img src={data.invoiceSignature} width="80px" height="45px" /></Typography>
+                                            </>
+                                        ) : (
+                                            <></>
+                                        )}
+                                        <Typography align='right'><b>Authorized Signatory</b></Typography>
+                                    </Grid>
+                                </Grid>
+                            </Grid>
+                        </Grid>
+                    </Box>
+
+                </Box>
+            </Box>
+            {/* </div>
+            ))} */}
+        </Box>
+    );
+}
+
 export default Poscreate;

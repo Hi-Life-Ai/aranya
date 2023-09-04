@@ -43,16 +43,16 @@ function Expensecategoryadd() {
             backPage("/expense/expensecategory/list")
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 setShowAlert(messages);
                 handleClickOpen();
-            }else{
+            } else {
                 setShowAlert("Something went wrong!");
                 handleClickOpen();
             }
         }
     };
-    
+
     const fetchDataName = async () => {
         try {
             let res = await axios.get(SERVICE.EXPENSE_CATEGORY, {
@@ -61,23 +61,23 @@ function Expensecategoryadd() {
                 },
             });
             let result = res.data.excategorys.filter((data, index) => {
-                    return data.assignbusinessid == setngs.businessid
-                
+                return data.assignbusinessid == setngs.businessid
+
             })
-            let excode = result.map((data,index)=>{
+            let excode = result.map((data, index) => {
                 return data.categorycode
-              })
-          
-              let exname = result.map((data,index)=>{
+            })
+
+            let exname = result.map((data, index) => {
                 return data.categoryname
-              })
-              setIsExcatCode(excode);
-              setIsExcatName(exname);
+            })
+            setIsExcatCode(excode);
+            setIsExcatName(exname);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }

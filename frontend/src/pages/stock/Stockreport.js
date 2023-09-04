@@ -42,12 +42,8 @@ function Stockreportall() {
             setProducts(res.data.products);
         }
         catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     };
     useEffect(() => {
@@ -63,8 +59,7 @@ function Stockreportall() {
             "Item Code": t.sku,
             "Current Stock": t.currentstock,
             "MRP": t.mrp,
-            "HSN": t.hsn,
-            "GST": t.applicabletax,
+            "Tax": t.hsncode,
         }));
         setExceldata(data);
     }
@@ -257,8 +252,7 @@ function Stockreportall() {
                                     <StyledTableCell onClick={() => handleSorting('sku')}><Box sx={userStyle.tableheadstyle}><Box>Item Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sku')}</Box></Box></StyledTableCell>
                                     <StyledTableCell onClick={() => handleSorting('currentstock')}><Box sx={userStyle.tableheadstyle}><Box>Current Stock</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('currentstock')}</Box></Box></StyledTableCell>
                                     <StyledTableCell onClick={() => handleSorting('mrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrp')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>HSN</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('applicabletax')}><Box sx={userStyle.tableheadstyle}><Box>GST</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('applicabletax')}</Box></Box></StyledTableCell>
+                                    <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
                                 </StyledTableRow>
                             </TableHead>
                             <TableBody>
@@ -269,8 +263,7 @@ function Stockreportall() {
                                             <StyledTableCell>{row.sku}</StyledTableCell>
                                             <StyledTableCell>{row.currentstock}</StyledTableCell>
                                             <StyledTableCell>{row.mrp}</StyledTableCell>
-                                            <StyledTableCell>{row.hsn}</StyledTableCell>
-                                                <StyledTableCell>{row.applicabletax}</StyledTableCell>
+                                            <StyledTableCell>{row.hsn == "" ? row.applicabletax : row.hsn}</StyledTableCell>
                                         </StyledTableRow>
                                     )))
                                     : <StyledTableRow><StyledTableCell colSpan={13} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
@@ -316,8 +309,7 @@ function Stockreportall() {
                                         <StyledTableCell>Item Name</StyledTableCell>
                                         <StyledTableCell>Current Stock</StyledTableCell>
                                         <StyledTableCell>MRP</StyledTableCell>
-                                        <StyledTableCell>HSN</StyledTableCell>
-                                        <StyledTableCell>GST</StyledTableCell>
+                                        <StyledTableCell>Tax</StyledTableCell>
                                     </StyledTableRow>
                                 </TableHead>
                                 <TableBody>
@@ -328,8 +320,7 @@ function Stockreportall() {
                                                 <StyledTableCell>{row.sku}</StyledTableCell>
                                                 <StyledTableCell>{row.currentstock}</StyledTableCell>
                                                 <StyledTableCell>{row.mrp}</StyledTableCell>
-                                                <StyledTableCell>{row.hsn}</StyledTableCell>
-                                                <StyledTableCell>{row.applicabletax}</StyledTableCell>
+                                                <StyledTableCell>{row.hsn == "" ? row.applicabletax : row.hsn}</StyledTableCell>
                                             </StyledTableRow>
                                         ))
                                     }

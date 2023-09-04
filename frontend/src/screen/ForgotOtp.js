@@ -29,12 +29,9 @@ const ForgotOtp = () => {
         //   setSignin(response);
         }
         catch (err) {
-          const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+          console.log(err,'error')
+          const messages = err.response.data.message;
+          toast.error(messages);
         }
       }
     

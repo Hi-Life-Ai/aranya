@@ -12,6 +12,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import Webcamimage from '../Webcamproduct';
 import { toast } from 'react-toastify';
 import { SERVICE } from '../../../services/Baseservice';
+import { UserRoleAccessContext } from '../../../context/Appcontext';
 import { AuthContext } from '../../../context/Appcontext';
 import Headtitle from '../../../components/header/Headtitle';
 import CreatecateMod from './CreateCatemod';
@@ -28,6 +29,9 @@ function Productcreatelist() {
     const [fetchCate, setFetchCate] = useState();
     const [isProducts, setIsProducts] = useState();
     const [taxrates, setTaxrates] = useState();
+
+    const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
+
 
     // autoid
     let newval = setngs ? setngs.skuprefix == undefined ? "SK0000" : setngs.skuprefix + "0001" : "SK0000";
@@ -85,16 +89,14 @@ function Productcreatelist() {
     const fetchUnit = async () => {
 
         try {
-            let response = await axios.get(SERVICE.UNIT, {
+            let response = await axios.post(SERVICE.UNIT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
             });
-            let result = response.data.units.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
             setUnits(
-                result?.map((d) => ({
+                response?.data?.units?.map((d) => ({
                     ...d,
                     label: d.unit,
                     value: d.unit,
@@ -102,11 +104,11 @@ function Productcreatelist() {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -144,17 +146,15 @@ function Productcreatelist() {
     // Categorys
     const fetchCategory = async () => {
         try {
-            let response = await axios.get(SERVICE.CATEGORIES, {
+            let response = await axios.post(SERVICE.CATEGORIES, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
             });
-            let result = response.data.categories.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
 
             setCategories(
-                result?.map((d) => ({
+                response?.data?.categories?.map((d) => ({
                     ...d,
                     label: d.categoryname,
                     value: d.categoryname,
@@ -162,9 +162,9 @@ function Productcreatelist() {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -177,6 +177,7 @@ function Productcreatelist() {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+
             });
             setSubcategories(
                 productlist?.data?.scategory?.subcategories?.map((d) => ({
@@ -187,9 +188,9 @@ function Productcreatelist() {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -198,16 +199,20 @@ function Productcreatelist() {
     // Taxrates
     const fetchRates = async () => {
         try {
-            let response = await axios.get(SERVICE.TAXRATE, {
+            let response = await axios.post(SERVICE.TAXRATE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                role: String(isUserRoleAccess.role),
+
             });
-            let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
-            })
+            // let taxRateData = response.data.taxrates.filter((data) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
             setTaxrates(
-                taxRateData?.map((d) => ({
+                response?.data?.taxrates?.map((d) => ({
                     ...d,
                     label: d.taxname,
                     value: d.taxname,
@@ -215,9 +220,9 @@ function Productcreatelist() {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -294,13 +299,13 @@ function Productcreatelist() {
             backLPage('/product/product/list');
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            setShowAlert(messages);
-            handleClickOpenalert();
-        }else{
-            setShowAlert("Something went wrong!");
-            handleClickOpenalert();
-        }
+            if (messages) {
+                setShowAlert(messages);
+                handleClickOpenalert();
+            } else {
+                setShowAlert("Something went wrong!");
+                handleClickOpenalert();
+            }
         }
     };
 
@@ -342,10 +347,10 @@ function Productcreatelist() {
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 setShowAlert(messages);
                 handleClickOpenalert();
-            }else{
+            } else {
                 setShowAlert("Something went wrong!");
                 handleClickOpenalert();
             }
@@ -354,29 +359,27 @@ function Productcreatelist() {
 
     const fetchProducts = async () => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                role: String(isUserRoleAccess.role),
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
             let resultloc = response.data.products.map((data, index) => {
-                if (data.assignbusinessid == setngs.businessid) {
-                    return data.sku
-                }
+                return data.sku
             })
             setLocationData(resultloc);
-            setIsProducts(result);
-            return result;
+            setIsProducts(response?.data?.products);
+            return response?.data?.products;
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 

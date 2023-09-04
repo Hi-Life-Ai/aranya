@@ -23,10 +23,13 @@ function Usereditlist() {
     const [file, setFile] = useState();
     const { auth, setngs } = useContext(AuthContext);
     const [fetchsavedepartment, setFetchsavedepartment] = useState("");
+    const [selectedValue, setSelectedValue] = useState([]);
     const [rolevalue, setRolevalue] = useState();
     const [departmentnames, setDepartmentnames] = useState();
+    const [isCounter, setIsCounter] = useState();
     const [isPasswordchange, setIsPasswordchange] = useState(false);
-   
+    const [isLocations, setIsLocations] = useState([]);
+
     const [datevalue, setDateValue] = useState(dayjs());
 
     const handleChange = (newValue) => {
@@ -35,7 +38,7 @@ function Usereditlist() {
 
     const [useradd, setUseradd] = useState({
         entrynumber: "", date: "", department: "", role: "", counter: "", userid: "", dateofjoin: "",
-        staffname: "", fathername: "", gender: "", bloodgroup: "", dateofbirth: "", nationality: "", address: "",
+        staffname: "", fathername: "", gender: "", bloodgroup: "", dateofbirth: "", religion: "", nationality: "", address: "",
         areacity: "", pincode: "", phonenum: "", otherphonenum: "", useractive: "", email: "", password: "", maritalstatus: "",
         familydetails: "", profileimage: "", educationdetails: "", experiencedetails: "", jobdetails: "", languageknown: "",
     });
@@ -46,29 +49,50 @@ function Usereditlist() {
     const handleClickOpen = () => { setIsErrorOpen(true); };
     const handleClose = () => { setIsErrorOpen(false); };
 
+    //user auto id from settings
+    const fetchSettings = () => {
+
+        setIsCounter(setngs.counter?.map((d) => ({
+            ...d,
+            label: d.countername,
+            value: d.countername,
+        })))
+    }
+
     // For Role as designation
     const fetchRole = async () => {
         try {
-            let req = await axios.get(`${SERVICE.ROLE}`, {
+            // let req = await axios.get(`${SERVICE.ROLE}`, {
+            //     headers: {
+            //         'Authorization': `Bearer ${auth.APIToken}`
+            //     }
+            // });
+            // let result = req.data.roles.filter((data, index)=>{
+            //     return data.rolename != 'Admin' && data.assignbusinessid == setngs.businessid
+            // })
+            // setRolevalue(result?.map((d) => ({
+            //     ...d,
+            //     label: d.rolename,
+            //     value: d.rolename,
+            // })))
+            let req = await axios.post(SERVICE.ROLE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid)
             });
-            let result = req.data.roles.filter((data, index)=>{
-                return data.rolename != 'Admin' && data.assignbusinessid == setngs.businessid
-            })
-            setRolevalue(result?.map((d) => ({
-                ...d,
-                label: d.rolename,
-                value: d.rolename,
-            })))
+
+            const roledrop = [{ label: 'Please Select Role', value: 'Please Select Role' }, ...req?.data?.roles.map((d) => (
+                {
+                    ...d,
+                    label: d.rolename,
+                    value: d.rolename,
+                }
+            ))];
+            setRolevalue(roledrop);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
@@ -80,7 +104,7 @@ function Usereditlist() {
                     'Authorization': `Bearer ${auth.APIToken}`
                 }
             });
-            let result = req.data.departments.filter((data, index)=>{
+            let result = req.data.departments.filter((data, index) => {
                 return data.assignbusinessid == setngs.businessid
             })
             setDepartmentnames(
@@ -90,16 +114,13 @@ function Usereditlist() {
                     value: d.departmentname,
                 })))
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
     useEffect(() => {
+        fetchSettings();
         fetchRole();
     }, [])
 
@@ -154,14 +175,11 @@ function Usereditlist() {
                         'Authorization': `Bearer ${auth.APIToken}`
                     }
                 })
-                setUseradd(response.data.suser);
+            setSelectedValue(response.data.suser.businesslocation)
+            setUseradd(response.data.suser);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
@@ -180,7 +198,7 @@ function Usereditlist() {
                 },
                 entrynumber: Number(useradd.entrynumber),
                 date: String(useradd.date),
-                businesslocation: [...useradd.businesslocation],
+                businesslocation: [...selectedValue],
                 department: String(useradd.department),
                 role: String(useradd.role),
                 counter: String(useradd.counter),
@@ -191,6 +209,7 @@ function Usereditlist() {
                 gender: String(useradd.gender),
                 bloodgroup: String(useradd.bloodgroup),
                 dateofbirth: String(useradd.dateofbirth),
+                religion: String(useradd.religion),
                 nationality: String(useradd.nationality),
                 address: String(useradd.address),
                 areacity: String(useradd.areacity),
@@ -212,7 +231,7 @@ function Usereditlist() {
                 remarks: String(useradd.remarks),
                 country: String(useradd.nationality),
                 termscondition: Boolean(false),
-                assignbusinessid:String(useradd.assignbusinessid),
+                assignbusinessid: String(useradd.assignbusinessid),
                 state: String(""),
                 companyname: String(""),
             });
@@ -222,12 +241,8 @@ function Usereditlist() {
             backPage('/user/user/list');
         }
         catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     }
 
@@ -240,7 +255,7 @@ function Usereditlist() {
                 },
                 entrynumber: Number(useradd.entrynumber),
                 date: String(useradd.date),
-                businesslocation: [...useradd.businesslocation],
+                businesslocation: [...selectedValue],
                 department: String(useradd.department),
                 role: String(useradd.role),
                 counter: String(useradd.counter),
@@ -251,6 +266,7 @@ function Usereditlist() {
                 gender: String(useradd.gender),
                 bloodgroup: String(useradd.bloodgroup),
                 dateofbirth: String(useradd.dateofbirth),
+                religion: String(useradd.religion),
                 nationality: String(useradd.nationality),
                 address: String(useradd.address),
                 areacity: String(useradd.areacity),
@@ -271,7 +287,7 @@ function Usereditlist() {
                 remarks: String(useradd.remarks),
                 country: String(useradd.nationality),
                 termscondition: Boolean(false),
-                assignbusinessid:String(useradd.assignbusinessid),
+                assignbusinessid: String(useradd.assignbusinessid),
                 state: String(""),
                 companyname: String(""),
             });
@@ -281,12 +297,8 @@ function Usereditlist() {
             backPage('/user/user/list');
         }
         catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
@@ -326,7 +338,7 @@ function Usereditlist() {
             setShowAlert("Please enter father name!")
             handleClickOpen();
         }
-        else if (useradd.role == "") {
+        if (useradd.role == "") {
             setShowAlert("Please enter role!")
             handleClickOpen();
         }
@@ -337,17 +349,10 @@ function Usereditlist() {
         else if (useradd.email == "") {
             setShowAlert("Please enter email!")
             handleClickOpen();
-        }else if(!useradd.email.includes('@' || '.')){
-            setShowAlert('Please enter correct email!')
-            handleClickOpen();
         }
-        else if (useradd.password == "") {
-            setShowAlert("Please enter password!")
-            handleClickOpen();
-        }
-        else if(isPasswordchange){
+        else if (isPasswordchange) {
             updateUser();
-        }else{
+        } else {
             updateUserPW();
         }
     }
@@ -395,6 +400,25 @@ function Usereditlist() {
         }
     }
 
+    const handleValidationReligion = (e) => {
+        let val = e.target.value;
+        let numbers = new RegExp('[0-9]')
+        if (e.target.value.match(numbers)) {
+            setShowAlert("Please Enter Letter only! (a-z)")
+            handleClickOpen();
+            let num = val.length;
+            let value = val.slice(0, num - 1)
+            setUseradd({ ...useradd, religion: value })
+        }
+        else if (regex.test(e.target.value)) {
+            setShowAlert("Please enter letter only! (a-z)")
+            handleClickOpen();
+            let num = val.length;
+            let value = val.slice(0, num - 1)
+            setUseradd({ ...useradd, religion: value })
+        }
+    }
+
     const handleValidationNationality = (e) => {
         let val = e.target.value;
         let numbers = new RegExp('[0-9]')
@@ -411,26 +435,6 @@ function Usereditlist() {
             let num = val.length;
             let value = val.slice(0, num - 1)
             setUseradd({ ...useradd, nationality: value })
-        }
-    }
-    
-    const handleValidationSalescommision = (e) => {
-        let val = e.target.value;
-        let alphabets = new RegExp('[a-zA-Z]')
-        var regExSpecialChar = /[ `₹!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
-        if (e.target.value.match(alphabets)) {
-            setShowAlert("Please enter numbers only! (0-9)")
-            handleClickOpen();
-            let num = val.length;
-            let value = val.slice(0, num - 1)
-            setUseradd({ ...useradd, salescommission: value })
-        }
-        else if (regExSpecialChar.test(e.target.value)) {
-            setShowAlert("Please enter numbers only! (0-9)")
-            handleClickOpen();
-            let num = val.length;
-            let value = val.slice(0, num - 1)
-            setUseradd({ ...useradd, salescommission: value })
         }
     }
 
@@ -510,29 +514,29 @@ function Usereditlist() {
                         <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Business Location</InputLabel>
                             <FormControl size="small" fullWidth>
-                            <OutlinedInput
+                                <OutlinedInput
                                     sx={userStyle.input}
-                                    value={useradd.businesslocation + ", "}
+                                    value={isLocations?.map((data, i) => useradd.businesslocation.map((value, liindec) => data.locationid.includes(value) ? data.name + " " : ""))}
                                     type="text"
                                 />
                             </FormControl>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
                             <InputLabel >Department</InputLabel>
-                            <Grid sx={{display:'flex'}}>
-                            <FormControl size="small" fullWidth>
-                                <Selects
-                                    options={departmentnames}
-                                    value={{ value: useradd.department, label: useradd.department }}
-                                    styles={colourStyles}
-                                    onChange={(e) => { setUseradd({ ...useradd, department: e.departmentname }) }}
-                                >
-                                </Selects>
-                            </FormControl>
-                            <Grid sx={userStyle.spanIcons2}>
-                                <Createdepartmentmod  setFetchsavedepartment={setFetchsavedepartment}/>
-                            </Grid>
-                            <Grid sx={{'& .MuiIconButton-root': {marginTop: '7px'}}}>
+                            <Grid sx={{ display: 'flex' }}>
+                                <FormControl size="small" fullWidth>
+                                    <Selects
+                                        options={departmentnames}
+                                        value={{ value: useradd.department, label: useradd.department }}
+                                        styles={colourStyles}
+                                        onChange={(e) => { setUseradd({ ...useradd, department: e.departmentname }) }}
+                                    >
+                                    </Selects>
+                                </FormControl>
+                                <Grid sx={userStyle.spanIcons2}>
+                                    <Createdepartmentmod setFetchsavedepartment={setFetchsavedepartment} />
+                                </Grid>
+                                <Grid sx={{ '& .MuiIconButton-root': { marginTop: '7px' } }}>
                                     <Tooltip title="You can add departments through the plus icon" placement="top" arrow>
                                         <IconButton size="small">
                                             <FcInfo />
@@ -553,29 +557,16 @@ function Usereditlist() {
                                 </Selects>
                             </FormControl>
                         </Grid>
-                        { useradd.role == "Salesman" ? 
-                        <>
-                        <Grid item xs={12} sm={6} md={4} lg={4}>
-                            <InputLabel >Sales Commission (%)</InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    value={useradd.salescommission}
-                                    onChange={(e) => { setUseradd({ ...useradd, salescommission: e.target.value }); handleValidationSalescommision(e); }}
-                                    type="text"
-                                />
-                            </FormControl>
-                        </Grid>
-                        </> : ""}
-                        <Grid item xs={12} sm={6} md={4} lg={4} sx={{ '& .MuiFormControlLabel-root': { marginTop: '20px !important' }, '& .MuiIconButton-root': {marginTop: '20px'} }}>
+                        <Grid item xs={12} sm={6} md={4} lg={4} sx={{ '& .MuiFormControlLabel-root': { marginTop: '20px !important' }, '& .MuiIconButton-root': { marginTop: '20px' } }}>
                             <FormGroup>
                                 <span>
-                                <FormControlLabel control={<Checkbox checked={Boolean(useradd.useractive)} onChange={(e) => setUseradd({ ...useradd, useractive: !useradd.useractive })} />} label="User Active" />
+                                    <FormControlLabel control={<Checkbox checked={Boolean(useradd.useractive)} onChange={(e) => setUseradd({ ...useradd, useractive: !useradd.useractive })} />} label="User Active" />
                                     <Tooltip arrow title="Active users only login!">
                                         <IconButton size="small">
                                             <FcInfo />
                                         </IconButton>
                                     </Tooltip>
-                                </span> 
+                                </span>
                             </FormGroup>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4} lg={4}>
@@ -622,6 +613,17 @@ function Usereditlist() {
                                     value={useradd.dateofbirth}
                                     onChange={(e) => { setUseradd({ ...useradd, dateofbirth: e.target.value }) }}
                                     type="date"
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4} lg={4}>
+                            <InputLabel >Religion</InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    sx={userStyle.input}
+                                    value={useradd.religion}
+                                    onChange={(e) => { setUseradd({ ...useradd, religion: e.target.value }); handleValidationReligion(e) }}
+                                    type="text"
                                 />
                             </FormControl>
                         </Grid>
@@ -803,22 +805,17 @@ function Usereditlist() {
                             </FormControl>
                         </Grid>
                         <Grid item lg={4} md={4} sm={6} xs={12}>
-                            <InputLabel sx={{ m: 1 }}>Profile Image</InputLabel>
+                            <InputLabel sx={{ m: 1 }}>Product Image</InputLabel>
                             <Grid sx={{ display: 'flex', justifyContent: 'center' }}>
-                            {useradd.profileimage || file ? (
-                                    <>
-                                    <img src={file ? file : useradd.profileimage} style={{ width: '30%' }} alt="Profile Image" />
-                                    </>
-                                ):(
-                                    <></>
-                                )}
+                                <img src={file ? file : useradd.profileimage} style={{ width: '30%' }} alt="Profile Image" />
                             </Grid>
+
                             <Grid sx={{ display: 'flex', justifyContent: "center" }}>
                                 <Button component="label" sx={userStyle.buttonadd} size={"small"}>
                                     Upload
                                     <input type='file' id="profileimage" name='file' hidden onChange={handleUploadimage} />
                                 </Button>
-                                <Button component="label" sx={userStyle.buttoncancel} size={"small"} onClick={(e) => {setUseradd({...useradd, profileimage: ""});setFile("")}}>
+                                <Button component="label" sx={userStyle.buttoncancel} size={"small"} onClick={(e) => { setUseradd({ ...useradd, profileimage: "" }); setFile("") }}>
                                     Reset
                                 </Button>
                             </Grid> <br />

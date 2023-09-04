@@ -46,9 +46,11 @@ import PosView from '../pages/sell/pos/View';
 import Expenselist from '../pages/expenses/expense/List';
 import Expensecreate from '../pages/expenses/expense/Create';
 import Expenseedit from '../pages/expenses/expense/Edit';
+import Expenseview from '../pages/expenses/expense/View';
 import Expensecategorylist from '../pages/expenses/expensecategory/List';
 import Expensecategoryedit from '../pages/expenses/expensecategory/Edit';
 import ExpenseCategorycreate from '../pages/expenses/expensecategory/Create';
+import Expensecategoryview from '../pages/expenses/expensecategory/View';
 
 // Stock module
 import Expiryreport from '../pages/stock/Expiryreport';
@@ -64,6 +66,7 @@ import Stocktransferview from '../pages/stocktransfer/View';
 import StocktransferandAdjust from '../pages/stockadjust/List';
 import Stockadjustview from '../pages/stockadjust/View';
 
+
 // Report
 import Daywiseprofit from '../pages/report/Daywiseprofit';
 import Monthwiseprofit from '../pages/report/Monthwiseprofit';
@@ -73,11 +76,12 @@ import CategoryProfitWise from '../pages/report/CategoryWiseProfit';
 import SubCategoryProfitWise from '../pages/report/SubCategoryWiseProfit';
 import LocationProfitIndidual from '../pages/report/LocationWiseIndidual';
 import LocationTotal from '../pages/report/LocationWiseTotal';
-import ItemsListSearch  from '../pages/report/ItemsSeacrh';
+import ItemsListSearch from '../pages/report/ItemsSeacrh';
 import ItemWiseProfitReport from '../pages/report/Itemwiseprofitreport';
 import Stocktransferreport from '../pages/report/Stocktransferreport';
 import Stockadjustreport from '../pages/report/Stockadjustreport';
 import Stockrejectedreport from '../pages/report/Stockrejectedreport';
+
 
 // Settings
 import Businesssettings from '../pages/settings/business/List';
@@ -87,6 +91,7 @@ import Businesslocationedit from '../pages/settings/location/Edit';
 import Taxratelist from '../pages/settings/taxrate/List';
 import TaxrateCreate from '../pages/settings/taxrate/Create';
 import Taxrateedit from '../pages/settings/taxrate/Edit';
+// import Hsncreate from '../pages/settings/taxrate/hsn/Create';
 
 function Applicationstack() {
   return (
@@ -142,9 +147,11 @@ function Applicationstack() {
           <Route path="expense/expense/list" element={<Expenselist />} />
           <Route path="expense/expense/create" element={<Expensecreate />} />
           <Route path="expense/espense/edit/:id" element={<Expenseedit />} />
+          <Route path="expense/espense/view/:id" element={<Expenseview />} />
           <Route path="expense/expensecategory/list" element={<Expensecategorylist />} />
           <Route path="expense/expensecategory/create" element={<ExpenseCategorycreate />} />
           <Route path="expense/expensecategory/edit/:id" element={<Expensecategoryedit />} />
+          <Route path="expense/expensecategory/view/:id" element={<Expensecategoryview />} />
 
           { /* stock module */}
           <Route path="stock/expiryreport" element={<Expiryreport />} />
@@ -183,6 +190,7 @@ function Applicationstack() {
           <Route path="settings/taxrate/list" element={<Taxratelist />} />
           <Route path="settings/taxrate/create" element={<TaxrateCreate />} />
           <Route path="settings/taxrate/edit/:id" element={<Taxrateedit />} />
+          {/* <Route path="settings/hsn/create" element={<Hsncreate />} /> */}
 
         </Routes>
       </BrowserRouter>

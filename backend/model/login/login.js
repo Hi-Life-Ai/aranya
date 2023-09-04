@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 
 const Schema = mongoose.Schema;
@@ -40,7 +41,7 @@ const userSchema = new Schema({
     },
     role: {
         type: String,
-        require: false
+        require: [true, "Please select user role!"]
     },
     salescommission: {
         type: Number,
@@ -71,6 +72,10 @@ const userSchema = new Schema({
         require: false
     },
     dateofbirth: {
+        type: String,
+        require: false
+    },
+    religion: {
         type: String,
         require: false
     },

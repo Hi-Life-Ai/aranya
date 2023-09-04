@@ -22,6 +22,8 @@ import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
 import { UserRoleAccessContext } from '../../../context/Appcontext';
 import Headtitle from "../../../components/header/Headtitle";
+import { ThreeDots } from 'react-loader-spinner';
+
 
 function Productlisttable() {
 
@@ -35,9 +37,10 @@ function Productlisttable() {
   const [pageSize, setPageSize] = useState(1);
   const [sorting, setSorting] = useState({ column: '', direction: '' });
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoader, setIsLoader] = useState(false);
 
   // Access
-  const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
+  const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
 
   // Delete
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -47,31 +50,31 @@ function Productlisttable() {
   // get all products
   const fetchProduct = async () => {
     try {
-      let response = await axios.get(SERVICE.PRODUCT, {
+      let response = await axios.post(SERVICE.PRODUCT, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation]
+
       });
-      let result = response.data.products.filter((data, index) => {
-        if (isUserRoleAccess.role == 'Admin') {
-          return data.assignbusinessid == setngs.businessid
-        } else {
-          if (isUserRoleAccess.businesslocation.includes(data.businesslocation)) {
-            return data.assignbusinessid == setngs.businessid
-          }
-        }
-      })
-      setProducts(result);
+
+      setIsLoader(true);
+      setProducts(response?.data?.products);
+
     } catch (err) {
+      setIsLoader(true);
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
+  console.log(allProducts, "all")
   // delete function api
   const rowData = async (id) => {
     try {
@@ -84,10 +87,10 @@ function Productlisttable() {
       //set function to get particular row
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   }
@@ -105,11 +108,11 @@ function Productlisttable() {
       handleClose();
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -129,7 +132,7 @@ function Productlisttable() {
       'Category': t.category, 'Sub Category': t.subcateory, 'Unit': t.unit, 'Tax': t.applicabletax,
       'Label Type': t.labeltype, 'Manage Stock': t.managestock, 'Company Rate': t.companyrate, 'Super Stock Rate': t.superstockrate, 'Dealer Rate': t.dealerrate,
       'productdescription': t.productdescription, 'applicabletax': t.applicabletax, 'Selling Price Tax': t.sellingpricetax,
-      'Min Quantity': t.minquantity, 'Max Quantity': t.maxquantity, 'HSN': t.hsn, 'MRP': t.mrp.toFixed(2), 
+      'Min Quantity': t.minquantity, 'Max Quantity': t.maxquantity, 'HSN': t.hsn, 'MRP': t.mrp.toFixed(2),
     }));
     setExceldata(data);
   }
@@ -294,105 +297,112 @@ function Productlisttable() {
             </Box>
           </Grid><br /><br />
           { /* Header Buttons */}
-          <Grid container sx={{ justifyContent: "center", }} >
-            <Grid>
-              {isUserRoleCompare[0].excelproduct && (
-                <>
-                  <ExportCSV csvData={exceldata} fileName={fileName} />
-                </>
-              )}
-              {isUserRoleCompare[0].csvproduct && (
-                <>
-                  <ExportXL csvData={exceldata} fileName={fileName} />
-                </>
-              )}
-              {isUserRoleCompare[0].printproduct && (
-                <>
-                  <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
-                </>
-              )}
-              {isUserRoleCompare[0].pdfproduct && (
-                <>
-                  <Button sx={userStyle.buttongrp} onClick={downloadPdf}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
-                </>
-              )}
-            </Grid>
-            {/* Table Grid Container */}
-          </Grid><br /><br />
-          { /* Table Start */}
-          <TableContainer component={Paper} >
-            <Table aria-label="simple table">
-              <TableHead sx={{ fontWeight: "600", fontSize: "14px" }} >
-                <StyledTableRow >
-                  <StyledTableCell >Actions</StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('productimage')}><Box sx={userStyle.tableheadstyle}><Box>Product Image</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productimage')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('sku')}><Box sx={userStyle.tableheadstyle}><Box>SKU</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sku')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('category')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('category')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('subcategory')}><Box sx={userStyle.tableheadstyle}><Box>Sub category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subcategory')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Unit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('applicabletax')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('applicabletax')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>Hsn</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
+          {isLoader ? <>
+            <Grid container sx={{ justifyContent: "center", }} >
+              <Grid>
+                {isUserRoleCompare[0].excelproduct && (
+                  <>
+                    <ExportCSV csvData={exceldata} fileName={fileName} />
+                  </>
+                )}
+                {isUserRoleCompare[0].csvproduct && (
+                  <>
+                    <ExportXL csvData={exceldata} fileName={fileName} />
+                  </>
+                )}
+                {isUserRoleCompare[0].printproduct && (
+                  <>
+                    <Button sx={userStyle.buttongrp} onClick={handleprint}>&ensp;<FaPrint />&ensp;Print&ensp;</Button>
+                  </>
+                )}
+                {isUserRoleCompare[0].pdfproduct && (
+                  <>
+                    <Button sx={userStyle.buttongrp} onClick={downloadPdf}><FaFilePdf />&ensp;Export to PDF&ensp;</Button>
+                  </>
+                )}
+              </Grid>
+              {/* Table Grid Container */}
+            </Grid><br /><br />
+            { /* Table Start */}
+            <TableContainer component={Paper} >
+              <Table aria-label="simple table">
+                <TableHead sx={{ fontWeight: "600", fontSize: "14px" }} >
+                  <StyledTableRow >
+                    <StyledTableCell >Actions</StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('productimage')}><Box sx={userStyle.tableheadstyle}><Box>Product Image</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productimage')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('sku')}><Box sx={userStyle.tableheadstyle}><Box>SKU</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sku')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('category')}><Box sx={userStyle.tableheadstyle}><Box>Category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('category')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('subcategory')}><Box sx={userStyle.tableheadstyle}><Box>Sub category</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('subcategory')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('unit')}><Box sx={userStyle.tableheadstyle}><Box>Unit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('unit')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('applicabletax')}><Box sx={userStyle.tableheadstyle}><Box>Tax</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('applicabletax')}</Box></Box></StyledTableCell>
+                    <StyledTableCell onClick={() => handleSorting('hsn')}><Box sx={userStyle.tableheadstyle}><Box>Hsn</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('hsn')}</Box></Box></StyledTableCell>
 
-                </StyledTableRow>
-              </TableHead>
-              <TableBody>
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell component="th" scope="row" colSpan={1}>
-                        <Grid sx={{ display: 'flex' }}>
-                          {isUserRoleCompare[0].eproduct && (
-                            <>
-                              <Link to={`/product/product/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonedit} style={{ minWidth: '0px' }}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
-                            </>
-                          )}
-                          {isUserRoleCompare[0].dproduct && (
-                            <>
-                              <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id); }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
-                            </>
-                          )}
-                          {isUserRoleCompare[0].vproduct && (
-                            <>
-                              <Link to={`/product/product/view/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonview} style={{ minWidth: '0px' }}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
-                            </>
-                          )}
-                        </Grid>
-                      </StyledTableCell>
-                      <StyledTableCell ><img src={row.productimage} alt="image" width="70px" height="70px" /></StyledTableCell>
-                      <StyledTableCell >{row.productname}</StyledTableCell>
-                      <StyledTableCell >{row.sku}</StyledTableCell>
-                      <StyledTableCell >{row.category}</StyledTableCell>
-                      <StyledTableCell >{row.subcategory}</StyledTableCell>
-                      <StyledTableCell >{row.unit}</StyledTableCell>
-                      <StyledTableCell >{row.applicabletax}</StyledTableCell>
-                      <StyledTableCell >{row.hsn}</StyledTableCell>
-                    </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={12} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-            </Table>
-          </TableContainer><br /><br />
-          <Box style={userStyle.dataTablestyle}>
-            <Box>
-              Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, products.length)} of {products.length} entries
-            </Box>
-            <Box>
-              <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Prev
-              </Button>
-              {pageNumbers?.map((pageNumber) => (
-                <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
-                  {pageNumber}
+                  </StyledTableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredData.length > 0 ?
+                    (filteredData.map((row, index) => (
+                      <StyledTableRow key={index}>
+                        <StyledTableCell component="th" scope="row" colSpan={1}>
+                          <Grid sx={{ display: 'flex' }}>
+                            {isUserRoleCompare[0].eproduct && (
+                              <>
+                                <Link to={`/product/product/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonedit} style={{ minWidth: '0px' }}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                              </>
+                            )}
+                            {isUserRoleCompare[0].dproduct && (
+                              <>
+                                <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id); }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
+                              </>
+                            )}
+                            {isUserRoleCompare[0].vproduct && (
+                              <>
+                                <Link to={`/product/product/view/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonview} style={{ minWidth: '0px' }}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                              </>
+                            )}
+                          </Grid>
+                        </StyledTableCell>
+                        <StyledTableCell ><img src={row.productimage} alt="image" width="70px" height="70px" /></StyledTableCell>
+                        <StyledTableCell >{row.productname}</StyledTableCell>
+                        <StyledTableCell >{row.sku}</StyledTableCell>
+                        <StyledTableCell >{row.category}</StyledTableCell>
+                        <StyledTableCell >{row.subcategory}</StyledTableCell>
+                        <StyledTableCell >{row.unit}</StyledTableCell>
+                        <StyledTableCell >{row.applicabletax}</StyledTableCell>
+                        <StyledTableCell >{row.hsn}</StyledTableCell>
+                      </StyledTableRow>
+                    )))
+                    : <StyledTableRow><StyledTableCell colSpan={12} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                  }
+                </TableBody>
+              </Table>
+            </TableContainer><br /><br />
+            <Box style={userStyle.dataTablestyle}>
+              <Box>
+                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, products.length)} of {products.length} entries
+              </Box>
+              <Box>
+                <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Prev
                 </Button>
-              ))}
-              {lastVisiblePage < totalPages && <span>...</span>}
-              <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
-                Next
-              </Button>
+                {pageNumbers?.map((pageNumber) => (
+                  <Button key={pageNumber} sx={userStyle.paginationbtn} onClick={() => handlePageChange(pageNumber)} className={((page)) === pageNumber ? 'active' : ''} disabled={page === pageNumber}>
+                    {pageNumber}
+                  </Button>
+                ))}
+                {lastVisiblePage < totalPages && <span>...</span>}
+                <Button onClick={() => handlePageChange(page + 1)} disabled={page === totalPages} sx={{ textTransform: 'capitalize', color: 'black' }}>
+                  Next
+                </Button>
+              </Box>
             </Box>
-          </Box>
+          </> : <>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+            </Box>
+          </>}
+
           { /* Table End */}
         </Box>
       </>

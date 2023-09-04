@@ -16,6 +16,7 @@ import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
 import Headtitle from '../../../components/header/Headtitle';
 import CreatecateMod from './CreateCatemod';
+import ReactQuill from 'react-quill';
 
 function Producteditlist() {
 
@@ -27,14 +28,18 @@ function Producteditlist() {
     const [subcategories, setSubcategories] = useState();
     const [fetchsaveunit, setFetchsaveunit] = useState();
     const [fetchCate, setFetchCate] = useState();
+    const [isProducts, setIsProducts] = useState();
     const [taxrates, setTaxrates] = useState();
+    const [hsnGrp, sethsnGrp] = useState([]);
+    const [hsnCodes, sethsnCodes] = useState(false);
     const id = useParams().id;
+    const { isUserRoleAccess } = useContext(UserRoleAccessContext);
 
     // Text field
     const [product, setProduct] = useState({
         productname: "", sku: "", hsn: "", hsncode: "", barcodetype: "Qr code", unit: "", currentstock: 0, pruchaseincludetax: 0, sellingexcludetax: 0, producttype: "Single", applicabletax: "",
         purchaseexcludetax: 0, sellingpricetax: "", category: "", subcategory: "DEFAULT", businesslocation: "", managestock: true, minquantity: "", maxquantity: "", productdescription: "", productimage: "",
-        mrp: "", expirydate: "", companyrate: "", superstockrate: "", dealerrate: ""
+        mrp: "", expirydate: ""
     });
 
     // ALERT POPUP
@@ -103,12 +108,8 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
 
 
@@ -130,12 +131,8 @@ function Producteditlist() {
             })
             setLocationData(result);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     };
 
@@ -163,19 +160,15 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     };
 
     // cascade sub category
     const searchSubcatename = async (id) => {
         try {
-            let productlist = await axios.get(`${SERVICE.CATEGORIES_SINGLE}/${id}`, {
+            let productlist = await axios.get(`${SERVICE.CATEGORY}/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
@@ -188,12 +181,8 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
 
@@ -206,7 +195,7 @@ function Producteditlist() {
                 },
             });
             let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
+                return (data.assignbusinessid == setngs.businessid && data.taxtype == "taxrate" || data.taxtype == "taxrategroup") && data.fortaxgonly == false
             })
             setTaxrates(
                 taxRateData?.map((d) => ({
@@ -216,14 +205,35 @@ function Producteditlist() {
                 }))
             );
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     };
+
+    // Get Datas
+    const taxrateRequest = async () => {
+        try {
+            let response = await axios.get(SERVICE.TAXRATE, {
+                headers: {
+                    'Authorization': `Bearer ${auth.APIToken}`
+                },
+            });
+            let hsnGrpData = response.data.taxrates.filter((data) => {
+                return data.taxtype == "hsn" && data.assignbusinessid == setngs.businessid
+            })
+            sethsnGrp(
+                hsnGrpData?.map((d) => ({
+                    ...d,
+                    label: d.hsn,
+                    value: d.hsn,
+                }))
+            );
+        } catch (err) {
+            const messages = err.response.data.message;
+            toast.error(messages);
+        }
+    }
+
 
     // Image Upload
     function handleChange(e) {
@@ -269,12 +279,8 @@ function Producteditlist() {
             })
             setProduct(res.data.sproduct);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
     // store product data
@@ -289,11 +295,10 @@ function Producteditlist() {
                 subcategory: String(product.subcategory),
                 productname: String(product.productname),
                 mrp: Number(product.mrp),
-                companyrate: Number(product.companyrate),
-                superstockrate: Number(product.superstockrate),
-                dealerrate: Number(product.dealerrate),
                 sku: String(product.sku),
+                hsnenable: Boolean(hsnCodes),
                 hsn: String(product.hsn),
+                hsncode: String(product.hsncode),
                 labeltype: String(product.labeltype),
                 expirydate: String(product.expirydate),
                 unit: String(product.unit),
@@ -310,14 +315,9 @@ function Producteditlist() {
             toast.success(PRODUCT_REQ.data.message);
             backLPage('/product/product/list');
         } catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                setShowAlert(messages);
-                handleClickOpenalert();
-            }else{
-                setShowAlert("Something went wrong!");
-                handleClickOpenalert();
-            }
+            const messages = err.response.data.message;
+            setShowAlert(messages);
+            handleClickOpenalert();
         }
     };
 
@@ -328,6 +328,7 @@ function Producteditlist() {
 
     useEffect(() => {
         fetchCategory();
+        taxrateRequest();
         fetchRates();
     }, [categories, setngs])
 
@@ -342,32 +343,11 @@ function Producteditlist() {
         if (product.category == "") {
             setShowAlert("Please select category!");
             handleClickOpenalert()
-        } else if (product.productname == "") {
-            setShowAlert("Please Enter product name!");
-            handleClickOpenalert()
-        }
-        else if (product.expirydate == "") {
-            setShowAlert("Please select expiry Rate!");
-            handleClickOpenalert()
-        }
-        else if (product.companyrate == "") {
-            setShowAlert("Please Enter Company Rate!");
-            handleClickOpenalert()
-        }
-        else if (product.dealerrate == "") {
-            setShowAlert("Please enter Dealer Rate!");
-            handleClickOpenalert()
-        }
-        else if (product.superstockrate == "") {
-            setShowAlert("Please select Super Stocky Rate!");
-            handleClickOpenalert()
         } else {
             sendRequest();
         }
     };
 
-    // Number field
-    const exceptThisSymbols = ["e", "E", "+", "-", "."];
 
     return (
         <Box>
@@ -388,7 +368,7 @@ function Producteditlist() {
                                         placeholder={product.category}
                                         onChange={(e) => {
                                             searchSubcatename(e._id);
-                                            setProduct({ ...product, category: e.value, productname: e.value + ' ' + product.subcategory })
+                                            setProduct({ ...product, category: e.value, productname: e.value + '_' + product.subcategory })
                                         }}
                                     />
                                 </FormControl>
@@ -406,7 +386,7 @@ function Producteditlist() {
                                     styles={colourStyles}
                                     placeholder={product.subcategory}
                                     onChange={(e) => {
-                                        setProduct({ ...product, subcategory: e.value, productname: product.category + ' ' + e.value })
+                                        setProduct({ ...product, subcategory: e.value, productname: product.category + '_' + e.value })
                                     }}
                                 />
                             </FormControl>
@@ -427,54 +407,14 @@ function Producteditlist() {
                             </FormControl>
                         </Grid>
                         <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel htmlFor="component-outlined">Company Rate<b style={{ color: 'red' }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.companyrate}
-                                    onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
-                                    onChange={(e) => { setProduct({ ...product, companyrate: e.target.value }) }}
-                                />
-                            </FormControl>
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel htmlFor="component-outlined">Super Stocky's Rate<b style={{ color: 'red' }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.superstockrate}
-                                    onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
-                                    onChange={(e) => { setProduct({ ...product, superstockrate: e.target.value }) }}
-                                />
-                            </FormControl>
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel htmlFor="component-outlined">Dealer Rate<b style={{ color: 'red' }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.dealerrate}
-                                    onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
-                                    onChange={(e) => { setProduct({ ...product, dealerrate: e.target.value }) }}
-                                />
-                            </FormControl>
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
                             <InputLabel htmlFor="component-outlined" >MRP<b style={{ color: 'red' }}>*</b></InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     type='number'
                                     id="component-outlined"
                                     value={product.mrp}
-                                    onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
                                     onChange={(e) => { setProduct({ ...product, mrp: e.target.value }) }}
+                                    sx={userStyle.input}
                                 />
                             </FormControl>
                         </Grid>
@@ -499,28 +439,14 @@ function Producteditlist() {
                         <Grid item lg={3} md={3} sm={6} xs={12}>
                             <InputLabel >HSN</InputLabel>
                             <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.hsn}
-                                    onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
-                                    onChange={(e) => { setProduct({ ...product, hsn: e.target.value }) }}
+                                <Selects
+                                    options={hsnGrp}
+                                    styles={colourStyles}
+                                    placeholder={product?.hsn}
+                                    onChange={(e) => { setProduct({ ...product, hsn: e.value, hsncode: e.value }); }}
                                 />
                             </FormControl>
-
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel >Applicable Tax</InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <Selects
-                                    options={taxrates}
-                                    styles={colourStyles}
-                                    placeholder={setngs?.applicabletax}
-                                    onChange={(e) => { setProduct({ ...product, applicabletax: e.value, }); }}
-                                >
-                                </Selects>
-                            </FormControl>
+                            <FormControlLabel control={<Checkbox checked={hsnCodes} onClick={(e) => { sethsnCodes(s => !s); }} />} label="Enable tax with HSN code" sx={{ fontSize: '10px' }} />
                         </Grid>
                         <Grid item lg={3} md={3} sm={6} xs={12}>
                             <InputLabel >Label type</InputLabel>
@@ -528,7 +454,7 @@ function Producteditlist() {
                                 <Selects
                                     options={barcodetypes}
                                     styles={colourStyles}
-                                    placeholder={product.labeltype}
+                                    placeholder={product?.labeltype}
                                     onChange={(e) => { setProduct({ ...product, labeltype: e.value }); }}
                                 />
                             </FormControl>
@@ -568,7 +494,6 @@ function Producteditlist() {
                                 <OutlinedInput
                                     id="outlined-adornment-password"
                                     value={product.currentstock}
-                                    onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
                                     onChange={(e) => { setProduct({ ...product, currentstock: e.target.value }) }}
                                     type="number"
                                     sx={userStyle.input}
@@ -590,26 +515,24 @@ function Producteditlist() {
                         </Grid>
                         {product.managestock ? (
                             <>
-                                <Grid item lg={4} md={4} sm={6} xs={12}>
+                                <Grid item lg={3} md={3} sm={6} xs={12}>
                                     <InputLabel htmlFor="outlined-adornment-password">Minimum Quantity</InputLabel>
                                     <FormControl variant="outlined" size="small" fullWidth>
                                         <OutlinedInput
                                             id="outlined-adornment-password"
                                             value={product?.minquantity}
-                                            onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
                                             onChange={(e) => { setProduct({ ...product, minquantity: e.target.value }) }}
                                             type="number"
                                             sx={userStyle.input}
                                         />
                                     </FormControl>
                                 </Grid>
-                                <Grid item lg={4} md={4} sm={6} xs={12}>
+                                <Grid item lg={3} md={3} sm={6} xs={12}>
                                     <InputLabel htmlFor="outlined-adornment-password">Maximum Quantity</InputLabel>
                                     <FormControl variant="outlined" size="small" fullWidth>
                                         <OutlinedInput
                                             id="outlined-adornment-password"
                                             value={product?.maxquantity}
-                                            onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
                                             onChange={(e) => { setProduct({ ...product, maxquantity: e.target.value }) }}
                                             type="number"
                                             sx={userStyle.input}
@@ -618,25 +541,20 @@ function Producteditlist() {
                                 </Grid>
                             </>
                         ) : (<> </>)}
-                       <Grid item lg={4} md={4} sm={6} xs={12}>
-                                <InputLabel >Selling Price Tax Type </InputLabel>
-                                <FormControl size="small" fullWidth>
-                                    <Selects
-                                        options={selltaxtype}
-                                        styles={colourStyles}
-                                        placeholder={product?.sellingpricetax}
-                                        onChange={(e) => { setProduct({ ...product, sellingpricetax: e.value }); }}
-                                    />
-                                </FormControl>
-                            </Grid>
-                        <Grid item lg={4} md={4} sm={6} xs={12}>
+                        <Grid item lg={9} md={9} sm={8} xs={12}>
+                            <InputLabel  sx={{ m: 1 }}>Product Description</InputLabel>
+                            <FormControl size="small" fullWidth >
+                            <TextareaAutosize aria-label="minimum height" minRows={7} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
+                                    value={product.productdescription}
+                                    onChange={(e) => { setProduct({ ...product, productdescription: e.target.value }) }}
+                                    name="paynotes"
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item lg={3} md={3} sm={4} xs={12}>
                             <InputLabel sx={{ m: 1 }}>Product Image</InputLabel>
                             <Grid sx={{ display: 'flex', justifyContent: 'center' }}>
-                                {file || capture ? (
-                                    <>
-                                        <img src={file || capture} style={{ width: '50%' }} height="100px" />
-                                    </>
-                                ):(<></>)}
+                                <img src={file || capture} style={{ width: '50%' }} height="100px" />
                             </Grid><br />
                             <Grid sx={{ display: 'flex' }}>
                                 <FormControl size="small" fullWidth>
@@ -654,16 +572,45 @@ function Producteditlist() {
                             </Grid>
                         </Grid>
                     </Grid>
-                    <Grid item lg={12} md={12} sm={12} xs={12}>
-                            <InputLabel sx={{ m: 1 }}>Product Description</InputLabel>
-                            <FormControl size="small" fullWidth >
-                                <TextareaAutosize aria-label="minimum height" minRows={7} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
-                                    value={product.productdescription}
-                                    onChange={(e) => { setProduct({ ...product, productdescription: e.target.value }) }}
-                                    name="paynotes"
+                    <Grid container spacing={2}>
+                        {hsnCodes ?
+                            <Grid item md={4} sm={4} xs={12}>
+                                <InputLabel >HSN code</InputLabel>
+                                <FormControl size="small" fullWidth>
+                                    <TextField
+                                        id="date"
+                                        type="text"
+                                        size='small'
+                                        value={product.hsncode}
+                                    />
+                                </FormControl>
+                            </Grid>
+                            :
+                            <Grid item md={4} sm={4} xs={12}>
+                                <InputLabel >Applicable Tax</InputLabel>
+                                <FormControl size="small" fullWidth>
+                                    <Selects
+                                        options={taxrates}
+                                        styles={colourStyles}
+                                        placeholder={product?.applicabletax}
+                                        onChange={(e) => { setProduct({ ...product, applicabletax: e.value, }); }}
+                                    >
+                                    </Selects>
+                                </FormControl>
+                            </Grid>
+                        }
+                        <Grid item md={4} sm={4} xs={12}>
+                            <InputLabel >Selling Price Tax Type </InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <Selects
+                                    options={selltaxtype}
+                                    styles={colourStyles}
+                                    placeholder={product?.sellingpricetax}
+                                    onChange={(e) => { setProduct({ ...product, sellingpricetax: e.value }); }}
                                 />
                             </FormControl>
                         </Grid>
+                    </Grid>
                     <Grid container sx={userStyle.gridcontainer}>
                         <Grid >
                             <Link to="/product/product/list"><Button sx={userStyle.buttoncancel}>CANCEL</Button></Link>

@@ -5,6 +5,7 @@ import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOu
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { SERVICE } from '../../../services/Baseservice';
+import { UserRoleAccessContext } from '../../../context/Appcontext';
 import { AuthContext } from '../../../context/Appcontext';
 
 function Createunitmod({ setFetchsaveunit }) {
@@ -18,28 +19,28 @@ function Createunitmod({ setFetchsaveunit }) {
 
     // ******** Text field ******** //
     const [unitForm, setUnitForm] = useState({ unit: "", shotname: "" });
+    const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
 
     //popup model
     const [showAlert, setShowAlert] = useState()
 
     const fetchData = async () => {
         try {
-            let res = await axios.get(SERVICE.UNIT, {
+            let res = await axios.post(SERVICE.UNIT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
             });
-            let result = res.data.units.map((data, index) => {
-                if (data.assignbusinessid == setngs.businessid) {
-                    return data.unit
-                }
+            let result = res?.data?.units?.map((data, index) => {
+                return data.unit
             })
             setUnitData(result);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -59,7 +60,7 @@ function Createunitmod({ setFetchsaveunit }) {
                 },
                 unit: String(unitForm.unit),
                 shortname: String(unitForm.shortname),
-                assignbusinessid: String(setngs.businessid),
+                businessid: String(setngs.businessid),
             });
             setFetchsaveunit("None")
             setUnitForm(response.data);
@@ -69,18 +70,18 @@ function Createunitmod({ setFetchsaveunit }) {
             unitModClose();
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     const addUnitSubmit = (e) => {
         e.preventDefault();
         if (unitData.includes(unitForm.unit)) {
-            setShowAlert("unit Already Exists");
+            setShowAlert("Unit Already Exists");
         }
         else if (unitForm.unit == "") {
             setShowAlert("Please enter unit name!");
@@ -103,37 +104,38 @@ function Createunitmod({ setFetchsaveunit }) {
                         border: '1px solid #b97df0',
                     },
                 }}
+                maxWidth="md"
             >
                 <form>
-                    <DialogTitle id="customized-dialog-title1" onClose={unitModClose}>
+                    <DialogTitle id="customized-dialog-title1" onClose={unitModClose} sx={{ backgroundColor: '#e0e0e0', color: "#000", display: "flex" }}>
                         Add Unit
                     </DialogTitle>
-                    <DialogContent dividers>
+                    <DialogContent dividers style={{
+                        minWidth: '750px', height: '160px',
+                    }}>
                         <Grid container spacing={3}>
                             <Grid item md={12} sm={12} xs={12}>
-                                <p style={{ color: 'red' }}>{showAlert}</p>
+                                <InputLabel htmlFor="component-outlined">Unit Name <b style={{ color: 'red' }}>*</b></InputLabel>
                                 <FormControl size="small" fullWidth>
-                                    <InputLabel htmlFor="component-outlined">Unit Name <b style={{ color: 'red' }}>*</b></InputLabel>
                                     <OutlinedInput
                                         sx={userStyle.alertOutline}
                                         id="component-outlined"
                                         value={unitForm.unit}
                                         onChange={(e) => { setUnitForm({ ...unitForm, unit: e.target.value }) }}
-                                        label="unit Name *"
                                     />
                                 </FormControl>
                             </Grid>
                             <Grid item md={12} sm={12} xs={12}>
+                                <InputLabel htmlFor="component-outlined">Short Name</InputLabel>
                                 <FormControl size="small" fullWidth>
-                                    <InputLabel htmlFor="component-outlined">Short Name</InputLabel>
                                     <OutlinedInput
                                         sx={userStyle.alertOutline}
                                         id="component-outlined"
                                         value={unitForm.shotname}
                                         onChange={(e) => { setUnitForm({ ...unitForm, shotname: e.target.value }) }}
-                                        label="Short Name"
                                     />
                                 </FormControl>
+                                <p style={{ color: 'red' }}>{showAlert}</p>
                             </Grid>
                         </Grid>
                     </DialogContent>

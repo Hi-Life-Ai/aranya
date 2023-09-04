@@ -13,13 +13,13 @@ import Headtitle from '../../components/header/Headtitle';
 import { UserRoleAccessContext } from '../../context/Appcontext';
 import { SERVICE } from '../../services/Baseservice';
 import { useReactToPrint } from "react-to-print";
-import moment from "moment";
 import { AuthContext } from '../../context/Appcontext';
 import { toast } from 'react-toastify';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import Selects from 'react-select';
+import { ThreeDots } from 'react-loader-spinner';
 
 function DaywiseprofitList() {
 
@@ -27,6 +27,7 @@ function DaywiseprofitList() {
     const [locations, setLocations] = useState([]);
     const [exceldata, setExceldata] = useState([]);
     const { auth, setngs } = useContext(AuthContext);
+    const [isLoader, setIsLoader] = useState(false);
 
     //popup model
     const [isErrorOpen, setIsErrorOpen] = useState(false);
@@ -57,32 +58,19 @@ function DaywiseprofitList() {
     let salesamount = 0.00;
     let profitamount = 0.00;
 
-    let date = []
-    let productName = [];
-    let productId = [];
-    let location = [];
-    let quantity = [];
-    let Mrp = [];
-    let Sellingvalue = [];
-    let sales = [];
-    let allData = [];
+
 
     const fetchLocation = async () => {
         try {
-            let req = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let req = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = req.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate == true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate == true
-                    }
-                }
-            })
+            let result = req.data.businesslocationsactive
             setLocations(
                 result?.map((d) => ({
                     ...d,
@@ -90,12 +78,13 @@ function DaywiseprofitList() {
                     value: d.name,
                 }))
             );
-
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -105,74 +94,85 @@ function DaywiseprofitList() {
         fetchLocation();
     }, []);
 
-    const fetchCompareData = async () => {
+
+
+
+
+    const fetchDatalocation = async () => {
 
         try {
-            let req = await axios.get(SERVICE.POS, {
+            let req = await axios.post(SERVICE.DAYWISE_REPORTS, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                location: String(dateFilter.location),
+                selectdate: String(dateFilter.selectdate)
             });
+            let result = req.data.filterpos
 
-            req.data.pos1.map(item => {
-
-                let splittedMonth = item.date
-                let dateTrim = moment(splittedMonth).format('YYYY-MM-DD')
-
-                if (dateFilter.location == item.location && dateFilter.selectdate == dateTrim) {
-                    item.goods.map(value => {
-                        date.push(moment(item.date).format('DD-MM-YYYY'))
-                        location.push(item.location)
-                        productId.push(value.productid)
-                        productName.push(value.productname)
-                        quantity.push(Number(value.quantity))
-                        Mrp.push(value.mrp)
-                        Sellingvalue.push(value.sellingvalue == undefined || "" ? 0 : Number(value.sellingvalue))
-                        sales.push(value.subtotal)
-                    })
-                }
-                allData = productId.map(function (data, i) {
-                    return {
-                        productid: data,
-                        productname: productName[i],
-                        date: date[i],
-                        location: location[i],
-                        quantity: quantity[i],
-                        mrp: Mrp[i],
-                        sellingvalue: Sellingvalue[i],
-                        sales: sales[i],
-                    };
+            const finalprofits = [...result.reduce((r, o) => {
+                const key = o.productid;
+                const items = r.get(key) || Object.assign({}, o, {
+                    quantity: 0,
+                    sellingvalue: 0,
+                    profit: 0,
+                    sales: 0,
+                    allmrp: 0,
+                    allsellingvalue: 0,
                 });
+                items.quantity += +o.quantity
+                items.sellingvalue += +o.sellingvalue
+                items.sales += +o.subtotal
+                items.allmrp += +o.quantity * +o.mrp
+                items.allsellingvalue += +o.quantity * +o.sellingvalue
+                return r.set(key, items);
+            }, new Map).values()];
 
-                const result = [...allData.reduce((r, o) => {
-                    const key = o.productid;
-                    const items = r.get(key) || Object.assign({}, o, {
-                        quantity: 0,
-                        sellingvalue: 0,
-                        profit: 0,
-                        sales: 0,
-                        allmrp: 0,
-                        allsellingvalue: 0,
-                    });
-                    items.quantity += +o.quantity
-                    items.sellingvalue += +o.sellingvalue
-                    items.sales += +o.sales
-                    items.allmrp += +o.quantity * +o.mrp
-                    items.allsellingvalue += +o.quantity * +o.sellingvalue
-                    return r.set(key, items);
-                }, new Map).values()];
-
-                setDayWiseProfit(result);
-            })
-
+            setDayWiseProfit(finalprofits);
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
+            if (messages) {
+                toast.error(messages);
+            }
+            else {
+                toast.error("Something went wrong!")
+            }
         }
+    }
+
+
+
+
+
+
+
+    const handleSubmit = () => {
+        if (dateFilter.location == "") {
+            setShowAlert(
+                <>
+                    <ErrorOutlineOutlinedIcon sx={{ fontSize: "100px", color: 'orange' }} />
+                    <p style={{ fontSize: '20px', fontWeight: 900 }}>{"Please Select Location"}</p>
+                </>
+            );
+            handleClickOpenalert()
+        } else if (dateFilter.selectdate == "") {
+            setShowAlert(
+                <>
+                    <ErrorOutlineOutlinedIcon sx={{ fontSize: "100px", color: 'orange' }} />
+                    <p style={{ fontSize: '20px', fontWeight: 900 }}>{"Please Select Date"}</p>
+                </>
+            );
+            handleClickOpenalert()
         }
+        else {
+            fetchDatalocation()
+        }
+
     }
 
     // Excel
@@ -180,8 +180,8 @@ function DaywiseprofitList() {
     // get particular columns for export excel
     const getexcelDatas = async () => {
         var data = dayWiseProfit.map(t => ({
-            Date: t.date,
-            'Location': t.location,
+            'Date': t.formatedate,
+            'Location': t.businesslocation,
             'Product Name': t.productname,
             'Quantity': t.quantity,
             'MRP': t.allmrp.toFixed(2),
@@ -213,6 +213,15 @@ function DaywiseprofitList() {
         setSorting({ column, direction });
     };
 
+
+    const sortedData = dayWiseProfit.sort((a, b) => {
+        if (sorting.direction === 'asc') {
+            return a[sorting.column] > b[sorting.column] ? 1 : -1;
+        } else if (sorting.direction === 'desc') {
+            return a[sorting.column] < b[sorting.column] ? 1 : -1;
+        }
+        return 0;
+    });
     const renderSortingIcon = (column) => {
         if (sorting.column !== column) {
             return <>
@@ -290,28 +299,7 @@ function DaywiseprofitList() {
         }, [dayWiseProfit]
     )
 
-    const handleSubmit = () => {
-        if (dateFilter.location == "") {
-            setShowAlert(
-                <>
-                    <ErrorOutlineOutlinedIcon sx={{ fontSize: "100px", color: 'orange' }} />
-                    <p style={{ fontSize: '20px', fontWeight: 900 }}>{"Please Select Location"}</p>
-                </>
-            );
-            handleClickOpenalert()
-        }else if(dateFilter.selectdate == ""){
-            setShowAlert(
-                <>
-                    <ErrorOutlineOutlinedIcon sx={{ fontSize: "100px", color: 'orange' }} />
-                    <p style={{ fontSize: '20px', fontWeight: 900 }}>{"Please Select Date"}</p>
-                </>
-            );
-            handleClickOpenalert()
-        } 
-        else {
-            fetchCompareData()
-        }
-    }
+
 
     return (
         <Box >
@@ -410,52 +398,63 @@ function DaywiseprofitList() {
                     </Grid><br /><br></br>
                     { /* ****** Table start ****** */}
                     <Box>
-                        <TableContainer component={Paper} >
-                            <Table sx={{}} aria-label="simple table">
-                                <TableHead sx={{ fontWeight: "600" }} >
-                                    <StyledTableRow >
-                                        <StyledTableCell onClick={() => handleSorting('date')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('date')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('location')}><Box sx={userStyle.tableheadstyle}><Box>Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('location')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('allmrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('allmrp')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('sales')}><Box sx={userStyle.tableheadstyle}><Box>Sales</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sales')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('totalsale')}><Box sx={userStyle.tableheadstyle}><Box>Profit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('totalsale')}</Box></Box></StyledTableCell>
-                                    </StyledTableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {filteredData.length > 0 ?
-                                        (filteredData.map((row, index) => (
-                                            <StyledTableRow key={index}>
-                                                <StyledTableCell align="left">{row.date}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.location}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.productname}</StyledTableCell >
-                                                <StyledTableCell align="left">{row.quantity}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.allmrp}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.sales.toFixed(2)}</StyledTableCell>
-                                                <StyledTableCell align="left">{(Number(row.sales) - Number(row.allmrp)).toFixed(0)}</StyledTableCell>
+                        {isLoader ? (
+                            <>
+                                <TableContainer component={Paper} >
+                                    <Table sx={{}} aria-label="simple table">
+                                        <TableHead sx={{ fontWeight: "600" }} >
+                                            <StyledTableRow >
+                                                <StyledTableCell onClick={() => handleSorting('formatedate')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('formatedate')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('businesslocation')}><Box sx={userStyle.tableheadstyle}><Box>Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('businesslocation')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('productname')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productname')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('quantity')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('allmrp')}><Box sx={userStyle.tableheadstyle}><Box>MRP</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('allmrp')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('sales')}><Box sx={userStyle.tableheadstyle}><Box>Sales</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sales')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('totalsale')}><Box sx={userStyle.tableheadstyle}><Box>Profit</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('totalsale')}</Box></Box></StyledTableCell>
                                             </StyledTableRow>
-                                        )))
-                                        : <StyledTableRow><StyledTableCell colSpan={7} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                    }
-                                </TableBody>
-                                <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
-                                    <StyledTableRow className="table2_total" >
-                                        {dayWiseProfit && (
-                                            dayWiseProfit.forEach(
-                                                (item => {
-                                                    salesamount += +item.sales;
-                                                    profitamount += +item.sales - (+item.allmrp);
-                                                })
-                                            ))}
-                                        <StyledTableCell align="center" colSpan={5} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
-                                        <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {salesamount.toFixed(2)}</StyledTableCell>
-                                        <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {profitamount.toFixed(2)}</StyledTableCell>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filteredData.length > 0 ?
+                                                (filteredData.map((row, index) => (
+                                                    <StyledTableRow key={index}>
+                                                        <StyledTableCell align="left">{row.formatedate}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.businesslocation}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.productname}</StyledTableCell >
+                                                        <StyledTableCell align="left">{row.quantity}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.allmrp}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.sales.toFixed(2)}</StyledTableCell>
+                                                        <StyledTableCell align="left">{(Number(row.sales) - Number(row.allmrp)).toFixed(0)}</StyledTableCell>
+                                                    </StyledTableRow>
+                                                )))
+                                                : <StyledTableRow><StyledTableCell colSpan={7} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                            }
+                                        </TableBody>
+                                        <TableFooter sx={{ backgroundColor: '#9591914f', height: '50px' }}>
+                                            <StyledTableRow className="table2_total" >
+                                                {dayWiseProfit && (
+                                                    dayWiseProfit.forEach(
+                                                        (item => {
+                                                            salesamount += +item.sales;
+                                                            profitamount += +item.sales - (+item.allmrp);
+                                                        })
+                                                    ))}
+                                                <StyledTableCell align="center" colSpan={5} sx={{ color: 'black', fontSize: '20px', justifyContent: 'center', border: '1px solid white !important' }}>Total:</StyledTableCell>
+                                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {salesamount.toFixed(2)}</StyledTableCell>
+                                                <StyledTableCell align="left" sx={{ color: 'black', fontSize: '16px', border: '1px solid white !important' }}>₹ {profitamount.toFixed(2)}</StyledTableCell>
 
-                                    </StyledTableRow>
-                                </TableFooter>
-                            </Table>
-                        </TableContainer>
+                                            </StyledTableRow>
+                                        </TableFooter>
+                                    </Table>
+                                </TableContainer>
+                            </>
+                        ) : (
+                            <>
+                                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                    <ThreeDots height="80" width="80" radius="9" color="#1976D2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                                </Box>
+                            </>
+                        )}
+
                         <br /><br />
                         <Box style={userStyle.dataTablestyle}>
                             <Box>
@@ -504,8 +503,8 @@ function DaywiseprofitList() {
                                     {dayWiseProfit.length > 0 && (
                                         dayWiseProfit.map((row, index) => (
                                             <StyledTableRow key={index}>
-                                                <StyledTableCell align="left">{row.date}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.location}</StyledTableCell>
+                                                <StyledTableCell align="left">{row.formatedate}</StyledTableCell>
+                                                <StyledTableCell align="left">{row.businesslocation}</StyledTableCell>
                                                 <StyledTableCell align="left">{row.productname}</StyledTableCell >
                                                 <StyledTableCell align="left">{row.quantity}</StyledTableCell>
                                                 <StyledTableCell align="left">{row.allmrp.toFixed(2)}</StyledTableCell>

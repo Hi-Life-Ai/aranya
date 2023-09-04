@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Dialog, DialogContent, DialogActions,Button, Box, Grid, FormControl, Typography, InputLabel, TextareaAutosize, OutlinedInput } from '@mui/material';
+import { Dialog, DialogContent, DialogActions, Button, Box, Grid, FormControl, Typography, InputLabel, TextareaAutosize, OutlinedInput } from '@mui/material';
 import { userStyle } from '../../PageStyle';
 import axios from 'axios';
 import { useEffect } from 'react';
@@ -11,13 +11,19 @@ import Footer from '../../../components/footer/Footer';
 import Headtitle from '../../../components/header/Headtitle';
 import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
+import { Country, State, City } from "country-state-city";
 
 function BusinessLoceditlist() {
-   
+
     const [businsLoca, setBusinsLoca] = useState({});
     const { auth } = useContext(AuthContext);
 
     const exceptThisSymbols = ["e", "E", "+", "-", "."];
+
+    const [selectedCountry, setSelectedCountry] = useState(null);
+    const [selectedState, setSelectedState] = useState(null);
+    const [selectedCity, setSelectedCity] = useState(null);
+
 
     // Pop up error
     const [isErrorOpen, setIsErrorOpen] = useState(false);
@@ -30,17 +36,26 @@ function BusinessLoceditlist() {
 
     const fetchHandler = async () => {
         try {
-            let response = await axios.get(`${SERVICE.BUSINESS_LOCATION_SINGLE}/${id}`,{
+            let response = await axios.get(`${SERVICE.BUSINESS_LOCATION_SINGLE}/${id}`, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 }
             })
+            let result = response.data.sbusilocation;
+            // Find the corresponding Country, State, and City objects
+            const country = Country.getAllCountries().find(country => country.name === result.country);
+            const state = State.getStatesOfCountry(country?.isoCode).find(state => state.name === result.state);
+            const city = City.getCitiesOfState(state?.countryCode, state?.isoCode).find(city => city.name === result.city);
+
+            setSelectedCountry(country);
+            setSelectedState(state);
+            setSelectedCity(city);
             setBusinsLoca(response.data.sbusilocation);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -49,6 +64,7 @@ function BusinessLoceditlist() {
     useEffect(() => {
         fetchHandler()
     }, [id]);
+
 
     const bactToPage = useNavigate();
 
@@ -74,10 +90,10 @@ function BusinessLoceditlist() {
                 twophonenumber: Number(businsLoca.twophonenumber),
                 threephonenumber: Number(businsLoca.threephonenumber),
                 whatsappno: Number(businsLoca.whatsappno),
-                gstnno:  String(businsLoca.gstnno),
-                contactpersonname:  String(businsLoca.contactpersonname),
-                contactpersonnum:  Number(businsLoca.contactpersonnum),
-                address:  String(businsLoca.address),
+                gstnno: String(businsLoca.gstnno),
+                contactpersonname: String(businsLoca.contactpersonname),
+                contactpersonnum: Number(businsLoca.contactpersonnum),
+                address: String(businsLoca.address),
             });
             setBusinsLoca(req.data)
             toast.success(req.data.message, {
@@ -87,60 +103,60 @@ function BusinessLoceditlist() {
         }
         catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
     }
 
     const handlePincode = (e) => {
-        if(e.length > 6){
+        if (e.length > 6) {
             setShowAlert("Zipcode can't have more than 6 characters!")
             handleClickOpen();
-           let num = e.slice(0, 6);
-           setBusinsLoca({...businsLoca, zipcde: num})
+            let num = e.slice(0, 6);
+            setBusinsLoca({ ...businsLoca, zipcde: num })
         }
     }
     const handlePhone = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, phonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, phonenumber: num })
         }
     }
     const handlePhoneOne = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, onephonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, onephonenumber: num })
         }
     }
     const handlePhoneTwo = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, twophonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, twophonenumber: num })
         }
     }
     const handlePhoneThree = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, threephonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, threephonenumber: num })
         }
     }
     const handleWhatsApp = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("WhatsApp number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, whatsappno: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, whatsappno: num })
         }
     }
 
@@ -166,22 +182,22 @@ function BusinessLoceditlist() {
 
     const handleEditSubmit = (e) => {
         e.preventDefault();
-        if(businsLoca.name == ""){
+        if (businsLoca.name == "") {
             setShowAlert('Please enter business name!')
             handleClickOpen();
         }
-        else if(businsLoca.whatsappno == ""){
+        else if (businsLoca.whatsappno == "") {
             setShowAlert('Please enter WhatsApp number!')
             handleClickOpen();
         }
-        else if(businsLoca.email == ""){
+        else if (businsLoca.email == "") {
             setShowAlert('Please enter email!')
             handleClickOpen();
         }
-        else if(!businsLoca.email.includes('@' || '.')){
+        else if (!businsLoca.email.includes('@' || '.')) {
             setShowAlert('Please enter correct email!')
             handleClickOpen();
-        }else{
+        } else {
             updatebusinsLoca();
         }
     }
@@ -194,7 +210,7 @@ function BusinessLoceditlist() {
                 <Box sx={userStyle.container}>
                     <Grid container spacing={3}>
                         <Grid item xs={12} sm={12} md={6} lg={6}>
-                            <InputLabel htmlFor="component-outlined">Business Name <b style={{color:"red"}}>*</b></InputLabel>
+                            <InputLabel htmlFor="component-outlined">Business Name <b style={{ color: "red" }}>*</b></InputLabel>
                             <FormControl variant="outlined" size="small" fullWidth>
                                 <OutlinedInput id="outlined-adornment-password"
                                     name="business name"
@@ -302,7 +318,7 @@ function BusinessLoceditlist() {
                                     name="mobilenumber"
                                     type="number"
                                     value={businsLoca.phonenumber}
-                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, phonenumber: e.target.value }); handlePhone(e.target.value)}}
+                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, phonenumber: e.target.value }); handlePhone(e.target.value) }}
                                     onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
 
                                 />
@@ -317,7 +333,7 @@ function BusinessLoceditlist() {
                                     name="mobilenumber 1"
                                     type="number"
                                     value={businsLoca.onephonenumber}
-                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, onephonenumber: e.target.value }); handlePhoneOne(e.target.value)}}
+                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, onephonenumber: e.target.value }); handlePhoneOne(e.target.value) }}
                                     onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
 
                                 />
@@ -360,7 +376,7 @@ function BusinessLoceditlist() {
                                     name="Landline number"
                                     type="text"
                                     value={businsLoca.landlinenumber}
-                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, landlinenumber: e.target.value });handleValidationLandline(e); }}
+                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, landlinenumber: e.target.value }); handleValidationLandline(e); }}
                                 />
                             </FormControl>
                         </Grid>
@@ -372,7 +388,7 @@ function BusinessLoceditlist() {
                                     name="whatsappno"
                                     type="number"
                                     value={businsLoca.whatsappno}
-                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, whatsappno: e.target.value });handleWhatsApp(e.target.value) }}
+                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, whatsappno: e.target.value }); handleWhatsApp(e.target.value) }}
                                     onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
                                 />
                             </FormControl>
@@ -430,8 +446,8 @@ function BusinessLoceditlist() {
                 </Box>
             </form>
             {/* // Alert Box */}
-        <Box>
-             <Dialog
+            <Box>
+                <Dialog
                     open={isErrorOpen}
                     onClose={handleClose}
                     aria-labelledby="alert-dialog-title"
@@ -445,7 +461,7 @@ function BusinessLoceditlist() {
                         <Button variant="contained" color="error" onClick={handleClose}>ok</Button>
                     </DialogActions>
                 </Dialog>
-        </Box>
+            </Box>
         </Box>
     );
 }
@@ -455,7 +471,7 @@ function Businesslocationedit() {
         <Box>
             <Navbar />
             <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                <Box component="main"sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' }}}>
+                <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
                     <BusinessLoceditlist /><br /><br /><br /><br />
                     <Footer />
                 </Box>

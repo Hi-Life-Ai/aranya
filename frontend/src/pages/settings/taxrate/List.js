@@ -21,9 +21,13 @@ import { SERVICE } from '../../../services/Baseservice';
 import { useReactToPrint } from "react-to-print";
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
+import { ThreeDots } from 'react-loader-spinner';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+
 
 const Taxratelisttable = () => {
 
+  const [isLoader, setIsLoader] = useState(false);
   const [taxRate, setTaxRate] = useState([]);
   const [hsnGrp, sethsnGrp] = useState([]);
   const [exceldata, setExceldata] = useState([]);
@@ -46,22 +50,23 @@ const Taxratelisttable = () => {
   // Get Datas
   const fetchTaxrate = async () => {
     try {
-      let res = await axios.get(SERVICE.TAXRATE, {
+      let res = await axios.post(SERVICE.TAXRATE, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid),
       })
-      let taxresult = res.data.taxrates.filter((data, index) => {
-        return data.assignbusinessid == setngs.businessid 
-      })
-      setTaxRate(taxresult)
+
+      setTaxRate(res.data.taxrates)
+      setIsLoader(true)
     } catch (err) {
+      setIsLoader(true)
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -78,13 +83,15 @@ const Taxratelisttable = () => {
           }
         });
       setTax(response.data.staxrate);
+      setIsLoader(true)
     } catch (err) {
+      setIsLoader(true)
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
   let taxid = tax._id;
@@ -100,13 +107,15 @@ const Taxratelisttable = () => {
         });
       handleClose();
       await fetchTaxrate();
+      setIsLoader(true)
     } catch (err) {
+      setIsLoader(true)
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -304,40 +313,51 @@ const Taxratelisttable = () => {
 
         {/* TAX RATE TABLE START */}
         <Box>
-          <TableContainer component={Paper}>
-            <Table sx={{ margin: '20px' }} aria-label="customized table" id="alltaxrate">
-              <TableHead>
-                <StyledTableRow>
-                  <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }}>Action</StyledTableCell>
-                  <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxname')}><Box sx={userStyle.tableheadstyle}><Box>Name </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxname')}</Box></Box></StyledTableCell>
-                  <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxtotal')}><Box sx={userStyle.tableheadstyle}><Box>Tax %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxtotal')}</Box></Box></StyledTableCell>
-                  <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxrategst')}><Box sx={userStyle.tableheadstyle}><Box>GST %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxrategst')}</Box></Box></StyledTableCell>
-                  <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxratecgst')}><Box sx={userStyle.tableheadstyle}><Box>CGST %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxratecgst')}</Box></Box></StyledTableCell>
-                  <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxrateigst')}><Box sx={userStyle.tableheadstyle}><Box>IGST %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxrateigst')}</Box></Box></StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody>
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell align="center">
-                        <Grid sx={{ display: 'flex' }}>
-                          {isUserRoleCompare[0].etaxrate && (<Link to={`/settings/taxrate/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>)}
-                          {isUserRoleCompare[0].dtaxrate && (<Button onClick={(e) => { handleClickOpen(); rowData(row._id) }} sx={userStyle.buttondelete}><DeleteOutlineOutlinedIcon style={{ fontSize: 'large' }} /></Button>)}
-                        </Grid>
-                      </StyledTableCell>
-                      <StyledTableCell component="th" scope="row">{row.taxname}</StyledTableCell>
-                      <StyledTableCell component="th" scope="row">{row.taxtotal}</StyledTableCell>
-                      <StyledTableCell align="left">{row.taxrategst}</StyledTableCell>
-                      <StyledTableCell align="left">{row.taxratecgst}</StyledTableCell>
-                      <StyledTableCell align="left">{row.taxrateigst}</StyledTableCell>
+          {isLoader ? (
+            <>
+              <TableContainer component={Paper}>
+                <Table sx={{ margin: '20px' }} aria-label="customized table" id="alltaxrate">
+                  <TableHead>
+                    <StyledTableRow>
+                      <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }}>Action</StyledTableCell>
+                      <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxname')}><Box sx={userStyle.tableheadstyle}><Box>Name </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxname')}</Box></Box></StyledTableCell>
+                      <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxtotal')}><Box sx={userStyle.tableheadstyle}><Box>Tax %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxtotal')}</Box></Box></StyledTableCell>
+                      <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxrategst')}><Box sx={userStyle.tableheadstyle}><Box>GST %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxrategst')}</Box></Box></StyledTableCell>
+                      <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxratecgst')}><Box sx={userStyle.tableheadstyle}><Box>CGST %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxratecgst')}</Box></Box></StyledTableCell>
+                      <StyledTableCell sx={{ border: '1px solid #dddddd7d !important' }} onClick={() => handleSorting('taxrateigst')}><Box sx={userStyle.tableheadstyle}><Box>IGST %</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('taxrateigst')}</Box></Box></StyledTableCell>
                     </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={6} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {filteredData.length > 0 ?
+                      (filteredData.map((row, index) => (
+                        <StyledTableRow key={index}>
+                          <StyledTableCell align="center">
+                            <Grid sx={{ display: 'flex' }}>
+                              {isUserRoleCompare[0].etaxrate && (<Link to={`/settings/taxrate/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>)}
+                              {isUserRoleCompare[0].dtaxrate && (<Button onClick={(e) => { handleClickOpen(); rowData(row._id) }} sx={userStyle.buttondelete}><DeleteOutlineOutlinedIcon style={{ fontSize: 'large' }} /></Button>)}
+                              {isUserRoleCompare[0].dtaxrate && <Link to={`/settings/taxrate/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>}
+                            </Grid>
+                          </StyledTableCell>
+                          <StyledTableCell component="th" scope="row">{row.taxname}</StyledTableCell>
+                          <StyledTableCell component="th" scope="row">{row.taxtotal}</StyledTableCell>
+                          <StyledTableCell align="left">{row.taxrategst}</StyledTableCell>
+                          <StyledTableCell align="left">{row.taxratecgst}</StyledTableCell>
+                          <StyledTableCell align="left">{row.taxrateigst}</StyledTableCell>
+                        </StyledTableRow>
+                      )))
+                      : <StyledTableRow><StyledTableCell colSpan={6} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                    }
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+              </Box>
+            </>
+          )}
           <br /><br />
           <Box style={userStyle.dataTablestyle}>
             <Box>

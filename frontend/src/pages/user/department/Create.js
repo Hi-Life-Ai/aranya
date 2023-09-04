@@ -1,20 +1,20 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Box, Button, Grid, FormControl, OutlinedInput, InputLabel, Typography, Dialog,DialogContent, DialogActions, } from '@mui/material';
+import { Box, Button, Grid, FormControl, OutlinedInput, InputLabel, Typography, Dialog, DialogContent, DialogActions, } from '@mui/material';
 import { userStyle } from '../../PageStyle';
 import axios from 'axios';
-import { useNavigate,Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Navbar from '../../../components/header/Navbar';
 import Footer from '../../../components/footer/Footer';
 import Headtitle from '../../../components/header/Headtitle';
-import {SERVICE} from '../../../services/Baseservice';
+import { SERVICE } from '../../../services/Baseservice';
 import { toast } from 'react-toastify';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { AuthContext } from '../../../context/Appcontext';
 
 function Departmentcreate() {
 
-  const [departmentAdd, setdepartmentAdd] = useState({ departmentid: "", departmentname: ""});
-  const { auth,setngs } = useContext(AuthContext);
+  const [departmentAdd, setdepartmentAdd] = useState({ departmentid: "", departmentname: "" });
+  const { auth, setngs } = useContext(AuthContext);
   const [department, setdepartments] = useState([]);
   const [isDepartmentCode, setIsDepartmentCode] = useState([]);
   const [isDepartmentName, setIsDepartmentName] = useState([]);
@@ -30,41 +30,43 @@ function Departmentcreate() {
   };
 
 
-   //  Fetch department Data
-   const fetchDepartments = async () => {
+  //  Fetch department Data
+  const fetchDepartments = async () => {
     try {
-      let res = await axios.get(SERVICE.DEPARTMENT, {
+      let res = await axios.post(SERVICE.DEPARTMENT, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
-      });
-      let result = res.data.departments.filter((data, index)=>{
-        return data.assignbusinessid == setngs.businessid
-    })
-    let departmentcode = result.map((data,index)=>{
-      return data.departmentid
-    })
+        },
+        businessid: String(setngs.businessid)
 
-    let departmentname = result.map((data,index)=>{
-      return data.departmentname
-    })
-    setIsDepartmentCode(departmentcode);
-    setIsDepartmentName(departmentname);
-      setdepartments(result);
+      });
+      //   let result = res.data.departments.filter((data, index)=>{
+      //     return data.assignbusinessid == setngs.businessid
+      // })
+      let departmentcode = res?.data?.departments?.map((data, index) => {
+        return data.departmentid
+      })
+
+      let departmentname = res?.data?.departments?.map((data, index) => {
+        return data.departmentname
+      })
+      setIsDepartmentCode(departmentcode);
+      setIsDepartmentName(departmentname);
+      setdepartments(res?.data?.departments);
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
 
   useEffect(
-    ()=>{
+    () => {
       fetchDepartments();
-    },[]
+    }, []
   )
 
   const backLPage = useNavigate();
@@ -72,11 +74,11 @@ function Departmentcreate() {
   let newval = setngs ? setngs.departmentsku == undefined ? "DP0001" : setngs.departmentsku + "0001" : "DP0001";
   // store department data to db
   const sendRequest = async () => {
-    
+
     try {
       let res = await axios.post(SERVICE.DEPARTMENT_CREATE, {
         headers: {
-          'Authorization':`Bearer ${auth.APIToken}`
+          'Authorization': `Bearer ${auth.APIToken}`
         },
         departmentid: String(newval),
         departmentname: String(departmentAdd.departmentname),
@@ -89,34 +91,34 @@ function Departmentcreate() {
       backLPage('/user/department/list');
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-          setShowAlert(messages);
-          handleClickOpenc();
-        }else{
-          setShowAlert("Something went wrong!");
-          handleClickOpenc();
-        }
-    } 
+      if (messages) {
+        setShowAlert(messages);
+        handleClickOpenc();
+      } else {
+        setShowAlert("Something went wrong!");
+        handleClickOpenc();
+      }
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if(departmentAdd.departmentname ==""){
+    if (departmentAdd.departmentname == "") {
       setShowAlert("Please enter department name!");
-        handleClickOpenc();
+      handleClickOpenc();
     }
-    else if(isDepartmentCode.includes(newval)){
+    else if (isDepartmentCode.includes(newval)) {
       setShowAlert("Code already exits!");
-        handleClickOpenc();
+      handleClickOpenc();
     }
-    else if(isDepartmentName.includes(departmentAdd.departmentname)){
+    else if (isDepartmentName.includes(departmentAdd.departmentname)) {
       setShowAlert("Name already exits!");
-        handleClickOpenc();
-    }else{
+      handleClickOpenc();
+    } else {
       sendRequest();
     }
- 
+
   }
 
   return (
@@ -124,70 +126,70 @@ function Departmentcreate() {
       <Headtitle title={'Add Department'} />
       <Typography sx={userStyle.HeaderText}>Add Department</Typography>
       {/* content start */}
-     <form onSubmit={handleSubmit}>
-     <Box sx={userStyle.container}>
-        <Grid container spacing={3} sx={userStyle.textInput}>
-        {department && (
-                                department.map(
-                                    () => {
-                                        let strings = setngs ? setngs.departmentsku : "DP";
-                                        let refNo = department[department.length - 1].departmentid;
-                                        let digits = (department.length + 1).toString();
-                                        const stringLength = refNo.length;
-                                        let lastChar = refNo.charAt(stringLength - 1);
-                                        let getlastBeforeChar = refNo.charAt(stringLength - 2);
-                                        let getlastThreeChar = refNo.charAt(stringLength - 3);
-                                        let lastBeforeChar = refNo.slice(-2);
-                                        let lastThreeChar = refNo.slice(-3);
-                                        let lastDigit = refNo.slice(-4);
-                                        let refNOINC = parseInt(lastChar) + 1
-                                        let refLstTwo = parseInt(lastBeforeChar) + 1;
-                                        let refLstThree = parseInt(lastThreeChar) + 1;
-                                        let refLstDigit = parseInt(lastDigit) + 1;
-                                        if (digits.length < 4 && getlastBeforeChar == 0 && getlastThreeChar == 0) {
-                                            refNOINC = ("000" + refNOINC);
-                                            newval = strings + refNOINC;
-                                        } else if (digits.length < 4 && getlastBeforeChar > 0 && getlastThreeChar == 0) {
-                                            refNOINC = ("00" + refLstTwo);
-                                            newval = strings + refNOINC;
-                                        } else if (digits.length < 4 && getlastThreeChar > 0) {
-                                            refNOINC = ("0" + refLstThree);
-                                            newval = strings + refNOINC;
-                                        } else {
-                                            refNOINC = (refLstDigit);
-                                            newval = strings + refNOINC;
-                                        }
-                                    }))}
-          <Grid item md={8} sm={12} xs={12}>
-            <InputLabel htmlFor="component-outlined">Department Id<b style={{color:'red'}}>*</b></InputLabel>
-            <FormControl size="small" fullWidth>
-              <OutlinedInput
-                id="component-outlined"
-                value={newval}
-              />
-            </FormControl>
+      <form onSubmit={handleSubmit}>
+        <Box sx={userStyle.container}>
+          <Grid container spacing={3} sx={userStyle.textInput}>
+            {department && (
+              department.map(
+                () => {
+                  let strings = setngs ? setngs.departmentsku : "DP";
+                  let refNo = department[department.length - 1].departmentid;
+                  let digits = (department.length + 1).toString();
+                  const stringLength = refNo.length;
+                  let lastChar = refNo.charAt(stringLength - 1);
+                  let getlastBeforeChar = refNo.charAt(stringLength - 2);
+                  let getlastThreeChar = refNo.charAt(stringLength - 3);
+                  let lastBeforeChar = refNo.slice(-2);
+                  let lastThreeChar = refNo.slice(-3);
+                  let lastDigit = refNo.slice(-4);
+                  let refNOINC = parseInt(lastChar) + 1
+                  let refLstTwo = parseInt(lastBeforeChar) + 1;
+                  let refLstThree = parseInt(lastThreeChar) + 1;
+                  let refLstDigit = parseInt(lastDigit) + 1;
+                  if (digits.length < 4 && getlastBeforeChar == 0 && getlastThreeChar == 0) {
+                    refNOINC = ("000" + refNOINC);
+                    newval = strings + refNOINC;
+                  } else if (digits.length < 4 && getlastBeforeChar > 0 && getlastThreeChar == 0) {
+                    refNOINC = ("00" + refLstTwo);
+                    newval = strings + refNOINC;
+                  } else if (digits.length < 4 && getlastThreeChar > 0) {
+                    refNOINC = ("0" + refLstThree);
+                    newval = strings + refNOINC;
+                  } else {
+                    refNOINC = (refLstDigit);
+                    newval = strings + refNOINC;
+                  }
+                }))}
+            <Grid item md={8} sm={12} xs={12}>
+              <InputLabel htmlFor="component-outlined">Department Id<b style={{ color: 'red' }}>*</b></InputLabel>
+              <FormControl size="small" fullWidth>
+                <OutlinedInput
+                  id="component-outlined"
+                  value={newval}
+                />
+              </FormControl>
+            </Grid>
+            <Grid item md={8} sm={12} xs={12}>
+              <InputLabel htmlFor="component-outlined">Department Name<b style={{ color: 'red' }}>*</b></InputLabel>
+              <FormControl size="small" fullWidth>
+                <OutlinedInput
+                  id="component-outlined"
+                  value={departmentAdd.departmentname}
+                  onChange={(e) => { setdepartmentAdd({ ...departmentAdd, departmentname: e.target.value }) }}
+                  type="text"
+                />
+              </FormControl>
+            </Grid>
+          </Grid><br />
+          <br />
+          <Grid container sx={userStyle.gridcontainer}>
+            <Grid sx={{ display: 'flex' }}>
+              <Button sx={userStyle.buttonadd} type="submit">SAVE</Button>
+              <Link to="/user/department/list"><Button sx={userStyle.buttoncancel}>CANCEL</Button></Link>
+            </Grid>
           </Grid>
-          <Grid item md={8} sm={12} xs={12}>
-            <InputLabel htmlFor="component-outlined">Department Name<b style={{color:'red'}}>*</b></InputLabel>
-            <FormControl size="small" fullWidth>
-              <OutlinedInput
-                id="component-outlined"
-                value={departmentAdd.departmentname}
-                onChange={(e) => { setdepartmentAdd({ ...departmentAdd, departmentname: e.target.value }) }}
-                type="text"
-              />
-            </FormControl>
-          </Grid>
-        </Grid><br />
-        <br />
-        <Grid container sx={userStyle.gridcontainer}>
-          <Grid sx={{display:'flex'}}>
-            <Button sx={userStyle.buttonadd} type="submit">SAVE</Button>
-            <Link to="/user/department/list"><Button sx={userStyle.buttoncancel}>CANCEL</Button></Link>
-          </Grid>
-        </Grid>
-      </Box>
-     </form>
+        </Box>
+      </form>
       {/* ALERT DIALOG */}
       <Box>
         <Dialog
@@ -214,7 +216,7 @@ function Departmentscreate() {
     <Box  >
       <Navbar />
       <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-        <Box component="main"sx={{ paddingRight: '60px',paddingLeft: '60px',paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
+        <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
           <Departmentcreate /><br /><br /><br />
           <Footer />
         </Box>

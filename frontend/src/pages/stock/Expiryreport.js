@@ -52,8 +52,6 @@ function Expiringreportall() {
         let expDate = new Date(data.expirydate);
         let previousexpirydate = new Date(expDate.getTime() - expiryday * 24 * 60 * 60 * 1000)
         let beforeDate = moment(previousexpirydate).format('DD-MM-YYYY');
-
-        console.log(previousexpirydate, 'b')
        if (currentDate < beforeDate ){
           tableData.push(data)
         }
@@ -62,12 +60,8 @@ function Expiringreportall() {
       setProducts(tableData);
     }
     catch (err) {
-      const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      const messages = err.response.data.message;
+      toast.error(messages);
     }
   };
   useEffect(() => {

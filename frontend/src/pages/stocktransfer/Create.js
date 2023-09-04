@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import {
-  Box, Grid, FormControl, InputLabel, Dialog, DialogActions, DialogContent, OutlinedInput,Table, TableBody, TableContainer, TableHead, Typography, Paper, Button,
+  Box, Grid, FormControl, InputLabel, Dialog, DialogActions, DialogContent, OutlinedInput, Table, TableBody, TableContainer, TableHead, Typography, Paper, Button,
 } from '@mui/material';
 import { colourStyles, userStyle } from '../PageStyle';
 import { StyledTableRow, StyledTableCell } from '../../components/Table';
@@ -23,20 +23,20 @@ function StockTransferCreate() {
   const [busilocations, setBusilocations] = useState([]);
   const [selectedValue, setSelectedValue] = useState([]);
   const [company, setCompany] = useState([]);
-  const [tableData, setTableData] = useState([]); 
+  const [tableData, setTableData] = useState([]);
   const productilputs = {
-    productname:"", sku:"",companyrate:0, superstockrate:0,dealerrate:0, mrp:0, currentstock:"", unit:"",category:"",subcategory:"",sellingpricetax:"",productuniqid:"", quantity:[], locations:[]
+    productname: "", sku: "", companyrate: 0, superstockrate: 0, dealerrate: 0, mrp: 0, currentstock: "", unit: "", category: "", subcategory: "", sellingpricetax: "", productuniqid: "", quantity: [], locations: []
   }
   const { auth, setngs } = useContext(AuthContext);
   //role access
-  const {isUserRoleAccess} = useContext(UserRoleAccessContext);
+  const { isUserRoleAccess } = useContext(UserRoleAccessContext);
   const [isErrorOpen, setIsErrorOpen] = useState(false);
   const [showAlert, setShowAlert] = useState()
   const handleOpen = () => { setIsErrorOpen(true); };
   const handleClose = () => { setIsErrorOpen(false); };
   const backPage = useNavigate();
   const [allProducts, setAllProducts] = useState({});
-  const [transfer, setTransfer] = useState({fromcompany: ""});
+  const [transfer, setTransfer] = useState({ fromcompany: "" });
 
   //  Datefield
   var today = new Date();
@@ -48,26 +48,26 @@ function StockTransferCreate() {
 
   //  Error popup
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const handleClickOpen = () => { 
+  const handleClickOpen = () => {
     if (transfer.fromcompany == "") {
       setShowAlert("please select from Company")
       handleOpen()
     } else if (allProducts.length == 0) {
       setShowAlert("please select any one of product")
       handleOpen()
-    }else if (selectedValue.length == 0) {
+    } else if (selectedValue.length == 0) {
       setShowAlert("please select to location")
       handleOpen()
     } else {
       setIsDeleteOpen(true)
     }
-     };
+  };
   const handleCloseClick = () => { setIsDeleteOpen(false) };
 
-   // business location multiselect
-   const handleChangeLocation = (e) => {
+  // business location multiselect
+  const handleChangeLocation = (e) => {
     setSelectedValue(Array.isArray(e) ? e.map((x) => x.value) : []);
-};
+  };
 
   //event for tabale data fetching
   const fetchEvent = (e) => {
@@ -97,11 +97,11 @@ function StockTransferCreate() {
           mrp: e.mrp,
           category: e.category,
           subcategory: e.subcategory,
-          sellingpricetax:e.sellingpricetax,
+          sellingpricetax: e.sellingpricetax,
           productuniqid: e._id,
           unit: e.unit,
-          quantity:[],
-          locations:[],
+          quantity: [],
+          locations: [],
         }]
       });
     }
@@ -110,54 +110,52 @@ function StockTransferCreate() {
   // Products
   const fetchProd = async () => {
     try {
-      let response = await axios.get(SERVICE.PRODUCT, {
+      let response = await axios.post(SERVICE.PRODUCT_ID_FILTER, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid),
       });
-      let result = response.data.products.filter((data, index)=>{
-        return data.assignbusinessid == setngs.businessid
-    })
-    setAllProducts(
-      result?.map((d) => (
-        {
-          ...d,
-          label: d.productname + ' ' + d.sku,
-          value: d.sku,
-        }
-      ))
-    );
+      setAllProducts(
+        response.data.products?.map((d) => (
+          {
+            ...d,
+            label: d.productname + ' ' + d.sku,
+            value: d.sku,
+          }
+        ))
+      );
     }
     catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
 
   useEffect(
     () => {
-    fetchProd();
-    fetchLocation();
-  },[])
+      fetchProd();
+      fetchLocation();
+    }, [])
 
   const addTransfer = async () => {
     try {
-     let res = await axios.post(SERVICE.TRANSFER_CREATE, {
-      headers: {
-        'Authorization': `Bearer ${auth.APIToken}`
-      },
+      let res = await axios.post(SERVICE.TRANSFER_CREATE, {
+        headers: {
+          'Authorization': `Bearer ${auth.APIToken}`
+        },
 
-        tobusinesslocations:[...selectedValue],
-        status:Boolean(false),
+        tobusinesslocations: [...selectedValue],
+        status: Boolean(false),
         products: [...tableData],
         fromlocation: String(transfer.fromcompany),
-        date:String(today),
-        reject:Boolean(false),
-        assignbusinessid:String(setngs.businessid),
+        date: String(today),
+        reject: Boolean(false),
+        assignbusinessid: String(setngs.businessid),
       })
 
       handleCloseClick();
@@ -167,57 +165,51 @@ function StockTransferCreate() {
       backPage('/stocktransfer/List')
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
   const addQuantity = (id, value, locationindex) => {
-      let valueQuantity = tableData.map((item, index) => {
-        if (index == id) {
-          if(value > item.currentstock){
-            setShowAlert("Please Enter Value Less Than Quantity");
-            handleOpen();
-            return {...item,  locations:[...selectedValue]}
-          }else {
-            return {...item, quantity:{...item.quantity, [selectedValue[locationindex]] : Number(value)}, locations:[...selectedValue]}
-          }
+    let valueQuantity = tableData.map((item, index) => {
+      if (index == id) {
+        if (value > item.currentstock) {
+          setShowAlert("Please Enter Value Less Than Quantity");
+          handleOpen();
+          return { ...item, locations: [...selectedValue] }
+        } else {
+          return { ...item, quantity: { ...item.quantity, [selectedValue[locationindex]]: Number(value) }, locations: [...selectedValue] }
         }
-        else {
-          return {...item, locations:[...selectedValue]};
-        }
-      })
-      setTableData(valueQuantity);
+      }
+      else {
+        return { ...item, locations: [...selectedValue] };
+      }
+    })
+    setTableData(valueQuantity);
   }
- 
+
   // Business Locations
   const fetchLocation = async () => {
     try {
-      let response = await axios.get(SERVICE.BUSINESS_LOCATION, {
+      let response = await axios.post(SERVICE.BUSINESS_LOCATION, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation],
       });
 
-        let result = response.data.busilocations.filter((data, index)=>{
-          if(isUserRoleAccess.role == 'Admin'){
-            return data.assignbusinessid == setngs.businessid && data.activate == true
-          }else {
-            if(isUserRoleAccess.businesslocation.includes(data.name)){
-              return data.assignbusinessid == setngs.businessid && data.activate == true
-            }
-          }
-        })
-        setCompany(setngs.company.map((t) => ({
-          ...t,
-          label: t.companyname,
-          value: t.companyname
+      setCompany(setngs.company.map((t) => ({
+        ...t,
+        label: t.companyname,
+        value: t.companyname
       })))
       setBusilocations(
-        result.map((d) => (
+        response.data.busilocations.map((d) => (
           {
             ...d,
             label: d.name,
@@ -227,10 +219,10 @@ function StockTransferCreate() {
       );
     } catch (err) {
       const messages = err?.response?.data?.message;
-      if(messages) {
-          toast.error(messages);
-      }else{
-          toast.error("Something went wrong!")
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
       }
     }
   };
@@ -253,8 +245,8 @@ function StockTransferCreate() {
               <Selects
                 options={company}
                 styles={colourStyles}
-                onChange={(e) => { setTransfer({ ...transfer, fromcompany: e.value });  }}
-                 />
+                onChange={(e) => { setTransfer({ ...transfer, fromcompany: e.value }); }}
+              />
             </FormControl>
           </Grid>
           <Grid item md={3} sx={12} xs={12}>
@@ -272,10 +264,10 @@ function StockTransferCreate() {
             <InputLabel htmlFor="component-outlined" >Products Name <b style={{ color: 'red' }}>*</b></InputLabel>
             <FormControl size="small" fullWidth >
               <Selects
-              options={allProducts}
-              styles={colourStyles}
-              onChange={(e) => { fetchEvent(e) }}
-                />
+                options={allProducts}
+                styles={colourStyles}
+                onChange={(e) => { fetchEvent(e) }}
+              />
             </FormControl>
           </Grid>
           <Grid item md={3} sx={12} xs={12}>
@@ -303,19 +295,20 @@ function StockTransferCreate() {
                       <StyledTableCell>{item.sku}</StyledTableCell>
                       <StyledTableCell>{item.currentstock}</StyledTableCell>
                       <StyledTableCell>
-                        {selectedValue?.map((data, locationindex)=>(
-                            <>            
+                        {selectedValue?.map((data, locationindex) => (
+                          <>
                             <OutlinedInput
                               id="component-outlined"
                               key={locationindex}
                               value={[item.quantity[data]]}
-                              onChange={(e) => { 
-                                addQuantity(index, e.target.value, locationindex);  }}
+                              onChange={(e) => {
+                                addQuantity(index, e.target.value, locationindex);
+                              }}
                               size="small"
                               type="number"
                             />
                           </>
-                          ))
+                        ))
                         }
                       </StyledTableCell>
                       <StyledTableCell><AiOutlineClose onClick={(e) => { deleteRow(index, e); }} style={{ color: "red", cursor: "pointer" }} /></StyledTableCell>
@@ -358,7 +351,7 @@ function StockTransferCreate() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseClick} variant="outlined">Cancel</Button>
-          <Button autoFocus variant="contained" color='error' onClick={() => { addTransfer();}}> OK </Button>
+          <Button autoFocus variant="contained" color='error' onClick={() => { addTransfer(); }}> OK </Button>
         </DialogActions>
       </Dialog>
 
@@ -368,14 +361,14 @@ function StockTransferCreate() {
 }
 function StockTransferCreatetable() {
   return (
-     <Box>
-        <Navbar />
-        <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-            <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' }}}>
-                <StockTransferCreate /><br /><br /><br /><br />
-                <Footer />
-            </Box>
+    <Box>
+      <Navbar />
+      <Box sx={{ width: '100%', overflowX: 'hidden' }}>
+        <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
+          <StockTransferCreate /><br /><br /><br /><br />
+          <Footer />
         </Box>
+      </Box>
     </Box>
   );
 }

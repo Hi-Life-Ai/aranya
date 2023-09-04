@@ -21,7 +21,7 @@ function Roleeditlist() {
     const [showAlert, setShowAlert] = useState()
     const handleClickOpen = () => { setIsErrorOpen(true); };
     const handleClose = () => { setIsErrorOpen(false); };
-    
+
     const id = useParams().id
 
     const userAllSelect = () => {
@@ -49,13 +49,14 @@ function Roleeditlist() {
                 pdfdepartment: !role.pdfdepartment,
                 edepartment: !role.edepartment,
                 ddepartment: !role.ddepartment,
+                vdepartment: !role.vdepartment,
             }
         })
     }
 
     const categoryAllSelect = () => {
         setRole((prevData) => {
-            return { ...prevData, checkallcategory: !role.checkallcategory, acategory: !role.acategory, ecategory: !role.ecategory, dcategory: !role.dcategory, printcategory: !role.printcategory, pdfcategory: !role.pdfcategory }
+            return { ...prevData, checkallcategory: !role.checkallcategory, acategory: !role.acategory, ecategory: !role.ecategory, dcategory: !role.dcategory, printcategory: !role.printcategory, pdfcategory: !role.pdfcategory, excelcategory: !role.excelcategory, csvcategory: !role.csvcategory }
         })
     }
 
@@ -413,9 +414,9 @@ function Roleeditlist() {
             setRole(response.data.srole);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -471,6 +472,7 @@ function Roleeditlist() {
                 pdfdepartment: Boolean(role.pdfdepartment),
                 edepartment: Boolean(role.edepartment),
                 ddepartment: Boolean(role.ddepartment),
+                vdepartment: Boolean(role.vdepartment),
 
                 // Product
                 productmanagement: Boolean(role.productmanagement),
@@ -480,8 +482,11 @@ function Roleeditlist() {
                 acategory: Boolean(role.acategory),
                 ecategory: Boolean(role.ecategory),
                 dcategory: Boolean(role.dcategory),
+                excelcategory: Boolean(role.excelcategory),
+                csvcategory: Boolean(role.csvcategory),
                 printcategory: Boolean(role.printcategory),
                 pdfcategory: Boolean(role.pdfcategory),
+
                 // Unit
                 allunit: Boolean(role.allunit),
                 checkallunit: Boolean(role.checkallunit),
@@ -778,7 +783,7 @@ function Roleeditlist() {
                 csvtaxrate: Boolean(role.csvtaxrate),
                 printtaxrate: Boolean(role.printtaxrate),
                 pdftaxrate: Boolean(role.pdftaxrate),
-                
+
                 // Business Settings
                 businesssettings: Boolean(role.businesssettings),
 
@@ -809,11 +814,11 @@ function Roleeditlist() {
         }
         catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -999,6 +1004,11 @@ function Roleeditlist() {
                                 </Grid>
                                 <Grid>
                                     <FormGroup>
+                                        <FormControlLabel control={<Checkbox checked={Boolean(role.vdepartment)} onChange={(e) => setRole({ ...role, vdepartment: !role.vdepartment })} />} label="View Department" />
+                                    </FormGroup>
+                                </Grid>
+                                <Grid>
+                                    <FormGroup>
                                         <FormControlLabel control={<Checkbox checked={Boolean(role.exceldepartment)} onChange={(e) => setRole({ ...role, exceldepartment: !role.exceldepartment })} />} label="Excel Department" />
                                     </FormGroup>
                                 </Grid>
@@ -1053,6 +1063,16 @@ function Roleeditlist() {
                                 <Grid>
                                     <FormGroup>
                                         <FormControlLabel control={<Checkbox checked={Boolean(role.dcategory)} onChange={(e) => setRole({ ...role, dcategory: !role.dcategory })} />} label="Delete category" />
+                                    </FormGroup>
+                                </Grid>
+                                <Grid>
+                                    <FormGroup>
+                                        <FormControlLabel control={<Checkbox checked={Boolean(role.excelcategory)} onChange={(e) => setRole({ ...role, excelcategory: !role.excelcategory })} />} label="Excel category" />
+                                    </FormGroup>
+                                </Grid>
+                                <Grid>
+                                    <FormGroup>
+                                        <FormControlLabel control={<Checkbox checked={Boolean(role.csvcategory)} onChange={(e) => setRole({ ...role, csvcategory: !role.csvcategory })} />} label="CSV category" />
                                     </FormGroup>
                                 </Grid>
                                 <Grid>

@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useContext, } from "react";
 import { userStyle } from "../../PageStyle";
-import { Box, Grid, FormControl, OutlinedInput, InputLabel, Card, TableCell, Typography, Button, Table,TableContainer, TableHead, TableRow, TableBody, } from "@mui/material";
+import { Box, Grid, FormControl, OutlinedInput, InputLabel, Card, TableCell, Typography, Button, Table, Tooltip, IconButton, TableContainer, TableHead, TableRow, TableBody, } from "@mui/material";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from "axios";
+import { FcInfo } from "react-icons/fc";
+import Aarlogo from '../../../assets/images/aarlogo.png';
 import { Link } from 'react-router-dom';
 import Headtitle from '../../../components/header/Headtitle';
 import { toast } from 'react-toastify';
@@ -12,14 +15,14 @@ import moment from 'moment';
 
 const DraftView = () => {
 
-    const { auth, setngs } = useContext(AuthContext)
+    const { auth } = useContext(AuthContext)
 
     const [isDraft, setIsDraft] = useState({});
     const [tableData, setTableData] = useState([]);
 
     const id = useParams().id; 
 
-    // get all pos 
+    // get all draft 
     const fetchDraft = async () => {
         try {
             let res = await axios.get(`${SERVICE.DRAFT_SINGLE}/${id}`, {
@@ -30,12 +33,8 @@ const DraftView = () => {
             setIsDraft(res.data.sdraft);
             setTableData(res.data.sdraft.goods);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     };
 
@@ -55,26 +54,21 @@ const DraftView = () => {
         <Box id="fullScreen"
             sx={{
                 backgroundColor: 'white',
+                // color: "red",
                 position: "relative",
                 overflow: "hidden",
             }}
         >
-            <Headtitle title={'Draft View'} />
+            <Headtitle title={'Pos View'} />
             <form >
                 {/* Navbar Start */}
                 <Box sx={{ padding: "5px"}}>
                     <Grid container spacing={1} sx={userStyle.poscontainer} >
                         <Grid item lg={2} md={2} sm={2} xs={12}>
                             <Box sx={{ float: "left" }}>
-                            {setngs.businesslogo ? (
-                                        <>
-                                       <Link to="/">
-                                            <img src={setngs?.businesslogo} alt="logo" style={{ width: '150px', height: '70px', paddingLeft: 'px' }}></img>
-                                        </Link>
-                                        </>
-                                    ) : (
-                                        <></>
-                                )}
+                                <Link to="/">
+                                    <img src={Aarlogo} alt="logo" style={{ width: '150px', height: '70px', paddingLeft: 'px' }}></img>
+                                </Link>
                             </Box>
                         </Grid>
                         <Grid item md={2} sm={6} xs={12} sx={{ marginTop: "5px" }}>
@@ -88,10 +82,10 @@ const DraftView = () => {
                         <Grid item md={2} sm={6} xs={12} sx={{ marginTop: "5px" }}>
                             <InputLabel sx={{ marginTop: '-3px' }}> Business Location</InputLabel>
                             <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    value={isDraft.location}
-                                />
-                            </FormControl>
+                                    <OutlinedInput
+                                        value={isDraft.location}
+                                    />
+                                </FormControl>
                         </Grid>
                         <Grid item md={2} sm={6} xs={12} sx={{ marginTop: "5px" }}>
                             <InputLabel sx={{ marginTop: '-3px' }}> Salesman</InputLabel>
@@ -124,13 +118,12 @@ const DraftView = () => {
                                         <TableHead >
                                             <TableRow sx={userStyle.tableHead1}>
                                                 <TableCell style={{ marginLeft: '5px', paddingLeft: "10px", width: '155px', }}> Product Name </TableCell>
-                                                <TableCell style={{ width: '55px' }}>Rate type</TableCell>
                                                 <TableCell style={{ width: '55px' }}>Qty</TableCell>
                                                 <TableCell style={{ width: '95px' }}>MRP</TableCell>
                                                 <TableCell style={{ width: '95px' }}>Net Rate</TableCell>
                                                 <TableCell style={{ width: '175px' }}>Discount</TableCell>
                                                 <TableCell style={{ width: '155px' }}>After Discount </TableCell>
-                                                <TableCell style={{ width: '55px' }}>GST</TableCell>
+                                                <TableCell style={{ width: '55px' }}>Tax</TableCell>
                                                 <TableCell style={{ width: '155px' }}>Subtotal</TableCell>
                                             </TableRow>
                                         </TableHead>
@@ -140,8 +133,7 @@ const DraftView = () => {
                                                     return (
                                                         <>
                                                             <TableRow >
-                                                                <TableCell sx={{ fontSize: '12px', }} key={i}>{data?.productname}</TableCell>
-                                                                <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.ratetype}</Typography></TableCell>
+                                                                <TableCell sx={{ fontSize: '12px', }} key={i}>{data?.productname + '_' + data?.productid}</TableCell>
                                                                 <TableCell ><Typography sx={{ fontSize: '12px' }}>{data?.quantity}</Typography></TableCell>
                                                                 <TableCell ><Typography sx={{ fontSize: '12px' }}> {data?.mrp}</Typography></TableCell>
                                                                 <TableCell><Typography sx={{ fontSize: '12px' }}>{data?.netrate}</Typography></TableCell>
@@ -195,23 +187,13 @@ const DraftView = () => {
                     </Grid>
                     <Grid item xs={12} sm={12} md={4} lg={4} sx={{ p: 1, backgroundColor: '#fff', }}>
                         <Card sx={{ margin: '15px', padding: '30px', boxShadow: '0 0 10px -2px #444444' }}>
-                            <Box>
+                            <Box >
                                 <Typography ><b>Company Name:</b> {isDraft.company}</Typography><br />
                                 <Typography ><b>Address:</b> {isDraft.companyaddress}</Typography>
-                                <Typography ><b>GSTN:</b> {isDraft.gstn}</Typography>
-                                <Typography ><b>Contact Person:</b> {isDraft.companycontactpersonname+'/'+isDraft.companycontactpersonnumber}</Typography>
                                 <Typography ><b>Bank Name:</b> {isDraft.bankname}</Typography>
                                 <Typography ><b>Account Number:</b> {isDraft.accountnumber}</Typography>
                                 <Typography ><b>IFSC Code:</b> {isDraft.ifsccode}</Typography>
-                                <Typography ><b>Salesman:</b> {isDraft.salesman+'/'+isDraft.salesmannumber}</Typography><br />
-                                <Typography ><b>Delivery Name:</b> {isDraft.location}</Typography><br />
-                                <Typography ><b>Address:</b> {isDraft.deliveryaddress}</Typography>
-                                <Typography ><b>GSTN:</b> {isDraft.deliverygstn}</Typography>
-                                <Typography ><b>Contact Person:</b> {isDraft.deliverycontactpersonname+'/'+isDraft.deliverycontactpersonnumber}</Typography><br />
-                                <Typography ><b>Driver Details</b></Typography><br />
-                                <Typography ><b>Driver Name:</b> {isDraft.drivername}</Typography>
-                                <Typography ><b>Driver No:</b> {isDraft.drivernumber}</Typography>
-                                <Typography ><b>Contact No:</b> {isDraft.drivernphonenumber}</Typography>
+                                <Typography ><b>Salesman:</b> {isDraft.salesman}</Typography>
                             </Box>
                         </Card>
                     </Grid>

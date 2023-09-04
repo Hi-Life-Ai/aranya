@@ -5,27 +5,27 @@ import axios from 'axios';
 import { useEffect } from 'react';
 import { toast } from 'react-toastify';
 import Navbar from '../../../components/header/Navbar';
-import { useNavigate,Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Footer from '../../../components/footer/Footer';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import { Country, State, City } from "country-state-city";
 import Selects from 'react-select';
 import Headtitle from '../../../components/header/Headtitle';
 import { SERVICE } from '../../../services/Baseservice';
-import { AuthContext } from '../../../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../../../context/Appcontext';
 
 function BusinessLocCreate() {
-    
+
     const [busilocations, setBusilocations] = useState();
     const [isBusilocations, setIsBusilocations] = useState([]);
     const [isEmail, setIsEmail] = useState([]);
-
+    const { isUserRoleAccess } = useContext(UserRoleAccessContext);
     const { auth, setngs } = useContext(AuthContext);
 
     const [businsLoca, setBusinsLoca] = useState({
         name: "", locationid: "", landmark: "", city: "", zipcde: "", state: "", country: "", phonenumber: "", landlinenumber: "",
         email: "", website: "", onephonenumber: "", twophonenumber: "", threephonenumber: "", whatsappno: "", gstnno: "",
-        address: "", contactpersonname: "",contactpersonnum: "",
+        address: "", contactpersonname: "", contactpersonnum: "",
     });
 
     const exceptThisSymbols = ["e", "E", "+", "-", "."];
@@ -38,11 +38,11 @@ function BusinessLocCreate() {
     const handleClose = () => { setIsErrorOpen(false); };
 
     const backLPage = useNavigate();
-    
+
     // Country city state datas
-    const [selectedCountry, setSelectedCountry] = useState({ label: "India", name: "India" });
-    const [selectedState, setSelectedState] = useState({ label: "Tamil Nadu", name: 'Tamil Nadu' });
-    const [selectedCity, setSelectedCity] = useState({ label: "Tiruchirapalli", name: 'Tiruchirapalli' });
+    const [selectedCountry, setSelectedCountry] = useState(Country.getAllCountries().find(country => country.name === "India"));
+    const [selectedState, setSelectedState] = useState(State.getStatesOfCountry(selectedCountry?.isoCode).find(state => state.name === "Tamil Nadu"));
+    const [selectedCity, setSelectedCity] = useState(City.getCitiesOfState(selectedState?.countryCode, selectedState?.isoCode).find(city => city.name === "Tiruchirappalli"));
 
 
     // Auto id
@@ -71,79 +71,79 @@ function BusinessLocCreate() {
     // Fetch Business location data
     const fetchBusilocations = async () => {
         try {
-            let res = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let res = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
             });
-            let result = res.data.busilocations.filter((data, index)=>{
-                return data.assignbusinessid == setngs.businessid
-            })
-            let resultloc = result.map((data, index)=>{
+            let resultloc = res.data.busilocations.map((data, index) => {
                 return data.locationid
             })
-            let resultemail = result.map((data, index)=>{
+            let resultemail = res.data.busilocations.map((data, index) => {
                 return data.email
             })
             setIsEmail(resultemail);
             setIsBusilocations(resultloc);
-            setBusilocations(result);
+            setBusilocations(res.data.busilocations);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     const handlePincode = (e) => {
-        if(e.length > 6){
+        if (e.length > 6) {
             setShowAlert("Zipcode can't have more than 6 characters!")
             handleClickOpen();
-           let num = e.slice(0, 6);
-           setBusinsLoca({...businsLoca, zipcde: num})
+            let num = e.slice(0, 6);
+            setBusinsLoca({ ...businsLoca, zipcde: num })
         }
     }
     const handlePhone = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, phonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, phonenumber: num })
         }
     }
     const handlePhoneOne = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, onephonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, onephonenumber: num })
         }
     }
     const handlePhoneTwo = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, twophonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, twophonenumber: num })
         }
     }
     const handlePhoneThree = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("Phone number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, threephonenumber: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, threephonenumber: num })
         }
     }
     const handleWhatsApp = (e) => {
-        if(e.length > 10){
+        if (e.length > 10) {
             setShowAlert("WhatsApp number can't have more than 10 characters!")
             handleClickOpen();
-           let num = e.slice(0, 10);
-           setBusinsLoca({...businsLoca, whatsappno: num})
+            let num = e.slice(0, 10);
+            setBusinsLoca({ ...businsLoca, whatsappno: num })
         }
     }
 
@@ -151,9 +151,9 @@ function BusinessLocCreate() {
     const sendRequest = async () => {
         try {
             let res = await axios.post(SERVICE.BUSINESS_LOCATION_CREATE, {
-                    headers: {
-                        'Authorization': `Bearer ${auth.APIToken}`
-                    },
+                headers: {
+                    'Authorization': `Bearer ${auth.APIToken}`
+                },
                 name: String(businsLoca.name),
                 locationid: String(newval),
                 landmark: String(businsLoca.landmark),
@@ -170,11 +170,11 @@ function BusinessLocCreate() {
                 threephonenumber: Number(businsLoca.threephonenumber),
                 activate: Boolean(true),
                 whatsappno: Number(businsLoca.whatsappno),
-                gstnno:  String(businsLoca.gstnno),
-                contactpersonname:  String(businsLoca.contactpersonname),
-                contactpersonnum:  Number(businsLoca.contactpersonnum),
-                address:  String(businsLoca.address),
-                assignbusinessid:String(setngs.businessid),
+                gstnno: String(businsLoca.gstnno),
+                contactpersonname: String(businsLoca.contactpersonname),
+                contactpersonnum: Number(businsLoca.contactpersonnum),
+                address: String(businsLoca.address),
+                assignbusinessid: String(setngs.businessid),
             });
             setBusinsLoca(res.data);
             backLPage('/settings/location/list');
@@ -183,52 +183,50 @@ function BusinessLocCreate() {
             });
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     useEffect(
         () => {
             fetchBusilocations();
-        },
-        []
-    )
-    
+        }, [])
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        if(isBusilocations.includes(newval)){
+        if (isBusilocations.includes(newval)) {
             setShowAlert('ID already exits!')
             handleClickOpen();
         }
-        else if(businsLoca.name == ""){
+        else if (businsLoca.name == "") {
             setShowAlert('Please enter Business name!')
             handleClickOpen();
         }
-        else if(businsLoca.whatsappno == ""){
+        else if (businsLoca.whatsappno == "") {
             setShowAlert('Please enter WhatsApp number!')
             handleClickOpen();
         }
-        else if(businsLoca.whatsappno.length != 10){
+        else if (businsLoca.whatsappno.length != 10) {
             setShowAlert('WhatsApp number can notmore than 10 characters!')
             handleClickOpen();
         }
-        else if(businsLoca.email == ""){
+        else if (businsLoca.email == "") {
             setShowAlert('Please enter email!')
             handleClickOpen();
         }
-        else if(!businsLoca.email.includes('@' || '.')){
+        else if (!businsLoca.email.includes('@' || '.')) {
             setShowAlert('Please enter correct email!')
             handleClickOpen();
         }
-        else if(isEmail.includes(businsLoca.email)){
+        else if (isEmail.includes(businsLoca.email)) {
             setShowAlert('This email already exits!')
             handleClickOpen();
         }
-        else{
+        else {
             sendRequest();
         }
     };
@@ -256,7 +254,7 @@ function BusinessLocCreate() {
                             {busilocations && (
                                 busilocations.map(
                                     () => {
-                                        let strings = setngs ? setngs.businesslocationsku: "BL";
+                                        let strings = setngs ? setngs.businesslocationsku : "BL";
                                         let refNo = busilocations[busilocations.length - 1].locationid;
                                         let digits = (busilocations.length + 1).toString();
                                         const stringLength = refNo.length;
@@ -285,7 +283,7 @@ function BusinessLocCreate() {
                                         }
                                     }))}
                             <FormControl variant="outlined" size="small" fullWidth>
-                            <InputLabel htmlFor="component-outlined">location id</InputLabel>
+                                <InputLabel htmlFor="component-outlined">location id</InputLabel>
                                 <OutlinedInput id="outlined-adornment-password"
                                     label="location id"
                                     name="location id"
@@ -393,7 +391,7 @@ function BusinessLocCreate() {
                         </Grid>
                         <Grid item xs={12} sm={12} md={6} lg={6}>
                             <FormControl variant="outlined" size="small" fullWidth>
-                            <InputLabel htmlFor="component-outlined">Zipcode</InputLabel>
+                                <InputLabel htmlFor="component-outlined">Zipcode</InputLabel>
                                 <OutlinedInput id="outlined-adornment-password"
                                     name="zipcode"
                                     label="Zipcode"
@@ -414,7 +412,7 @@ function BusinessLocCreate() {
                                     name="mobilenumber"
                                     type="number"
                                     value={businsLoca.phonenumber}
-                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, phonenumber: e.target.value,locationid: newval, }); handlePhone(e.target.value) }}
+                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, phonenumber: e.target.value, locationid: newval, }); handlePhone(e.target.value) }}
                                     onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
                                 />
                             </FormControl>
@@ -442,7 +440,7 @@ function BusinessLocCreate() {
                                     name="mobilenumber 2"
                                     type="number"
                                     value={businsLoca.twophonenumber}
-                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, twophonenumber: e.target.value }); handlePhoneTwo(e.target.value)  }}
+                                    onChange={(e) => { setBusinsLoca({ ...businsLoca, twophonenumber: e.target.value }); handlePhoneTwo(e.target.value) }}
                                     onKeyDown={e => exceptThisSymbols.includes(e.key) && e.preventDefault()}
                                 />
                             </FormControl>
@@ -540,7 +538,9 @@ function BusinessLocCreate() {
                     </Grid>
                     <Grid container sx={userStyle.gridcontainer}>
                         <Grid >
-                            <Link to="/settings/location/list"><Button sx={userStyle.buttoncancel}>CANCEL</Button></Link>
+                            <Link to="/settings/location/list">
+                                <Button sx={userStyle.buttoncancel} >CANCEL</Button>
+                            </Link>
                             <Button sx={userStyle.buttonadd} type="submit" onClick={handleSubmit}>Save</Button>
                         </Grid>
                     </Grid>
@@ -570,7 +570,7 @@ function BusinessLocaCreate() {
         <Box>
             <Navbar />
             <Box sx={{ width: '100%', overflowX: 'hidden' }}>
-                <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' }}}>
+                <Box component="main" sx={{ paddingRight: '60px', paddingLeft: '60px', paddingTop: '20px', '@media (maxWidth: 600px)': { paddingLeft: '30px', paddingRight: '30px' } }}>
                     <BusinessLocCreate /><br /><br /><br /><br />
                     <Footer />
                 </Box>

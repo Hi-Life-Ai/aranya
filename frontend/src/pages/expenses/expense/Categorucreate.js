@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Box, Grid, FormControl, InputLabel, OutlinedInput, Button, Dialog, DialogTitle, DialogContent, DialogActions,} from '@mui/material';
+import { Box, Grid, FormControl, InputLabel, OutlinedInput, Button, Dialog, DialogTitle, DialogContent, DialogActions, } from '@mui/material';
 import AddCircleOutlineOutlinedIcon from '@mui/icons-material/AddCircleOutlineOutlined';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { SERVICE } from "../../../services/Baseservice";
-import { AuthContext } from '../../../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../../../context/Appcontext';
 import { userStyle } from '../../PageStyle';
 
 function CreateCatMod({ setSaveExpcate }) {
@@ -12,8 +12,10 @@ function CreateCatMod({ setSaveExpcate }) {
     const [expenseCategoryForm, setExpenseCategoryForm] = useState({
         categoryname: "", categorycode: "",
     });
+    const { isUserRoleAccess } = useContext(UserRoleAccessContext);
+
     const [isExcatCode, setIsExcatCode] = useState([]);
-  const [isExcatName, setIsExcatName] = useState([]);
+    const [isExcatName, setIsExcatName] = useState([]);
     const { auth, setngs } = useContext(AuthContext);
 
     // Add Modal
@@ -26,30 +28,31 @@ function CreateCatMod({ setSaveExpcate }) {
 
     const fetchData = async () => {
         try {
-            let res = await axios.get(SERVICE.EXPENSE_CATEGORY, {
+            let res = await axios.post(SERVICE.EXPENSE_CATEGORY_BYID, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = res.data.excategorys.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let excode = result.map((data,index)=>{
+            let excode = res.data.excategorys.map((data, index) => {
                 return data.categorycode
-              })
-          
-            let exname = result.map((data,index)=>{
-            return data.categoryname
             })
-              setIsExcatCode(excode);
-              setIsExcatName(exname);
+
+            let exname = res.data.excategorys.map((data, index) => {
+                return data.categoryname
+            })
+
+            setIsExcatCode(excode);
+            setIsExcatName(exname);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -75,9 +78,9 @@ function CreateCatMod({ setSaveExpcate }) {
             closeAdd();
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -121,14 +124,14 @@ function CreateCatMod({ setSaveExpcate }) {
                         <p style={{ color: 'red' }}>{showAlert}</p><br />
                         <Grid container spacing={3}>
                             <Grid item md={12} sm={12} xs={12}>
-                            
+
                                 <FormControl size="small" fullWidth>
-                                <InputLabel htmlFor="component-outlined">Category name <b style={{ color: 'red' }}>*</b></InputLabel>
+                                    <InputLabel htmlFor="component-outlined">Category name <b style={{ color: 'red' }}>*</b></InputLabel>
                                     <OutlinedInput
                                         sx={userStyle.alertOutline}
                                         id="component-outlined"
                                         value={expenseCategoryForm.categoryname}
-                                        onChange={(e) => { setExpenseCategoryForm({ ...expenseCategoryForm, categoryname: e.target.value });setShowAlert(""); }}
+                                        onChange={(e) => { setExpenseCategoryForm({ ...expenseCategoryForm, categoryname: e.target.value }); setShowAlert(""); }}
                                         type="text"
                                         label="category name"
                                         name="categoryname"
@@ -136,9 +139,9 @@ function CreateCatMod({ setSaveExpcate }) {
                                 </FormControl>
                             </Grid>
                             <Grid item md={12} sm={12} xs={12}>
-                            
+
                                 <FormControl size="small" fullWidth>
-                                <InputLabel htmlFor="component-outlined">Category Code <b style={{ color: 'red' }}>*</b></InputLabel>
+                                    <InputLabel htmlFor="component-outlined">Category Code <b style={{ color: 'red' }}>*</b></InputLabel>
                                     <OutlinedInput
                                         sx={userStyle.alertOutline}
                                         id="component-outlined"

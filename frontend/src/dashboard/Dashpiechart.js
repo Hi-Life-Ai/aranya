@@ -3,19 +3,23 @@ import CanvasJSReact from './canvasjs.react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { SERVICE } from '../services/Baseservice';
-import { AuthContext } from '../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../context/Appcontext';
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
 const getcmonth = new Date();
 const monthNames = ["January", "February", "March", "April", "May", "June",
 	"July", "August", "September", "October", "November", "December"
 ];
+
+
 const valnmonth = monthNames[getcmonth.getMonth()];
 
-function Dashpiechart({isLocations, isLocationChange}) {
+function Dashpiechart({ isLocations, isLocationChange }) {
 
 	const { auth, setngs } = useContext(AuthContext);
+	const { isUserRoleAccess, setAllPos, setIsActiveLocations, setAllLocations, setAllPurchases, isUserRoleCompare, isActiveLocations, allPurchases, allPos } = useContext(UserRoleAccessContext);
+
 	const [dataPoints, setDataPoints] = useState([])
-	let resultsdata =[]
+	let resultsdata = []
 
 	let posData = []
 	let collections = []
@@ -24,26 +28,29 @@ function Dashpiechart({isLocations, isLocationChange}) {
 	//	fetch pos data
 	const fetchPos = async () => {
 		try {
-			let res = await axios.get(SERVICE.POS, {
-				headers: {
-					'Authorization': `Bearer ${auth.APIToken}`
-				},
+			// let res = await axios.post(SERVICE.POS, {
+			// 	headers: {
+			// 		'Authorization': `Bearer ${auth.APIToken}`
+			// 	},
+			// 	locationid: String(setngs.businesscation),
+			// 	userassignedlocation: [isUserRoleAccess.businesslocation],
+			// 	role: String(isUserRoleAccess.role),
+
+			// })
+			let posresult = allPos?.filter((data, index) => {
+				if (isLocationChange) {
+					if (data.assignbusinessid == setngs.businessid && isLocations == data.location) {
+						resultsdata.push(data);
+					}
+				} else {
+					if (data.assignbusinessid == setngs.businessid) {
+						resultsdata.push(data);
+					}
+				}
 			})
-			let posresult = res.data.pos1.filter((data, index)=>{
-				if(isLocationChange){
-					if(data.assignbusinessid == setngs.businessid && isLocations == data.location){
-						resultsdata.push(data);
-					}
-				}else{
-					if(data.assignbusinessid == setngs.businessid){
-						resultsdata.push(data);
-					}
-				}	
-			  })			  
-			     resultsdata.filter((data) => {
+			resultsdata.filter((data) => {
 				posData.push(...data.goods)
 			})
-
 			const result = [...posData.reduce((r, o) => {
 				const key = o.productname;
 				const items = r.get(key) || Object.assign({}, o, {
@@ -61,22 +68,21 @@ function Dashpiechart({isLocations, isLocationChange}) {
 				return { y: +data.quantity, label: data.productname, color: colors[i] };
 			});
 			setDataPoints(collections);
-
 		} catch (err) {
 			const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+			if (messages) {
+				toast.error(messages);
+			} else {
+				toast.error("Something went wrong!")
+			}
 		}
 	}
 
 	useEffect(
-		()=>{
-		fetchPos();
+		() => {
+			fetchPos();
 
-	},[dataPoints, isLocations])
+		}, [dataPoints, isLocations])
 
 	const options = {
 		animationEnabled: true,
@@ -97,8 +103,8 @@ function Dashpiechart({isLocations, isLocationChange}) {
 		],
 	};
 	return (
-		<div> 
-			<CanvasJSChart sx={{width:'100%'}} options={options} />
+		<div>
+			<CanvasJSChart sx={{ width: '100%' }} options={options} />
 		</div>
 	);
 }

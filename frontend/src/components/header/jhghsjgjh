@@ -1,0 +1,317 @@
+import { React, useState, useEffect, useContext } from 'react';
+import { Typography, Box, Button, Grid, Dialog, DialogContent, DialogActions, InputLabel, FormControl, TextareaAutosize } from '@mui/material';
+import { userStyle } from '../Pagestyle'
+import Navbar from './navbar/Navbar';
+import { SERVICE } from '../../services/Baseservice';
+import { AuthContext } from '../../context/Appcontext';
+import Headtitle from "./navbar/Headtitle";
+import axios from "axios";
+import { toast } from 'react-toastify';
+
+
+const Dashboardlayout = () => {
+
+  const [showClockout, setshowClockout] = useState(false);
+  const [showClockin, setshowClockin] = useState(true);
+
+  //  Access
+  const { auth } = useContext(AuthContext);
+
+  const [attendance, setAttendance] = useState([]);
+  const [showtime, setShowtime] = useState("00:00:00");
+  const [isErrorOpen, setIsErrorOpen] = useState(false)
+    const handleOpen = () => { setIsErrorOpen(true); };
+    const handleClose = () => { setIsErrorOpen(false); };
+
+  let today = new Date();
+  var presentDate= new Date();
+  var year = presentDate.getFullYear();
+  var mes = (presentDate.getMonth()+1).toString();
+  let month = mes.length > 1 ? mes  : "0"+mes
+  var dia = (presentDate.getDate()).toString();
+  let date = dia.length > 1 ? dia  : "0"+dia
+  let presentDateFormat =date+"-"+month+"-"+year;
+
+  const[cid, setCid] = useState([]);
+
+//get single row to edit....
+const getCode = async () => {
+  try{
+    let res = await axios.get(`${SERVICE.USER_SINGLE}/${auth.loginuserid}`, {
+      headers: {
+        'Authorization': `Bearer ${auth.APIToken}`
+    }
+    })
+    setCid(res.data.suser)
+  }
+  catch(err){
+    const messages = err.response.data.message
+    toast.error(messages);
+  }
+}
+
+
+  const fetchAllattendance = async () => {
+    try {
+        let req_user = await axios.get(SERVICE.ATTANDANCES, {
+            headers: {
+                'Authorization': `Bearer ${auth.APIToken}`
+            }
+        });
+        let resut = req_user.data.attandances.filter((item, index)=>{           
+              return item
+        })  
+        setAttendance(resut);
+        
+    } catch(err){
+      const messages = err.response.data.message
+      toast.error(messages);
+    }
+}
+  
+let id;
+
+  id = attendance.filter((item) =>{
+    if(cid.staffid == item.staffid && presentDateFormat == item.date){
+      return item._id
+    }
+  })
+
+  let updateid=null;
+  updateid = id[0]?._id 
+
+var dd = String(today.getDate()).padStart(2, '0');
+var mm = String(today.getMonth() + 1).padStart(2, '0'); 
+var yyyy = today.getFullYear();
+let todayDate = yyyy+ '-' + mm+ '-' + dd; 
+
+let all='00h:00m:00s';
+
+
+useEffect(() => {
+
+const status = attendance.map((item)=>{
+  if(item.today.slice(0,10) == todayDate && item.status== true && item.username == cid.username && item.hideclockout == true){
+    setshowClockout(false);
+    setshowClockin(false);
+    }else if(item.today.slice(0,10) == todayDate && item.status== true && item.username == cid.username){
+      // let date2 = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+      // let date1 =id[0]?.clockintimer;
+
+      // const time1Ms = new Date(`01/01/2022 ${date1}`).getTime();
+      // const time2Ms = new Date(`01/01/2022 ${date2}`).getTime();
+      // const diffMs = time2Ms - time1Ms;
+      // const hours = Math.floor(date2 / 3600000);
+      // const minutes = Math.floor((date2 % 3600000) / 60000);
+      // const seconds = Math.floor(((date2 % 3600000) % 60000) / 1000);
+      // all = `${hours.toString().padStart(2, "0")}h:${minutes.toString().padStart(2, "0")}m:${seconds.toString().padStart(2, "0")}s`;
+
+      // setShowtime(all);
+      setshowClockout(true);
+      setshowClockin(false);
+    }
+})
+})
+
+const handleTimerOn = () =>{
+  let date2 = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+  let date1 = "00h:00m:00s";
+
+  const time1Ms = new Date(`01/01/2022 ${date1}`).getTime();
+  const time2Ms = new Date(`01/01/2022 ${date2}`).getTime();
+  const diffMs = time2Ms - time1Ms;
+  const hours = Math.floor(date2 / 3600000);
+  const minutes = Math.floor((date2 % 3600000) / 60000);
+  const seconds = Math.floor(((date2 % 3600000) % 60000) / 1000);
+  all = `${hours.toString().padStart(2, "0")}h:${minutes.toString().padStart(2, "0")}m:${seconds.toString().padStart(2, "0")}s`;
+
+  setShowtime(all);
+}
+
+useEffect(
+  ()=>{
+    let date2 = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    const time2Ms = new Date(`01/01/2022 ${date2}`).getTime();
+    const hours = Math.floor(time2Ms / 3600000);
+    const minutes = Math.floor((time2Ms % 3600000) / 60000);
+    const seconds = Math.floor(((time2Ms % 3600000) % 60000) / 1000);
+    all = `${hours.toString().padStart(2, "0")}h:${minutes.toString().padStart(2, "0")}m:${seconds.toString().padStart(2, "0")}s`;
+    console.log(date2,'date2')
+    console.log(all,'datetime')
+  },[]
+)
+
+  const handleClockIn = () => {
+    setshowClockout(true);
+    handleSubmit();
+  };
+
+  const handleClockOut = () => { 
+    let time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    sendRequestUpdate();   
+
+  };
+ 
+
+//add function 
+const sendRequest = async () => {
+  try {
+      let clockincreate = await axios.post(SERVICE.ATTANDANCE_CREATE, {
+        headers: {
+          'Authorization': `Bearer ${auth.APIToken}`
+        },
+       
+          clockintimer: (today.getHours() + "h:" + today.getMinutes() + "m:" + today.getSeconds()+"s"),
+          username: String(cid.username),
+          staffid: String(cid.staffid),
+          regular: Boolean(cid.regular),
+          status: Boolean(true),
+          date:presentDateFormat,
+          today:String(today),
+          totalhours:String("00h:00m:00s"),
+          clockouttime:String("00h:00m:00s"),
+          hideclockout:Boolean(false),     
+      })
+
+      toast.success("Attendance marked successfully!", {
+        position: toast.POSITION.TOP_CENTER
+      });
+      
+  }catch(err){
+    const messages = err.response.data.message
+    toast.error(messages);
+  }
+}
+
+const sendRequestUpdate = async () => {
+
+  try {
+      let clockincreate = await axios.put(`${SERVICE.ATTANDANCE_SINGLE}/${updateid}`, {
+        headers: {
+          'Authorization': `Bearer ${auth.APIToken}`
+          } ,
+          clockouttime: String(today.getHours() + "h:" + today.getMinutes() + "m:" + today.getSeconds()+"s"),
+          hideclockout: Boolean(true),              
+          totalhours :showtime
+          
+      })
+      toast.success("Attendance marked timer stopped successfully!", {
+        position: toast.POSITION.TOP_CENTER
+    });
+  } catch(err){
+    const messages = err.response.data.message
+    toast.error(messages);
+
+  }
+}
+
+//submit option for saving
+const handleSubmit = () => {
+  sendRequest();  
+}
+
+useEffect(
+  () => {
+    getCode();
+    fetchAllattendance();   
+  }
+)
+
+
+ return (
+    <Box sx={{ overflow: 'hidden', }}>
+      <Headtitle title={'Dashboard'} />
+      <Typography sx={{ color: '#fff', fontSize: "25px" }}>Welcome {auth.loginusername}
+      </Typography><br /><br />
+      <Grid color='red'>
+       <Grid container>
+            <Grid item md={6} sm={12}></Grid>
+            <Grid item md={6} sm={12}>  
+             {showClockout && (
+              <>
+                <Box sx={{display:'flex', justifyContent:'right', marginRight:'80px'}}>      
+                  <Typography sx={{padding:'10px 20px', width:'max-content', boxShadow:'0px 0px 5px black'}}> {showtime}</Typography>
+                  <Button color='success' onClick={handleTimerOn}>Timer on</Button>
+                  <Button color='error' onClick={handleOpen}>Timer off</Button>
+               </Box> 
+              </>
+             )
+               }
+            </Grid>
+        </Grid><br /><br />
+        <Grid container>      
+            <Grid item md={12} sm={12}>    
+              {showClockout && ( 
+                <>     
+                <Typography variant='h6'>You are clocked in.</Typography><br />
+                <Button onClick={handleClockOut}  sx={userStyle.clockinbtn} id="myButton" variant="contained" color="secondary">Clock Out</Button>
+                </>
+                ) }
+            </Grid>  
+            <Grid item md={12} sm={12}>  
+              {showClockin && (
+              <>
+                <Typography></Typography>
+                  <Box sx={{display:'flex', justifyContent:'right'}}>                    
+                      <Button onClick={handleClockIn} sx={userStyle.clockinbtn} variant="contained" color="secondary"> Clock In</Button>
+                  </Box> 
+                  </>
+                ) }
+            </Grid>  
+            <Grid item md={12} sm={12}>    
+              {(showClockout == false && showClockin == false) &&( 
+                <>     
+                <Typography variant='h6'>Maximum time reached attendance marked.</Typography>
+                </>
+                ) }
+            </Grid>           
+        </Grid> 
+      </Grid>
+        <Box>
+          <Dialog
+              open={isErrorOpen}
+              onClose={handleClose}
+              aria-labelledby="alert-dialog-title"
+              aria-describedby="alert-dialog-description"
+          >
+              <DialogContent sx={{ width: '350px', textAlign: 'center', alignItems: 'center' }}>
+                  <Typography variant="h6" >Remark Popup</Typography>
+                <Grid>
+                  <InputLabel htmlFor="component-outlined">Remarks</InputLabel>
+                  <FormControl size="small" fullWidth >
+                    <TextareaAutosize aria-label="minimum height" minRows={5} mincol={5} style={{ border: '1px solid #ff47a8', backgroundColor: 'rgb(40,39,39)', color:'#ff00a5' }}
+                      type="text"
+                    />
+                  </FormControl>
+                </Grid>
+              </DialogContent>
+              <DialogActions>
+                  <Button variant="contained" color="error" onClick={handleClose} >ok</Button>
+              </DialogActions>
+          </Dialog>
+      </Box>
+    </Box>
+  );
+}
+
+const Empdashboard = () => {
+  return (
+    <>
+      <Navbar sx={{ backgroundColor: "#272626" }} />
+      <Box sx={{
+        display: 'flex', backgroundColor: "#272626", overflowY: 'hidden !important',
+        height: "100vh ",
+      }}>
+        {/* Main Dashboard start */}
+        <Box sx={{ width: '100%', overflowX: 'hidden' }}>
+          <Box component="main" sx={{ padding: '30px', }}><br />
+            <Dashboardlayout />
+          </Box>
+        </Box>
+        {/* Main Dashboard end */}
+      </Box>
+    </>
+  )
+}
+
+export default Empdashboard;

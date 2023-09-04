@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { userStyle, } from '../../PageStyle';
-import { Box, Grid, FormControl, Tooltip, InputLabel,OutlinedInput, TextareaAutosize, Typography,FormGroup, FormControlLabel, Checkbox, Button, IconButton } from '@mui/material';
+import { Box, Grid, FormControl, Tooltip, InputLabel,OutlinedInput, TextareaAutosize, Typography, TextField, FormGroup, FormControlLabel, Checkbox, Button, IconButton } from '@mui/material';
 import { FcInfo } from "react-icons/fc";
 import Navbar from '../../../components/header/Navbar';
 import Footer from '../../../components/footer/Footer';
+import { UserRoleAccessContext } from '../../../context/Appcontext';
 import axios from 'axios';
-import { Link, useParams } from 'react-router-dom';
+import { useNavigate, Link, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext } from '../../../context/Appcontext';
@@ -19,6 +20,7 @@ function Productcreatelist() {
     const id = useParams().id;
     // Text field
     const [product, setProduct] = useState({});
+    const backLPage = useNavigate();
 
     const getProducts = async () => {
         try {
@@ -29,12 +31,8 @@ function Productcreatelist() {
             })
             setProduct(res.data.sproduct);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-        if(messages) {
+            const messages = err.response.data.message;
             toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
         }
     }
     useEffect(() => {
@@ -49,26 +47,25 @@ function Productcreatelist() {
                 <Typography sx={userStyle.HeaderText}>View product</Typography>
                 {/* content start */}
                 <Box sx={userStyle.container}>
-                <Grid container spacing={2} sx={userStyle.textInput}>
+                    <Grid container spacing={2} sx={userStyle.textInput}>
                         <Grid item lg={4} md={4} sm={6} xs={12}>
                             <InputLabel >Category <b style={{ color: 'red' }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.category}
-                                />
-                            </FormControl>
+                            <Grid sx={{ display: 'flex' }}>
+                                <FormControl size="small" fullWidth sx={{ display: 'flex' }}>
+                                    <OutlinedInput
+                                        value={product.category}
+
+                                    />
+                                </FormControl>
+                            </Grid>
+
                         </Grid>
                         <Grid item lg={4} md={4} sm={6} xs={12}>
                             <InputLabel >Sub category</InputLabel>
                             <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
+                                <OutlinedInput
                                     value={product.subcategory}
+
                                 />
                             </FormControl>
                         </Grid>
@@ -82,50 +79,16 @@ function Productcreatelist() {
                             </FormControl>
                         </Grid>
                         <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel htmlFor="component-outlined" >Company Rate<b style={{ color: 'red' }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.companyrate}
-                                />
-                            </FormControl>
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel htmlFor="component-outlined" >Super Stocky's Rate<b style={{ color: 'red' }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.superstockrate}
-                                />
-                            </FormControl>
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel htmlFor="component-outlined" >Dealer Rate<b style={{ color: 'red' }}>*</b></InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
-                                    value={product.dealerrate}
-                                />
-                            </FormControl>
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
                             <InputLabel htmlFor="component-outlined" >MRP<b style={{ color: 'red' }}>*</b></InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
                                     type='number'
                                     id="component-outlined"
                                     value={product.mrp}
+                                    sx={userStyle.input}
                                 />
                             </FormControl>
                         </Grid>
-
                         <Grid item lg={3} md={3} sm={6} xs={12}>
                             <Grid sx={{ display: "flex" }}>
                                 <InputLabel htmlFor="component-outlined">SKU <b style={{ color: 'red' }}>*</b></InputLabel>
@@ -138,10 +101,9 @@ function Productcreatelist() {
                                 </Grid>
                             </Grid>
                             <FormControl size="small" fullWidth>
-                            <OutlinedInput
-                                    id="outlined-adornment-password"
+                                <OutlinedInput
+                                    id="component-outlined"
                                     value={product.sku}
-                                    sx={userStyle.input}
                                 />
                             </FormControl>
                         </Grid>
@@ -149,21 +111,7 @@ function Productcreatelist() {
                             <InputLabel >HSN</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    sx={userStyle.input}
-                                    type='number'
-                                    id="component-outlined"
                                     value={product.hsn}
-                                />
-                            </FormControl>
-
-                        </Grid>
-                        <Grid item lg={3} md={3} sm={6} xs={12}>
-                            <InputLabel >Applicable Tax</InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    id="outlined-adornment-password"
-                                    value={product.applicabletax}
-                                    sx={userStyle.input}
                                 />
                             </FormControl>
                         </Grid>
@@ -171,9 +119,7 @@ function Productcreatelist() {
                             <InputLabel >Label type</InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
-                                    id="outlined-adornment-password"
                                     value={product.labeltype}
-                                    sx={userStyle.input}
                                 />
                             </FormControl>
                         </Grid>
@@ -181,19 +127,22 @@ function Productcreatelist() {
                             <InputLabel >Expiry Date<b style={{ color: 'red' }}>*</b></InputLabel>
                             <FormControl size="small" fullWidth>
                                 <OutlinedInput
+                                    type='date'
                                     value={product.expirydate}
                                 />
                             </FormControl>
                         </Grid>
+
+                        {/* color multi select end */}
                         <Grid item lg={4} md={4} sm={6} xs={12}>
                             <InputLabel >Unit</InputLabel>
-                            <FormControl size="small" fullWidth sx={{ display: 'flex' }}>
-                                <OutlinedInput
-                                    id="outlined-adornment-password"
-                                    value={product.unit}
-                                    sx={userStyle.input}
-                                />
+                            <Grid sx={{ display: 'flex' }}  >
+                                <FormControl size="small" fullWidth sx={{ display: 'flex' }}>
+                                    <OutlinedInput
+                                        value={product.unit}
+                                    />
                                 </FormControl>
+                            </Grid>
                         </Grid>
                         <Grid item lg={4} md={4} sm={6} xs={12}>
                             <InputLabel htmlFor="outlined-adornment-password">Quantity</InputLabel>
@@ -201,13 +150,14 @@ function Productcreatelist() {
                                 <OutlinedInput
                                     id="outlined-adornment-password"
                                     value={product.currentstock}
+                                    type="number"
                                     sx={userStyle.input}
                                 />
                             </FormControl>
                         </Grid>
-                        <Grid item lg={4} md={4} sm={6} xs={12}>
-                        <FormGroup>
-                                <span><FormControlLabel control={<Checkbox checked={product.managestock} />} label="Manage Stock" />
+                        <Grid item lg={3} md={3} sm={6} xs={12}>
+                            <FormGroup>
+                                <span><FormControlLabel control={<Checkbox checked={Boolean(product.managestock)}/>} label="Manage Stock" />
                                     <Tooltip title="Enable or disable stock management for a product." placement="top" arrow>
                                         <IconButton size="small">
                                             <FcInfo />
@@ -217,57 +167,71 @@ function Productcreatelist() {
                             </FormGroup>
                             <Typography variant='body2' style={{ marginTop: "5px" }}>Enable stock management at product level</Typography>
                         </Grid>
-                        {product.managestock ? (
                             <>
-                                <Grid item lg={4} md={4} sm={6} xs={12}>
+                                <Grid item lg={3} md={3} sm={6} xs={12}>
                                     <InputLabel htmlFor="outlined-adornment-password">Minimum Quantity</InputLabel>
                                     <FormControl variant="outlined" size="small" fullWidth>
                                         <OutlinedInput
-                                        id="outlined-adornment-password"
-                                        value={product.minquantity}
-                                        sx={userStyle.input}
-                                    />
+                                            id="outlined-adornment-password"
+                                            value={product?.minquantity}
+                                            type="number"
+                                            sx={userStyle.input}
+                                        />
                                     </FormControl>
                                 </Grid>
-                                <Grid item lg={4} md={4} sm={6} xs={12}>
+                                <Grid item lg={3} md={3} sm={6} xs={12}>
                                     <InputLabel htmlFor="outlined-adornment-password">Maximum Quantity</InputLabel>
                                     <FormControl variant="outlined" size="small" fullWidth>
                                         <OutlinedInput
                                             id="outlined-adornment-password"
-                                            value={product.maxquantity}
+                                            value={product?.maxquantity}
+                                            type="number"
                                             sx={userStyle.input}
                                         />
                                     </FormControl>
                                 </Grid>
                             </>
-                        ) : (<> </>)}
-                        <Grid item lg={4} md={4} sm={6} xs={12}>
-                            <InputLabel >Selling Price Tax Type </InputLabel>
-                            <FormControl size="small" fullWidth>
-                                <OutlinedInput
-                                    id="outlined-adornment-password"
-                                    value={product.sellingpricetax}
-                                    sx={userStyle.input}
+                        <Grid item lg={9} md={9} sm={8} xs={12}>
+                            <InputLabel  sx={{ m: 1 }}>Product Description</InputLabel>
+                            <FormControl size="small" fullWidth >
+                                <TextareaAutosize aria-label="minimum height" minRows={7} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
+                                    value={product.productdescription}
                                 />
                             </FormControl>
                         </Grid>
-                        <Grid item lg={4} md={4} sm={6} xs={12}>
+                        <Grid item lg={3} md={3} sm={4} xs={12}>
                             <InputLabel sx={{ m: 1 }}>Product Image</InputLabel>
-                            <Grid sx={{ display: 'flex', justifyContent: 'center' }}>
-                                {product.productimage ? (
-                                    <>
-                                    <img src={product.productimage} style={{width:'50%'}} height="100px" />  
-                                    </>
-                                ):(
-                                    <></>
-                                )}
-                            </Grid>
+                            <img src={product.productimage} alt="image" width="70px" height="70px" />
                         </Grid>
-                        <Grid item lg={12} md={12} sm={12} xs={12} >
-                            <InputLabel sx={{ m: 1 }}>Product Description</InputLabel>
+                    </Grid><br />
+                    <Grid container spacing={2}>
+                        <Grid item md={4} sm={4} xs={12}>
+                            <InputLabel >HSN code</InputLabel>
                             <FormControl size="small" fullWidth>
-                                <TextareaAutosize aria-label="minimum height" minRows={7} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
-                                    value={product.productdescription}
+                                <TextField
+                                    id="date"
+                                    type="text"
+                                    size='small'
+                                    value={product.hsncode}
+                                />
+                            </FormControl>
+                        </Grid>
+                        {/* : */}
+                        <Grid item md={4} sm={4} xs={12}>
+                            <InputLabel >Applicable Tax</InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    value={product?.applicabletax}
+                                />
+
+                            </FormControl>
+                        </Grid>
+
+                        <Grid item md={4} sm={4} xs={12}>
+                            <InputLabel >Selling Price Tax Type </InputLabel>
+                            <FormControl size="small" fullWidth>
+                                <OutlinedInput
+                                    value={product?.sellingpricetax}
                                 />
                             </FormControl>
                         </Grid>
@@ -275,6 +239,7 @@ function Productcreatelist() {
                     <Grid container sx={userStyle.gridcontainer}>
                         <Grid >
                             <Link to="/product/product/list"><Button sx={userStyle.buttoncancel}>Back</Button></Link>
+
                         </Grid>
                     </Grid>
                 </Box>

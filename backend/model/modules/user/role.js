@@ -476,10 +476,6 @@ const roleSchema = new Schema({
         type: Boolean,
         required: false
     },
-    vcurrentstocktransferlist: {
-        type: Boolean,
-        required: false
-    },
     excelcurrentstocktransferlist: {
         type: Boolean,
         required: false
@@ -507,10 +503,6 @@ const roleSchema = new Schema({
         required: false
     },
     checkallcurrentstockadjust: {
-        type: Boolean,
-        required: false
-    },
-    vcurrentstockadjust: {
         type: Boolean,
         required: false
     },
@@ -1181,6 +1173,40 @@ const roleSchema = new Schema({
         required: false
     },
 
+    // HSN
+    alltaxratehsn: {
+        type: Boolean,
+        required: false
+    },
+    checkalltaxratehsn: {
+        type: Boolean,
+        required: false
+    },
+    ataxratehsn: {
+        type: Boolean,
+        required: false
+    },
+    dtaxratehsn: {
+        type: Boolean,
+        required: false
+    },
+    exceltaxratehsn: {
+        type: Boolean,
+        required: false
+    },
+    csvtaxratehsn: {
+        type: Boolean,
+        required: false
+    },
+    printtaxratehsn: {
+        type: Boolean,
+        required: false
+    },
+    pdftaxratehsn: {
+        type: Boolean,
+        required: false
+    },
+
     // Business Settings
     businesssettings: {
         type: Boolean,
@@ -1256,6 +1282,7 @@ const roleSchema = new Schema({
         type: Boolean,
         required: false
     },
+
     createdAt: {
         type: Date,
         default: Date.now

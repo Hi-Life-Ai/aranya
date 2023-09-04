@@ -30,7 +30,7 @@ const Expenseeditlist = () => {
     const [expenseForm, setExpenseForm] = useState({
         busilocation: "", expcategory: "", referenceno: "",
         expcontact: "", expimage: "", exptax: "", totalamount: "", expnote: "",
-        expamount: "", repeaton: "", exppaidon: "", paymethod: "",cardnum: "", cardhname: "",
+        expamount: "", repeaton: "", exppaidon: "", paymethod: "", cardnum: "", cardhname: "",
         cardtransnum: "", cardtype: "", month: "", year: "", securitycode: "", checkno: "",
         baccno: "", transnum1: "", transnum2: "", transnum3: "", transnum4: "",
         transnum5: "", transnum6: "", transnum7: "", paynotes: "", duppaydue: 0.00, paydue: 0.0
@@ -51,17 +51,27 @@ const Expenseeditlist = () => {
     const [files, setFiles] = useState([]);
 
     const handleFileUpload = (event) => {
-        const files = event.target.files;
-        const reader = new FileReader();
-        for (let i = 0; i <= 1; i++) {
-            const file = files[i];
-            reader.readAsDataURL(file);
-            reader.onload = () => {
-                setFiles((prevFiles) => [
-                    ...prevFiles,
-                    { name: file.name, data: reader.result.split(',')[1] },
-                ]);
-            };
+        const files = event.target.files[0];
+
+        const reader = new FileReader()
+        const file = files;
+        reader.readAsDataURL(files)
+        if (file) {
+            // Get the file extension
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            // Check if the file is an image or PDF
+            if (['jpg', 'jpeg', 'png', 'pdf'].includes(fileExtension)) {
+                // Handle the file upload here
+                reader.onloadend = (event) => {
+                    setFiles((prevFiles) => [
+                        ...prevFiles,
+                        { name: file.name, preview: reader.result, data: reader.result.split(',')[1] },
+                    ]);
+                };
+            } else {
+                // Display an error message or take appropriate action for unsupported file types
+                toast.error('Unsupported file type. Only images and PDFs are allowed.');
+            }
         }
     };
 
@@ -70,25 +80,20 @@ const Expenseeditlist = () => {
     };
 
     // Business Locations
-    const fetchLocation = async (expenselist) => {
+    const fetchLocation = async () => {
         try {
-            let res = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let res = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = res.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate == true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate == true
-                    }
-                }
-            })
-           
+
             setBusilocations(
-                result?.map((d) => ({
+                res.data.busilocations?.map((d) => ({
                     ...d,
                     label: d.name,
                     value: d.name,
@@ -96,9 +101,9 @@ const Expenseeditlist = () => {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -107,16 +112,18 @@ const Expenseeditlist = () => {
     // Expense Category
     const fetchExpenseCategory = async () => {
         try {
-            let res = await axios.get(SERVICE.EXPENSE_CATEGORY, {
+            let res = await axios.post(SERVICE.EXPENSE_CATEGORY_BYID, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = res.data.excategorys.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
+
             setExcategorys(
-                result?.map((d) => ({
+                res.data.excategorys?.map((d) => ({
                     ...d,
                     label: d.categoryname,
                     value: d.categoryname,
@@ -124,9 +131,9 @@ const Expenseeditlist = () => {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -142,30 +149,30 @@ const Expenseeditlist = () => {
                 }
             });
             setExpenseForm(response.data.sexpense);
+            setFiles(response?.data?.sexpense?.files)
             await fetchLocation(response.data.sexpense);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
     //taxrates
     const fetchRates = async () => {
         try {
-            let response = await axios.get(SERVICE.TAXRATE, {
+            let response = await axios.post(SERVICE.TAXRATE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
             });
-            let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
-            })
+
             setTaxrates(
-                taxRateData?.map((d) => ({
+                response.data.taxrates?.map((d) => ({
                     ...d,
                     label: d.taxname,
                     value: d.taxname,
@@ -173,9 +180,9 @@ const Expenseeditlist = () => {
             );
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -221,11 +228,11 @@ const Expenseeditlist = () => {
             backLPage('/expense/expense/list');
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -281,13 +288,13 @@ const Expenseeditlist = () => {
                                     <Grid sx={userStyle.spanIcons}>
                                         <CreateCatMod setSaveExpcate={setSaveExpcate} />
                                     </Grid>
-                                    <Grid sx={{'& .MuiIconButton-root': {marginTop: '7px'}}}>
-                                    <Tooltip title="You can add categories through the plus icon" placement="top" arrow>
-                                        <IconButton size="small">
-                                            <FcInfo />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Grid>
+                                    <Grid sx={{ '& .MuiIconButton-root': { marginTop: '7px' } }}>
+                                        <Tooltip title="You can add categories through the plus icon" placement="top" arrow>
+                                            <IconButton size="small">
+                                                <FcInfo />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Grid>
                                 </Grid>
                             </FormControl>
                         </Grid>
@@ -371,7 +378,7 @@ const Expenseeditlist = () => {
                         <Grid item md={12} sm={12} xs={12}>
                             <InputLabel id="demo-select-small" sx={{ m: 1 }}>Expense Note</InputLabel>
                             <FormControl size="small" fullWidth >
-                            <TextareaAutosize aria-label="minimum height" minRows={3} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
+                                <TextareaAutosize aria-label="minimum height" minRows={3} style={{ border: '1px solid rgb(0 0 0 / 60%)' }}
                                     value={expenseForm.expnote}
                                     onChange={(e) => { setExpenseForm({ ...expenseForm, expnote: e.target.value }) }}
                                     name="paynotes"

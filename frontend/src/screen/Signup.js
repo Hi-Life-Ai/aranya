@@ -19,6 +19,7 @@ import { Country, State } from "country-state-city";
 import Select from 'react-select';
 import './Signin.css';
 import axios from 'axios';
+import { GoogleLogin } from 'react-google-login';
 import { toast } from 'react-toastify';
 import { AUTH } from '../services/Authservice';
 import { SERVICE } from '../services/Baseservice';
@@ -46,12 +47,8 @@ const Signup = () => {
             let res_users = await axios.get(`${SERVICE.USER_TERMSTRUE}`);
             setAutoid(res_users.data.usersterms);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     }
 
@@ -61,12 +58,8 @@ const Signup = () => {
             let res_business = await axios.get(`${SERVICE.SETTINGS}`);
             setBusinessAutoid(res_business.data.busisetngs);
         } catch (err) {
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     }
 
@@ -495,6 +488,15 @@ const Signup = () => {
                 printtaxrate: Boolean(true),
                 pdftaxrate: Boolean(true),
 
+                // HSN
+                alltaxratehsn: Boolean(true),
+                checkalltaxratehsn: Boolean(true),
+                ataxratehsn: Boolean(true),
+                dtaxratehsn: Boolean(true),
+                exceltaxratehsn: Boolean(true),
+                csvtaxratehsn: Boolean(true),
+                printtaxratehsn: Boolean(true),
+                pdftaxratehsn: Boolean(true),
                 // Business Settings
                 businesssettings: Boolean(true),
 
@@ -514,12 +516,8 @@ const Signup = () => {
             setSignup(auth.data);
             backPage('/signin')
         } catch(err){
-            const messages = err?.response?.data?.message;
-            if(messages) {
-                toast.error(messages);
-            }else{
-                toast.error("Something went wrong!")
-            }
+            const messages = err.response.data.message;
+            toast.error(messages);
         }
     }
     const responseGoogle = (response) => {
@@ -730,7 +728,7 @@ const Signup = () => {
                                 <Box sx={loginSignIn.socialicons}>
                                 <Box component="img" sx={loginSignIn.socialgoogle} alt="Google logo" src={google} />
                         {/* <Typography sx={loginSignIn.socialiconstxt}>Google</Typography> */}
-                        {/* <GoogleLogin
+                        <GoogleLogin
                                   clientId="517438224490-cdrp1615c7jtmh2bb9orh31dvsiok6d8.apps.googleusercontent.com"
                                   
                                   render={renderProps => (
@@ -740,7 +738,7 @@ const Signup = () => {
                                   onSuccess={responseGoogle}
                                   onFailure={responseGoogle}
                                   cookiePolicy={'single_host_origin'}
-                                /> */}
+                                />
                                 </Box>
                   
                                 <Box sx={loginSignIn.micrsoftlogo}>

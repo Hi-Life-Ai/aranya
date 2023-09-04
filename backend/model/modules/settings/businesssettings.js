@@ -17,7 +17,19 @@ const busisetngSchema = new Schema({
         type: String,
         required: false
     },
-    signature: {
+    dprofitpercent: {
+        type: Number,
+        required: false
+    },
+    currency:{
+        type: String,
+        required: false
+    },
+    currencysymbol:{
+        type: String,
+        required: false
+    },
+    timezone:{
         type: String,
         required: false
     },
@@ -25,11 +37,55 @@ const busisetngSchema = new Schema({
         type: String,
         required: false
     },
+    fyearsstartmonth:{
+        type: String,
+        required: false
+    },
+    stockaccountmethod:{
+        type: String,
+        required: false
+    },
+    dateformat:{
+        type: String,
+        required: false
+    },
+    timeformat:{
+        type: String,
+        required: false
+    },
     skuprefix:{
         type: String,
         required: false
     },
+    credeitlimit:{
+        type: Number,
+        required: false 
+    },
+    purchasesku:{
+        type: String,
+        required: false
+    },
+    purchasereturnsku:{
+        type: String,
+        required: false
+    },
+    purchaseordersku:{
+        type: String,
+        required: false
+    },
     expensesku:{
+        type: String,
+        required: false
+    },
+    customersku:{
+        type: String,
+        required: false
+    },
+    suppliersku:{
+        type: String,
+        required: false
+    },
+    cusgroupsku:{
         type: String,
         required: false
     },
@@ -58,6 +114,18 @@ const busisetngSchema = new Schema({
         type:String,
         required: false
     },
+    ciono:{
+        type:Number,
+        required: false
+    },
+    gstno:{
+        type:Number,
+        required: false
+    },
+    discountsku:{
+        type:String,
+        required:false
+    },
     applicabletax:{
         type:String,
         required: false
@@ -65,6 +133,14 @@ const busisetngSchema = new Schema({
     departmentsku:{
         type:String,
         required:false
+    },
+    passwordsku:{
+        type:String,
+        required:false
+    },
+    multivalue:{
+        type:String,
+        required: false
     },
     sellingpricetax:{
         type:String,

@@ -10,11 +10,13 @@ import Navbar from '../../../components/header/Navbar';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import Footer from '../../../components/footer/Footer';
 import { SERVICE } from '../../../services/Baseservice';
-import { AuthContext } from '../../../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../../../context/Appcontext';
 import Headtitle from '../../../components/header/Headtitle';
+
 
 function Categorycreate() {
 
+  const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
   const { auth, setngs } = useContext(AuthContext);
   const [categoryForm, setCategoryForm] = useState({ categoryname: "", categorycode: "", categorydescription: "", });
   const [isSubCategory, setIsSubCategory] = useState([])
@@ -74,50 +76,41 @@ function Categorycreate() {
       backLPage('/product/category/list');
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            setShowAlert(messages);
-            handleClickOpenc();
-        }else{
-            setShowAlert("Something went wrong!");
-            handleClickOpenc();
-        }
+      if (messages) {
+        setShowAlert(messages);
+        handleClickOpenc();
+      } else {
+        setShowAlert("Something went wrong!");
+        handleClickOpenc();
+      }
     }
   };
 
   const fetchData = async () => {
     try {
-      let res = await axios.get(SERVICE.CATEGORIES, {
+      let res = await axios.post(SERVICE.CATEGORIES, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid),
       });
-      let resultcode = res.data.categories.map((data, index) => {
-        if (data.assignbusinessid == setngs.businessid) {
-          return data.categorycode
-        }
-      })
-      let resultname = res.data.categories.map((data, index) => {
-        if (data.assignbusinessid == setngs.businessid) {
-          return data.categoryname
-        }
-      })
-      setCateCode(resultcode);
-      setCateName(resultname);
+      setCateCode(res?.data?.categories);
+      setCateName(res?.data?.categories);
     }
-     catch (err) {
+    catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
   useEffect(
     () => {
-    fetchData();
-  }, [])
+      fetchData();
+    }, [])
 
 
   //sub category add new item

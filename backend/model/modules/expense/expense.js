@@ -49,6 +49,10 @@ const expenseSchema = new Schema ({
         type: String,
         required: false
     },
+    payaccount:{
+        type: String,
+        required: false
+    },
     cardnum:{
         type: String,
         required: false

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useContext, } from "react";
 import { userStyle } from "../../PageStyle";
 import { makeStyles } from "@material-ui/core/styles";
-import { Box, Grid, Select, MenuItem,DialogTitle, InputLabel, FormControl, OutlinedInput, FormControlLabel, Card, Checkbox, FormGroup, Paper, TextField, TableCell, Typography, Drawer, Button, Table, Tooltip, IconButton, TableContainer, TableHead, TableRow, TableBody, DialogActions, DialogContent, Dialog, TableFooter, } from "@mui/material";
+import { Box, Grid, Select, MenuItem, DialogTitle, InputLabel, FormControl, OutlinedInput, FormControlLabel, Card, Checkbox, FormGroup, Paper, TextField, TableCell, Typography, Drawer, Button, Table, Tooltip, IconButton, TableContainer, TableHead, TableRow, TableBody, DialogActions, DialogContent, Dialog, TableFooter, } from "@mui/material";
 import { FaMoneyBillAlt, FaRegWindowClose, } from "react-icons/fa";
 import { AiOutlineClose } from "react-icons/ai";
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
@@ -65,16 +65,16 @@ const Draftedit = () => {
 
     // pos inside products array data
     const productInputs = {
-        companyrate:"",superstockrate:"",dealerrate:"",ratetype:"",sellingvalue:"", hsn:"", discountcheck:false, productid: "", productname: "", subtax: [], quantity: "", sellingpricetax: "", taxtareval: "", subtotal: "", applicabletax: "", discountamt: 0,
+        companyrate: "", superstockrate: "", dealerrate: "", ratetype: "", sellingvalue: "", hsn: "", discountcheck: false, productid: "", productname: "", subtax: [], quantity: "", sellingpricetax: "", taxtareval: "", subtotal: "", applicabletax: "", discountamt: 0,
         mrp: "", afterdiscount: 0, netrate: "", expirydate: "", category: "", subcategory: "",
     }
 
 
     // pos db store data 
     const [draftEdit, setDraftEdit] = useState({
-        company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-        salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-        accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+        company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+        salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+        accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", drivername: "", drivernumber: "", drivernphonenumber: "",
     });
 
     const [productsList, setProductsList] = useState([]);
@@ -110,7 +110,7 @@ const Draftedit = () => {
             if (tableData.length == 0) {
                 setShowAlert("Please select any one of product details!");
                 alertOpen();
-            }else if (draftEdit.company == "") {
+            } else if (draftEdit.company == "") {
                 setShowAlert("Please select any one of company!");
                 alertOpen();
             }
@@ -163,9 +163,9 @@ const Draftedit = () => {
             setTableData(res.data.sdraft.goods);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -179,30 +179,35 @@ const Draftedit = () => {
 
     //fetch settings company 
     const fetchCompany = () => {
-        setCompany(setngs.company.map((t) => ({
+        setCompany(setngs?.company?.map((t) => ({
             ...t,
             label: t.companyname,
-            value: t.companyname
+            value: t.companyname,
         })))
+        console.log(company, "com....")
     }
 
     // fetch all products for category/brand/sub category onclick with particular data
     const fetchProd = async (e) => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setMergeprod(result);
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setMergeprod(response?.data?.products);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -211,20 +216,23 @@ const Draftedit = () => {
     // get taxvrate data for products
     const taxrateRequest = async () => {
         try {
-            let response = await axios.get(SERVICE.TAXRATE, {
+            let response = await axios.post(SERVICE.TAXRATE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setTaxrates(taxRateData);
+            // let taxRateData = response.data.taxrates.filter((data) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setTaxrates(response?.data?.taxrates);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -233,47 +241,54 @@ const Draftedit = () => {
     // fetch all products for get particular product in product select give products
     const fetchProductsall = async () => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setProducts(result);
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setProducts(response?.data?.products);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     // get all stock data
     const fetchHandleStock = async () => {
         try {
-            var response = await axios.get(SERVICE.PRODUCT, {
+            var response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setProductsList(result.map((t) => ({
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setProductsList(response?.data?.products?.map((t) => ({
                 ...t,
                 label: t.productname,
                 value: t.productname
             })))
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 setShowAlert(messages);
                 alertOpen();
-            }else{
+            } else {
                 setShowAlert("Something went wrong!");
                 alertOpen();
             }
@@ -283,47 +298,56 @@ const Draftedit = () => {
     // fetch categories
     const fetchcategory = async (e) => {
         try {
-            let response = await axios.get(SERVICE.CATEGORIES, {
+            let response = await axios.post(SERVICE.CATEGORIES, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
+
             });
-            let result = response.data.categories.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setCategory(result);
+            // let result = response.data.categories.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setCategory(response?.data?.categories);
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
     // fetch subcategory
     const fetchSubcategory = async (e) => {
         try {
-            let req = await axios.get(SERVICE.CATEGORIES, {
+            let req = await axios.post(SERVICE.CATEGORIES, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
-            let result = req.data.categories.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let reqdata = result.filter(item => {
+            // let result = req.data.categories.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            let reqdata = req?.data?.categories?.filter(item => {
                 return item.subcategories
             })
-            setSubCategory(reqdata);
+            setSubCategory(req?.data?.categories);
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -351,12 +375,12 @@ const Draftedit = () => {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
             })
-            fetchtable(res.data.sproduct)
+            fetchtable(res?.data?.sproduct)
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -364,23 +388,27 @@ const Draftedit = () => {
 
     const fetchlocated = async () => {
         try {
-            var response = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            var response = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                active: Boolean(true),
             });
 
-            let result = response.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate == true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate == true
-                    }
-                }
-            })
+            // let result = response.data.busilocations.filter((data, index) => {
+            //     if (isUserRoleAccess.role == 'Admin') {
+            //         return data.assignbusinessid == setngs.businessid && data.activate == true
+            //     } else {
+            //         if (isUserRoleAccess.businesslocation.includes(data.name)) {
+            //             return data.assignbusinessid == setngs.businessid && data.activate == true
+            //         }
+            //     }
+            // })
 
-            setBusiOptions(result?.map((data) => ({
+            setBusiOptions(response?.data?.busilocations?.map((data) => ({
                 ...data,
                 label: data.name,
                 value: data.name
@@ -388,9 +416,9 @@ const Draftedit = () => {
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -398,16 +426,20 @@ const Draftedit = () => {
 
     const fetchSalesman = async () => {
         try {
-            let res = await axios.get(`${SERVICE.USER_TERMSFALSE}`, {
+            let res = await axios.post(`${SERVICE.USER_TERMSFALSE}`, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
 
-            let result = res.data.usersterms.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let getresult = result?.filter((data) => {
+            // let result = res.data.usersterms.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            let getresult = res?.data?.usersterms?.filter((data) => {
                 return data.role == "Salesman"
             })
 
@@ -419,9 +451,9 @@ const Draftedit = () => {
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -440,7 +472,7 @@ const Draftedit = () => {
 
     let getTaxRateData = [];
     const fetchDataProd = (e) => {
-      
+
         let getTaxRateData = taxrates?.filter((data) => {
             if (e.applicabletax == data.taxname) {
                 return data
@@ -468,8 +500,8 @@ const Draftedit = () => {
                     superstockrate: e.superstockrate,
                     dealerrate: e.dealerrate,
                     mrp: e.mrp,
-                    ratetype:"",
-                    sellingvalue:e.mrp,
+                    ratetype: "",
+                    sellingvalue: e.mrp,
                     category: e.category,
                     subcategory: e.subcategory,
                     productid: e.sku,
@@ -512,9 +544,9 @@ const Draftedit = () => {
                 else if (reference == "percentage" && inputvalue == false) {
                     let afterdisval = Number(value?.netrate) - Number(value.discountamt)
                     return { ...value, [productInputName]: Boolean(false), afterdiscount: afterdisval, subtotal: (Number(afterdisval) * Number(value.taxtareval) / 100 + Number(afterdisval)) }
-                   
-                }else if (reference == "rateamount"){
-                    if(inputvalue == "companyrate"){
+
+                } else if (reference == "rateamount") {
+                    if (inputvalue == "companyrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.companyrate);
                         //after discount rate
@@ -522,15 +554,15 @@ const Draftedit = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
-                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost)); 
+                        //subtotal
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.companyrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
-                    }else  if(inputvalue == "superstockrate"){
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.companyrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
+                    } else if (inputvalue == "superstockrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.superstockrate);
                         //after discount rate
@@ -538,16 +570,16 @@ const Draftedit = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));  
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.superstockrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.superstockrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
                     }
-                    else  if(inputvalue == "dealarrate"){
+                    else if (inputvalue == "dealarrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.dealerrate);
                         //after discount rate
@@ -555,14 +587,14 @@ const Draftedit = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost)); 
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.dealerrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.dealerrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
                     }
                 }
                 else {
@@ -632,7 +664,7 @@ const Draftedit = () => {
         let totaltaxvalue = 0;
         if (tableData?.length > 0) {
             tableData?.forEach((value) => {
-                totaltaxvalue += Math.abs((((value.taxtareval == "" || value.taxtareval == undefined ? 0 : value.taxtareval)/100) * (value.mrp == "" || value.mrp == undefined ? 0 : value.mrp))) * Number(value.quantity)
+                totaltaxvalue += Math.abs((((value.taxtareval == "" || value.taxtareval == undefined ? 0 : value.taxtareval) / 100) * (value.mrp == "" || value.mrp == undefined ? 0 : value.mrp))) * Number(value.quantity)
             })
             return totaltaxvalue;
         }
@@ -664,20 +696,25 @@ const Draftedit = () => {
     // fetch pos forrecent transction
     const fetchPos = async () => {
         try {
-            let req = await axios.get(SERVICE.POS, {
+            let req = await axios.post(SERVICE.POS, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
+
             });
-            let result = req.data.pos1.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setPos(result);
+            // let result = req.data.pos1.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setPos(req?.data?.pos1);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -753,21 +790,21 @@ const Draftedit = () => {
                 companycontactpersonname: String(draftEdit.companycontactpersonname == undefined || null ? "" : draftEdit.companycontactpersonname),
                 companycontactpersonnumber: Number(draftEdit.companycontactpersonnumber == undefined || null ? 0 : draftEdit.companycontactpersonnumber),
                 location: String(draftEdit.location),
-                deliveryaddress:String(draftEdit.deliveryaddress == undefined || null ? "": draftEdit.deliveryaddress),
-                deliverygstn:String(draftEdit.deliverygstn == undefined | null ? "" : draftEdit.deliverygstn),
-                deliverycontactpersonname:String(draftEdit.deliverycontactpersonname == undefined || null ? "" : draftEdit.deliverycontactpersonname),
-                deliverycontactpersonnumber:Number(draftEdit.deliverycontactpersonnumber == undefined || null ? 0 : draftEdit.deliverycontactpersonnumber),
-                drivernumber:String(draftEdit.drivernumber == undefined || null ? "":draftEdit.drivernumber),
-                drivername:String(draftEdit.drivername == undefined || null ? "" : draftEdit.drivername),
-                drivernphonenumber:Number(draftEdit.drivernphonenumber == undefined || null ? 0 : draftEdit.drivernphonenumber),
+                deliveryaddress: String(draftEdit.deliveryaddress == undefined || null ? "" : draftEdit.deliveryaddress),
+                deliverygstn: String(draftEdit.deliverygstn == undefined | null ? "" : draftEdit.deliverygstn),
+                deliverycontactpersonname: String(draftEdit.deliverycontactpersonname == undefined || null ? "" : draftEdit.deliverycontactpersonname),
+                deliverycontactpersonnumber: Number(draftEdit.deliverycontactpersonnumber == undefined || null ? 0 : draftEdit.deliverycontactpersonnumber),
+                drivernumber: String(draftEdit.drivernumber == undefined || null ? "" : draftEdit.drivernumber),
+                drivername: String(draftEdit.drivername == undefined || null ? "" : draftEdit.drivername),
+                drivernphonenumber: Number(draftEdit.drivernphonenumber == undefined || null ? 0 : draftEdit.drivernphonenumber),
                 salesman: String(draftEdit.salesman == undefined || null ? "" : draftEdit.salesman),
                 salesmannumber: Number(draftEdit.salesmannumber == undefined || null ? 0 : draftEdit.salesmannumber),
-                salescommission: Number(draftEdit.salescommission == undefined ? 0 :  draftEdit.salescommission),
+                salescommission: Number(draftEdit.salescommission == undefined ? 0 : draftEdit.salescommission),
                 date: String(draftEdit.date),
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
-                totalnettax:Number(totalTaxValCal().toFixed(2)),
+                totalnettax: Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
@@ -786,13 +823,13 @@ const Draftedit = () => {
             backLPage('/sell/pos/create');
         } catch (err) {
             const messages = err?.response?.data?.message;
-           if(messages) {
-            setShowAlert(messages);
-            alertOpen();
-           }else{
-             setShowAlert("Something went wrong!");
-             alertOpen();
-           }
+            if (messages) {
+                setShowAlert(messages);
+                alertOpen();
+            } else {
+                setShowAlert("Something went wrong!");
+                alertOpen();
+            }
         }
     };
 
@@ -840,21 +877,21 @@ const Draftedit = () => {
                 companycontactpersonname: String(draftEdit.companycontactpersonname == undefined || null ? "" : draftEdit.companycontactpersonname),
                 companycontactpersonnumber: Number(draftEdit.companycontactpersonnumber == undefined || null ? 0 : draftEdit.companycontactpersonnumber),
                 location: String(draftEdit.location),
-                deliveryaddress:String(draftEdit.deliveryaddress == undefined || null ? "": draftEdit.deliveryaddress),
-                deliverygstn:String(draftEdit.deliverygstn == undefined | null ? "" : draftEdit.deliverygstn),
-                deliverycontactpersonname:String(draftEdit.deliverycontactpersonname == undefined || null ? "" : draftEdit.deliverycontactpersonname),
-                deliverycontactpersonnumber:Number(draftEdit.deliverycontactpersonnumber == undefined || null ? 0 : draftEdit.deliverycontactpersonnumber),
-                drivernumber:String(draftEdit.drivernumber == undefined || null ? "":draftEdit.drivernumber),
-                drivername:String(draftEdit.drivername == undefined || null ? "" : draftEdit.drivername),
-                drivernphonenumber:Number(draftEdit.drivernphonenumber == undefined || null ? 0 : draftEdit.drivernphonenumber),
+                deliveryaddress: String(draftEdit.deliveryaddress == undefined || null ? "" : draftEdit.deliveryaddress),
+                deliverygstn: String(draftEdit.deliverygstn == undefined | null ? "" : draftEdit.deliverygstn),
+                deliverycontactpersonname: String(draftEdit.deliverycontactpersonname == undefined || null ? "" : draftEdit.deliverycontactpersonname),
+                deliverycontactpersonnumber: Number(draftEdit.deliverycontactpersonnumber == undefined || null ? 0 : draftEdit.deliverycontactpersonnumber),
+                drivernumber: String(draftEdit.drivernumber == undefined || null ? "" : draftEdit.drivernumber),
+                drivername: String(draftEdit.drivername == undefined || null ? "" : draftEdit.drivername),
+                drivernphonenumber: Number(draftEdit.drivernphonenumber == undefined || null ? 0 : draftEdit.drivernphonenumber),
                 salesman: String(draftEdit.salesman == undefined || null ? "" : draftEdit.salesman),
                 salesmannumber: Number(draftEdit.salesmannumber == undefined || null ? 0 : draftEdit.salesmannumber),
-                salescommission: Number(draftEdit.salescommission == undefined ? 0 :  draftEdit.salescommission),
+                salescommission: Number(draftEdit.salescommission == undefined ? 0 : draftEdit.salescommission),
                 date: String(draftEdit.date),
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
-                totalnettax:Number(totalTaxValCal().toFixed(2)),
+                totalnettax: Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
@@ -871,11 +908,11 @@ const Draftedit = () => {
             backLPage('/sell/draft/list');
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -894,9 +931,9 @@ const Draftedit = () => {
 
     const handleSubmitclear = (e) => {
         setDraftEdit({
-            company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-        salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-        accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+            company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+            salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+            accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", drivername: "", drivernumber: "", drivernphonenumber: "",
         });
         setTableData(clearvalall);
     };
@@ -930,8 +967,8 @@ const Draftedit = () => {
                     superstockrate: e.superstockrate,
                     dealerrate: e.dealerrate,
                     mrp: e.mrp,
-                    ratetype:"",
-                    sellingvalue:e.mrp,
+                    ratetype: "",
+                    sellingvalue: e.mrp,
                     category: e.category,
                     subcategory: e.subcategory,
                     productid: e.sku,
@@ -978,14 +1015,14 @@ const Draftedit = () => {
                     <Grid container spacing={1} >
                         <Grid item lg={2} md={2} sm={6} xs={12}>
                             <Box sx={{ float: "left" }}>
-                            {setngs.businesslogo ? (
-                                        <>
-                                       <Link to="/">
+                                {setngs.businesslogo ? (
+                                    <>
+                                        <Link to="/">
                                             <img src={setngs?.businesslogo} alt="logo" style={{ width: '150px', height: '70px', paddingLeft: 'px' }}></img>
                                         </Link>
-                                        </>
-                                    ) : (
-                                        <></>
+                                    </>
+                                ) : (
+                                    <></>
                                 )}
                             </Box>
                         </Grid>
@@ -1019,7 +1056,7 @@ const Draftedit = () => {
                                         options={busioptions}
                                         value={{ value: draftEdit.location, label: draftEdit.location }}
                                         placeholder="Business Location"
-                                        onChange={(e) => { setDraftEdit({ ...draftEdit, location: e.value,  deliveryaddress:e.address, deliverygstn:e.gstnno, deliverycontactpersonname:e.contactpersonname, deliverycontactpersonnumber:e.contactpersonnum }); }}
+                                        onChange={(e) => { setDraftEdit({ ...draftEdit, location: e.value, deliveryaddress: e.address, deliverygstn: e.gstnno, deliverycontactpersonname: e.contactpersonname, deliverycontactpersonnumber: e.contactpersonnum }); }}
                                     />
                                 </FormControl>
                             </Grid>
@@ -1035,7 +1072,7 @@ const Draftedit = () => {
                                         options={salesmans}
                                         value={{ value: draftEdit.salesman, label: draftEdit.salesman }}
                                         placeholder="Salesman"
-                                        onChange={(e) => { setDraftEdit({ ...draftEdit, salesman: e.value, salescommission: e.salescommission, salesmannumber:e.phonenum }); }}
+                                        onChange={(e) => { setDraftEdit({ ...draftEdit, salesman: e.value, salescommission: e.salescommission, salesmannumber: e.phonenum }); }}
                                     />
                                 </FormControl>
                             </Grid>
@@ -1088,7 +1125,7 @@ const Draftedit = () => {
                                                 <TableCell style={{ width: '155px' }}>After Discount </TableCell>
                                                 <TableCell style={{ width: '55px' }}>GST</TableCell>
                                                 <TableCell style={{ width: '155px' }}>Subtotal</TableCell>
-                                                <TableCell sx={{ paddingTop: "5px", width: '55px' }} ><DeleteOutlineOutlinedIcon style={{fontSize: 'large'}}/></TableCell>
+                                                <TableCell sx={{ paddingTop: "5px", width: '55px' }} ><DeleteOutlineOutlinedIcon style={{ fontSize: 'large' }} /></TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -1098,12 +1135,12 @@ const Draftedit = () => {
                                                         <>
                                                             <TableRow >
                                                                 <TableCell sx={{ fontSize: '12px', }} key={i}>{data?.productname}</TableCell>
-                                                                <TableCell sx={{ fontSize: '12px'}}>
+                                                                <TableCell sx={{ fontSize: '12px' }}>
                                                                     <Select
-                                                                     isClearable
-                                                                     labelId="demo-select-small"
-                                                                     variant="standard"
-                                                                     id="demo-select-small"
+                                                                        isClearable
+                                                                        labelId="demo-select-small"
+                                                                        variant="standard"
+                                                                        id="demo-select-small"
                                                                         value={data?.ratetype}
                                                                         sx={{ fontSize: '12px', }}
                                                                         onChange={(e) => handleProductchange(i, 'rateamount', 'ratetype', e.target.value)}
@@ -1402,29 +1439,29 @@ const Draftedit = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography ><b>Company Name:</b> {draftEdit.company}</Typography><br />
-                                    <Grid sx={{display:'flex'}}>
-                                    <Grid>
-                                    <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
-                                    <FormControl size="small" sx={{ display: "flex"}} >
-                                        <OutlinedInput
-                                            id="component-outlined"
-                                            type="text"
-                                            value={draftEdit.companycontactpersonname}
-                                            onChange={(e) => { setDraftEdit({ ...draftEdit, companycontactpersonname: e.target.value}) }}
-                                        />
-                                    </FormControl>
-                                    </Grid>
-                                    <Grid>
-                                    <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
-                                    <FormControl size="small"  sx={{ display: "flex"}} >
-                                        <OutlinedInput
-                                            id="component-outlined"
-                                            type="number"
-                                            value={draftEdit.companycontactpersonnumber}
-                                            onChange={(e) => { setDraftEdit({ ...draftEdit, companycontactpersonnumber: e.target.value}) }}
-                                        />
-                                    </FormControl>
-                                    </Grid>
+                                    <Grid sx={{ display: 'flex' }}>
+                                        <Grid>
+                                            <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="text"
+                                                    value={draftEdit.companycontactpersonname}
+                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, companycontactpersonname: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid>
+                                            <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="number"
+                                                    value={draftEdit.companycontactpersonnumber}
+                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, companycontactpersonnumber: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
                                     </Grid>
                                 </Box>
                             </Card>
@@ -1436,26 +1473,26 @@ const Draftedit = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography ><b>Delivery Name:</b> {draftEdit.location}</Typography><br />
-                                    <Grid sx={{display:'flex'}}>
+                                    <Grid sx={{ display: 'flex' }}>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
-                                            <FormControl size="small" sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={draftEdit.deliverycontactpersonname}
-                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, deliverycontactpersonname: e.target.value}) }}
+                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, deliverycontactpersonname: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="number"
                                                     value={draftEdit.deliverycontactpersonnumber}
-                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, deliverycontactpersonnumber: e.target.value}) }}
+                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, deliverycontactpersonnumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -1470,37 +1507,37 @@ const Draftedit = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography><b>Transport Details</b></Typography><br />
-                                    <Grid sx={{display:'flex'}}>
+                                    <Grid sx={{ display: 'flex' }}>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Driver Name</b></InputLabel>
-                                            <FormControl size="small" sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={draftEdit.drivername}
-                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, drivername: e.target.value}) }}
+                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, drivername: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Driver Number</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={draftEdit.drivernumber}
-                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, drivernumber: e.target.value}) }}
+                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, drivernumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Driver Contact No</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="number"
                                                     value={draftEdit.drivernphonenumber}
-                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, drivernphonenumber: e.target.value}) }}
+                                                    onChange={(e) => { setDraftEdit({ ...draftEdit, drivernphonenumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -1536,16 +1573,16 @@ const Draftedit = () => {
             <>
                 <Box sx={userStyle.printcls} ref={componentRef}>
                     <Box sx={{ padding: '20px' }}>
-                    {setngs.businesslogo ? (
-                        <>
-                        <img src={setngs?.businesslogo} alt="Aranya Herbals" width="150px" height="70px" /><br />
-                        </>
-                    ) : (
-                        <></>
-                    )}
+                        {setngs.businesslogo ? (
+                            <>
+                                <img src={setngs?.businesslogo} alt="Aranya Herbals" width="150px" height="70px" /><br />
+                            </>
+                        ) : (
+                            <></>
+                        )}
                         <Grid container >
                             <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
-                                <Typography><b>COMPANY DETAILS</b><br/></Typography>
+                                <Typography><b>COMPANY DETAILS</b><br /></Typography>
                                 <Grid container>
                                     <Grid item md={4} sm={4} xs={4}>
                                         <Typography><b>Name:</b></Typography>
@@ -1553,11 +1590,11 @@ const Draftedit = () => {
                                         <Typography><b>GSTN:</b></Typography>
                                         <Typography><b>Contact person:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{draftEdit.company}</Typography>
                                         <Typography>{draftEdit.companyaddress}</Typography>
                                         <Typography>{draftEdit.gstno}</Typography>
-                                        <Typography>{draftEdit.companycontactpersonname+'/'+draftEdit.companycontactpersonnumber}</Typography>
+                                        <Typography>{draftEdit.companycontactpersonname + '/' + draftEdit.companycontactpersonnumber}</Typography>
                                     </Grid>
                                 </Grid><br /><br /><br /><br />
                                 <Grid container>
@@ -1566,15 +1603,15 @@ const Draftedit = () => {
                                         <Typography><b>Order Date:</b></Typography>
                                         <Typography><b>Salesman:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{newvalpos}</Typography>
                                         <Typography>{moment(draftEdit.date).format('DD-MM-YYYY')}</Typography>
-                                        <Typography>{draftEdit.salesman+'/'+draftEdit.salesmannumber}</Typography>
+                                        <Typography>{draftEdit.salesman + '/' + draftEdit.salesmannumber}</Typography>
                                     </Grid>
                                 </Grid>
                             </Grid>
                             <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
-                            <Typography><b>DELIVERY DETAILS:</b> <br /></Typography>
+                                <Typography><b>DELIVERY DETAILS:</b> <br /></Typography>
                                 <Grid container>
                                     <Grid item md={4} sm={4} xs={4}>
                                         <Typography><b>Name:</b></Typography>
@@ -1582,11 +1619,11 @@ const Draftedit = () => {
                                         <Typography><b>GSTN:</b></Typography>
                                         <Typography><b>Contact person:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{draftEdit.location}</Typography>
                                         <Typography>{draftEdit.deliveryaddress}</Typography>
                                         <Typography>{draftEdit.deliverygstn}</Typography>
-                                        <Typography>{draftEdit.deliverycontactpersonname+'/'+draftEdit.deliverycontactpersonnumber}</Typography>
+                                        <Typography>{draftEdit.deliverycontactpersonname + '/' + draftEdit.deliverycontactpersonnumber}</Typography>
                                     </Grid>
                                 </Grid><br /><br />
                                 <Typography><b>TRANSPORT DETAILS:</b> <br /></Typography>
@@ -1596,7 +1633,7 @@ const Draftedit = () => {
                                         <Typography><b>No:</b></Typography>
                                         <Typography><b>Contact No:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{draftEdit.drivername}</Typography>
                                         <Typography>{draftEdit.drivernumber}</Typography>
                                         <Typography>{draftEdit.drivernphonenumber}</Typography>
@@ -1607,7 +1644,7 @@ const Draftedit = () => {
                                         <Typography><b>Invoice Number:</b></Typography>
                                         <Typography><b>Invoice Date:</b></Typography>
                                     </Grid>
-                                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{newvalpos}</Typography>
                                         <Typography>{moment(draftEdit.date).format('DD-MM-YYYY')}</Typography>
                                     </Grid>
@@ -1687,11 +1724,11 @@ const Draftedit = () => {
                             <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right' }}>
                                 <br /><br /><br /><br /><br /><br /><br />
                                 {setngs.signature ? (
-                                        <>
+                                    <>
                                         <Typography align='right'><img src={setngs.signature} width="80px" height="45px" /></Typography>
-                                        </>
-                                    ) : (
-                                        <></>
+                                    </>
+                                ) : (
+                                    <></>
                                 )}
                                 <Typography align='right'><b>Authorized Signatory</b></Typography>
                             </Grid>

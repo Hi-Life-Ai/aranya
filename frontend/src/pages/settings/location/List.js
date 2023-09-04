@@ -20,9 +20,12 @@ import { toast } from 'react-toastify';
 import Headtitle from '../../../components/header/Headtitle';
 import { SERVICE } from '../../../services/Baseservice';
 import { AuthContext, UserRoleAccessContext } from '../../../context/Appcontext';
+import { ThreeDots } from 'react-loader-spinner';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 
 const Locationtable = () => {
 
+    const [isLoader, setIsLoader] = useState(false);
     const { auth, setngs } = useContext(AuthContext);
     const [busilocations, setBusilocations] = useState([]);
     const [exceldata, setExceldata] = useState([]);
@@ -36,10 +39,10 @@ const Locationtable = () => {
     const [isActive, setIsActive] = useState("");
 
     // User Access
-    const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
+    const { isUserRoleCompare, isUserRoleAccess, setIsActiveLocations, setAllLocations } = useContext(UserRoleAccessContext);
 
     const [isPdfData, setIsPdfData] = useState({
-        isBusiId: false, isBusiName: false, isBusiLandmark: false, isCountry: false, isLandline:false,
+        isBusiId: false, isBusiName: false, isBusiLandmark: false, isCountry: false, isLandline: false,
         isState: false, isCity: false, isZipcode: false, ismobile: false, ismobileone: false, ismobiletwo: false,
         ismobilethree: false, isWhatsapp: false, isEmail: false, isWebsite: false, isGstn: false, isAddress: false, isContactperson: false,
     })
@@ -59,44 +62,38 @@ const Locationtable = () => {
     const handleClickOpener = () => { setIsErrorOpen(true); };
     const handleCloser = () => { setIsErrorOpen(false); };
 
-    // get particular columns for export excel
-    const getexcelDatas = async () => {
-        var data = busilocations.map(t => ({
-            Name: t.name, 'Location ID': t.locationid, Landmark: t.landmark, Country: t.country, State: t.state, City: t.city, Zipcode: t.zipcde,
-            Mobile: t.phonenumber,'Mobile 1': t.onephonenumber, 'Mobile 2': t.twophonenumber, 'Mobile 3': t.threephonenumber,
-            'Landline Number': t.landlinenumber, 'WhatsApp No': t.whatsappno, Email: t.email, Website: t.website,
-            'GSTN No': t.gstnno, 'Address': t.address, 'Contact Person Name': t.contactpersonname,'Contact Person No': t.contactpersonnum,
-        }));
-        setExceldata(data);
-    }
-
     // Business Locations
     const fetchLocation = async () => {
         try {
-            let response = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let response = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
             });
-            let result = response.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid
-                    }
-                }
-            })
-            setBusilocations(result);
+            setBusilocations(response?.data?.busilocations);
+            setIsActiveLocations(response?.data?.businesslocationsactive);
+            setAllLocations(response?.data?.businesslocations);
+            setIsLoader(true)
+
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
+
+    useEffect(
+        () => {
+            fetchLocation();
+        }, [isActive, isOpen]
+    );
 
     const getrow = async (id) => {
         try {
@@ -113,18 +110,17 @@ const Locationtable = () => {
                 activate: !getdata,
             }).then(res => res.data);
             setIsActive("None");
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
     };
-
-    // Excel
-    const fileName = 'Business Locations';
 
     const rowData = async (id) => {
         try {
@@ -134,11 +130,13 @@ const Locationtable = () => {
                 }
             })
             setBusilocationses(res.data.sbusilocation);//set function to get particular row
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -155,15 +153,36 @@ const Locationtable = () => {
             });
             await fetchLocation();
             handleClose();
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
     };
+
+    // Excel
+    const fileName = 'Business Locations';
+    // get particular columns for export excel
+    const getexcelDatas = async () => {
+        var data = busilocations?.map(t => ({
+            Name: t.name, 'Location ID': t.locationid, Landmark: t.landmark, Country: t.country, State: t.state, City: t.city, Zipcode: t.zipcde,
+            Mobile: t.phonenumber, 'Mobile 1': t.onephonenumber, 'Mobile 2': t.twophonenumber, 'Mobile 3': t.threephonenumber,
+            'Landline Number': t.landlinenumber, 'WhatsApp No': t.whatsappno, Email: t.email, Website: t.website,
+            'GSTN No': t.gstnno, 'Address': t.address, 'Contact Person Name': t.contactpersonname, 'Contact Person No': t.contactpersonnum,
+        }));
+        setExceldata(data);
+    }
+
+    useEffect(
+        () => {
+            getexcelDatas();
+        }, [busilocations]
+    );
 
     // Print
     const componentRef = useRef();
@@ -213,25 +232,13 @@ const Locationtable = () => {
         doc.save('Business Locations.pdf')
     }
 
-    useEffect(
-        () => {
-            fetchLocation();
-        }, [isActive, isOpen]
-    );
-
-    useEffect(
-        () => {
-            getexcelDatas();
-        }, [busilocations]
-    );
-
     // Sorting
     const handleSorting = (column) => {
         const direction = sorting.column === column && sorting.direction === 'asc' ? 'desc' : 'asc';
         setSorting({ column, direction });
     };
 
-    const sortedData = busilocations.sort((a, b) => {
+    const sortedData = busilocations?.sort((a, b) => {
         if (sorting.direction === 'asc') {
             return a[sorting.column] > b[sorting.column] ? 1 : -1;
         } else if (sorting.direction === 'desc') {
@@ -296,9 +303,9 @@ const Locationtable = () => {
         )
     );
 
-    const filteredData = filteredDatas.slice((page - 1) * pageSize, page * pageSize);
+    const filteredData = filteredDatas?.slice((page - 1) * pageSize, page * pageSize);
 
-    const totalPages = Math.ceil(busilocations.length / pageSize);
+    const totalPages = Math.ceil(busilocations?.length / pageSize);
 
     const visiblePages = Math.min(totalPages, 3);
 
@@ -341,7 +348,7 @@ const Locationtable = () => {
                             <MenuItem value={25}>25</MenuItem>
                             <MenuItem value={50}>50</MenuItem>
                             <MenuItem value={100}>100</MenuItem>
-                            <MenuItem value={(busilocations.length)}>All</MenuItem>
+                            <MenuItem value={(busilocations?.length)}>All</MenuItem>
                         </Select>
                         <label htmlFor="pageSizeSelect">&ensp;entries</label>
                     </Box>
@@ -387,81 +394,96 @@ const Locationtable = () => {
                 {/* EXPORT BUTTONS END */}
                 {/* TABLE START */}
                 <Box>
-                    <TableContainer component={Paper} >
-                        <Table aria-label="customized table" id="businessLocation" sx={{ minWidth: 700 }}>
-                            <TableHead>
-                                <StyledTableRow>
-                                    <StyledTableCell align="left">Action</StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('name')}><Box sx={userStyle.tableheadstyle}><Box>Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('name')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('locationid')}><Box sx={userStyle.tableheadstyle}><Box>Location ID</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('locationid')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('gstnno')}><Box sx={userStyle.tableheadstyle}><Box>GSTN No</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('gstnno')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('address')}><Box sx={userStyle.tableheadstyle}><Box>Address</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('address')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('landmark')}><Box sx={userStyle.tableheadstyle}><Box>Landmark</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('landmark')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('country')}><Box sx={userStyle.tableheadstyle}><Box>Country</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('country')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('state')}><Box sx={userStyle.tableheadstyle}><Box>State</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('state')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('city')}><Box sx={userStyle.tableheadstyle}><Box>City</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('city')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('zipcde')}><Box sx={userStyle.tableheadstyle}><Box>Zip Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('zipcde')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('phonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('phonenumber')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('onephonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile 1</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('onephonenumber')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('twophonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile 2</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('twophonenumber')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('threephonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile 3</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('threephonenumber')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('whatsappno')}><Box sx={userStyle.tableheadstyle}><Box>WhatsApp</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('whatsappno')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('website')}><Box sx={userStyle.tableheadstyle}><Box>Website</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('website')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('email')}><Box sx={userStyle.tableheadstyle}><Box>Email</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('email')}</Box></Box></StyledTableCell>
-                                    <StyledTableCell onClick={() => handleSorting('contactpersonname')}><Box sx={userStyle.tableheadstyle}><Box>Contact Person</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('contactpersonname')}</Box></Box></StyledTableCell>
-                                </StyledTableRow>
-                            </TableHead>
-                            <TableBody>
-                                {filteredData.length > 0 ?
-                                    (filteredData.map((row, index) => (
-                                        <StyledTableRow key={index}>
-                                            <StyledTableCell align="left">
-                                                <Grid sx={{ display: 'flex' }}>
-                                                    {isUserRoleCompare[0].ebusinesslocation && (
-                                                        <>
-                                                            <Link to={`/settings/location/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
-                                                        </>
-                                                    )}
-                                                    {isUserRoleCompare[0].dbusinesslocation && (
-                                                        <>
-                                                            <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
-                                                        </>
-                                                    )}
-                                                    {isUserRoleCompare[0].activatebusinesslocation && (
-                                                        <>
-                                                            <Button variant="contained" color={row.activate == true ? 'success' : 'warning'} sx={{ minWidth: '0px', padding: '0 7px' }} onClick={(e) => { handleClickOpener((setShowAlert(row.activate == true ? 'Do you want to Deactivate?' : 'Do you want to Activate?'))); rowData(row._id) }}><PowerSettingsNewOutlinedIcon style={{ fontSize: 'large' }} /></Button>
-                                                        </>
-                                                    )}
-
-                                                </Grid>
-                                            </StyledTableCell>
-                                            <StyledTableCell component="th" scope="row"> {row.name} </StyledTableCell>
-                                            <StyledTableCell align="left">{row.locationid}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.gstnno}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.address}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.landmark}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.country}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.state}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.city}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.zipcde}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.phonenumber}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.onephonenumber}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.twophonenumber}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.threephonenumber}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.whatsappno}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.website}</StyledTableCell>
-                                            <StyledTableCell align='left'>{row.email}</StyledTableCell>
-                                            <StyledTableCell align="left">{row.contactpersonname}</StyledTableCell>
+                    {isLoader ? (
+                        <>
+                            <TableContainer component={Paper} >
+                                <Table aria-label="customized table" id="businessLocation" sx={{ minWidth: 700 }}>
+                                    <TableHead>
+                                        <StyledTableRow>
+                                            <StyledTableCell align="left">Action</StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('name')}><Box sx={userStyle.tableheadstyle}><Box>Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('name')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('locationid')}><Box sx={userStyle.tableheadstyle}><Box>Location ID</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('locationid')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('gstnno')}><Box sx={userStyle.tableheadstyle}><Box>GSTN No</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('gstnno')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('address')}><Box sx={userStyle.tableheadstyle}><Box>Address</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('address')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('landmark')}><Box sx={userStyle.tableheadstyle}><Box>Landmark</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('landmark')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('country')}><Box sx={userStyle.tableheadstyle}><Box>Country</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('country')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('state')}><Box sx={userStyle.tableheadstyle}><Box>State</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('state')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('city')}><Box sx={userStyle.tableheadstyle}><Box>City</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('city')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('zipcde')}><Box sx={userStyle.tableheadstyle}><Box>Zip Code</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('zipcde')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('phonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('phonenumber')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('onephonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile 1</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('onephonenumber')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('twophonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile 2</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('twophonenumber')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('threephonenumber')}><Box sx={userStyle.tableheadstyle}><Box>Mobile 3</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('threephonenumber')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('whatsappno')}><Box sx={userStyle.tableheadstyle}><Box>WhatsApp</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('whatsappno')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('website')}><Box sx={userStyle.tableheadstyle}><Box>Website</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('website')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('email')}><Box sx={userStyle.tableheadstyle}><Box>Email</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('email')}</Box></Box></StyledTableCell>
+                                            <StyledTableCell onClick={() => handleSorting('contactpersonname')}><Box sx={userStyle.tableheadstyle}><Box>Contact Person</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('contactpersonname')}</Box></Box></StyledTableCell>
                                         </StyledTableRow>
-                                    )))
-                                    : <StyledTableRow><StyledTableCell colSpan={15} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                }
-                            </TableBody>
-                        </Table>
-                    </TableContainer><br /><br />
+                                    </TableHead>
+                                    <TableBody>
+                                        {filteredData?.length > 0 ?
+                                            (filteredData?.map((row, index) => (
+                                                <StyledTableRow key={index}>
+                                                    <StyledTableCell align="left">
+                                                        <Grid sx={{ display: 'flex' }}>
+                                                            {isUserRoleCompare[0].ebusinesslocation && (
+                                                                <>
+                                                                    <Link to={`/settings/location/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview}><VisibilityOutlinedIcon style={{ fontSize: 'large' }} /></Button></Link>
+                                                                </>
+                                                            )}
+                                                            {isUserRoleCompare[0].ebusinesslocation && (
+                                                                <>
+                                                                    <Link to={`/settings/location/edit/${row._id}`} style={{ textDecoration: 'none', color: '#fff', minWidth: '0px' }}><Button sx={userStyle.buttonedit}><EditOutlinedIcon style={{ fontSize: "large" }} /></Button></Link>
+                                                                </>
+                                                            )}
+                                                            {isUserRoleCompare[0].dbusinesslocation && (
+                                                                <>
+                                                                    <Button sx={userStyle.buttondelete} onClick={(e) => { handleClickOpen(); rowData(row._id) }}><DeleteOutlineOutlinedIcon style={{ fontsize: 'large' }} /></Button>
+                                                                </>
+                                                            )}
+                                                            {isUserRoleCompare[0].activatebusinesslocation && (
+                                                                <>
+                                                                    <Button variant="contained" color={row.activate == true ? 'success' : 'warning'} sx={{ minWidth: '0px', padding: '0 7px' }} onClick={(e) => { handleClickOpener((setShowAlert(row.activate == true ? 'Do you want to Deactivate?' : 'Do you want to Activate?'))); rowData(row._id) }}><PowerSettingsNewOutlinedIcon style={{ fontSize: 'large' }} /></Button>
+                                                                </>
+                                                            )}
+
+                                                        </Grid>
+                                                    </StyledTableCell>
+                                                    <StyledTableCell component="th" scope="row"> {row.name} </StyledTableCell>
+                                                    <StyledTableCell align="left">{row.locationid}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.gstnno}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.address}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.landmark}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.country}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.state}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.city}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.zipcde}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.phonenumber}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.onephonenumber}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.twophonenumber}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.threephonenumber}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.whatsappno}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.website}</StyledTableCell>
+                                                    <StyledTableCell align='left'>{row.email}</StyledTableCell>
+                                                    <StyledTableCell align="left">{row.contactpersonname}</StyledTableCell>
+                                                </StyledTableRow>
+                                            )))
+                                            : <StyledTableRow><StyledTableCell colSpan={18} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                        }
+                                    </TableBody>
+                                </Table>
+                            </TableContainer><br /><br />
+                        </>
+                    ) : (
+                        <>
+                            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                            </Box>
+                        </>
+                    )}
                     <Box style={userStyle.dataTablestyle}>
                         <Box>
-                            Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, busilocations.length)} of {busilocations.length} entries
+                            Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, busilocations?.length)} of {busilocations?.length} entries
                         </Box>
                         <Box>
                             <Button onClick={() => handlePageChange(page - 1)} disabled={page === 1} sx={{ textTransform: 'capitalize', color: 'black' }}>

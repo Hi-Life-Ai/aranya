@@ -11,38 +11,42 @@ const crypto = require('crypto');
 exports.getAllUsers = catchAsyncErrors(async (req, res, next) => {
     let users;
 
-    try{
+    try {
         users = await User.find()
-    }catch(err){
+    } catch (err) {
         console.log(err.message);
     }
 
-    if(!users){
+    if (!users) {
         return next(new ErrorHandler('Users not found', 400));
     }
 
-    return res.status(200).json({users});
+    let userlocation = users.filter((data, index) => {
+        if (req.body.role == 'Admin') {
+            return data
+        } else if (req.body.assignbusinessid.includes(data.businessid)) {
+            return data
+        }
+    })
+
+    return res.status(200).json({ users, userlocation });
 })
 
 // get All user => /api/userstermsfalse
 exports.getAllUsersTermsFalse = catchAsyncErrors(async (req, res, next) => {
     let usersterms;
-    let result;
+    try {
 
-    try{
-        result = await User.find()
-        usersterms = result.filter((data, index)=>{
-            return data.termscondition == false
-        })
-    }catch(err){
+        usersterms = await User.find({ assignbusinessid: req.body.businessid, termscondition: false })
+    } catch (err) {
         console.log(err.message);
     }
 
-    if(!result){
+    if (!usersterms) {
         return next(new ErrorHandler('Users not found', 400));
     }
 
-    return res.status(200).json({usersterms});
+    return res.status(200).json({ usersterms });
 })
 
 // get All user with terms true => /api/userstermstrue
@@ -50,70 +54,70 @@ exports.getAllUsersTermsTrue = catchAsyncErrors(async (req, res, next) => {
     let usersterms;
     let result;
 
-    try{
+    try {
         result = await User.find()
-        usersterms = result.filter((data, index)=>{
+        usersterms = result.filter((data, index) => {
             return data.termscondition == true
         })
-    }catch(err){
+    } catch (err) {
         console.log(err.message);
     }
 
-    if(!result){
+    if (!result) {
         return next(new ErrorHandler('Users not found', 400));
     }
 
-    return res.status(200).json({usersterms});
+    return res.status(200).json({ usersterms });
 })
 
 // register from user module => api/user/new
-exports.regUser = catchAsyncErrors( async (req, res, next) =>{
-    const { companyname,email,password, cpassword,entrynumber,role, date, businesslocation, department, roel,
-        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth,nationality,address,areacity,pincode,
-phonenum, otherphonenum, useractive,salescommission, maritalstatus, familydetails,profileimage,educationdetails,experiencedetails,jobdetails,
-languageknown, aadharnumber, accnumber, remarks, country, termscondition,state,assignbusinessid } = req.body;
+exports.regUser = catchAsyncErrors(async (req, res, next) => {
+    const { companyname, email, password, cpassword, entrynumber, role, date, businesslocation, department, roel,
+        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, religion, nationality, address, areacity, pincode,
+        phonenum, otherphonenum, useractive, maritalstatus, familydetails, profileimage, educationdetails, experiencedetails, jobdetails,
+        languageknown, aadharnumber, accnumber, remarks, country, termscondition, state, assignbusinessid } = req.body;
 
 
     // encrypt password before saving
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt)
-    
+
     let user = await User.create({
-        companyname,email,password:hashPassword, cpassword,entrynumber,role, date, businesslocation, department, roel,
-        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, nationality,address,areacity,pincode,
-        phonenum, otherphonenum, useractive,salescommission, maritalstatus, familydetails,profileimage,educationdetails,experiencedetails,jobdetails,
-        languageknown, aadharnumber, accnumber, remarks, country, termscondition,state,assignbusinessid
+        companyname, email, password: hashPassword, cpassword, entrynumber, role, date, businesslocation, department, roel,
+        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, religion, nationality, address, areacity, pincode,
+        phonenum, otherphonenum, useractive, maritalstatus, familydetails, profileimage, educationdetails, experiencedetails, jobdetails,
+        languageknown, aadharnumber, accnumber, remarks, country, termscondition, state, assignbusinessid
     });
 
-    return res.status(200).json({ 
-        message: 'Successfully added!' 
+    return res.status(200).json({
+        message: 'Successfully added!'
     });
 
     // sendToken(user, 200, res);
 
 })
 // register a user => api/auth/new
-exports.regAuth = catchAsyncErrors( async (req, res, next) =>{
+exports.regAuth = catchAsyncErrors(async (req, res, next) => {
 
-    const { companyname,email,password, cpassword,entrynumber, date,role, businesslocation, department, roel,
-        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, nationality,address,areacity,pincode,
-phonenum, otherphonenum, useractive,salescommission, maritalstatus, familydetails,profileimage,educationdetails,experiencedetails,jobdetails,
-languageknown, aadharnumber, accnumber, remarks, country, termscondition,state,assignbusinessid } = req.body;
+    const { companyname, email, password, cpassword, entrynumber, date, role, businesslocation, department, roel,
+        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, religion, nationality, address, areacity, pincode,
+        phonenum, otherphonenum, useractive, maritalstatus, familydetails, profileimage, educationdetails, experiencedetails, jobdetails,
+        languageknown, aadharnumber, accnumber, remarks, country, termscondition, state, assignbusinessid } = req.body;
     // encrypt password before saving
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt)
-    
+
     const user = await User.create({
-        companyname,email,password:hashPassword, cpassword,entrynumber,role, date, businesslocation, department, roel,
-        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth,nationality,address,areacity,pincode,
-phonenum, otherphonenum, useractive,salescommission, maritalstatus, familydetails,profileimage,educationdetails,experiencedetails,jobdetails,
-languageknown, aadharnumber, accnumber, remarks, country, termscondition,state,assignbusinessid
+        companyname, email, password: hashPassword, cpassword, entrynumber, role, date, businesslocation, department, roel,
+        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, religion, nationality, address, areacity, pincode,
+        phonenum, otherphonenum, useractive, maritalstatus, familydetails, profileimage, educationdetails, experiencedetails, jobdetails,
+        languageknown, aadharnumber, accnumber, remarks, country, termscondition, state, assignbusinessid
 
     })
 
-    return res.status(201).json({ 
-        success: true, 
-        user 
+    return res.status(201).json({
+        success: true,
+        user
     })
 
     // sendToken(user, 200, res);
@@ -121,25 +125,25 @@ languageknown, aadharnumber, accnumber, remarks, country, termscondition,state,a
 })
 
 // Login user => api/users
-exports.loginAuth = catchAsyncErrors(async (req, res, next) =>{
-    const { email, password, phonenum } = req.body;
+exports.loginAuth = catchAsyncErrors(async (req, res, next) => {
+    const { email, password } = req.body;
 
     // check if email & password entered by user
-    if(!email || !password){
+    if (!email || !password) {
         return next(new ErrorHandler('Please enter email and password', 400));
     }
 
     // Finding if user exists in database
     const user = await User.findOne({ email }).select('+password');
 
-    if(!user){
+    if (!user) {
         return next(new ErrorHandler('Invalid Email or Password', 401));
     }
 
     // If checks password is correct or not
     const isPwdMatched = await bcrypt.compare(password, user.password);
 
-    if(!isPwdMatched){
+    if (!isPwdMatched) {
         return next(new ErrorHandler('Invalid Password', 401));
     }
 
@@ -153,25 +157,25 @@ exports.loginAuth = catchAsyncErrors(async (req, res, next) =>{
 
 
 // Forgot password => api/password/forgot
-exports.forgotPassword = catchAsyncErrors(async (req, res, next) =>{
+exports.forgotPassword = catchAsyncErrors(async (req, res, next) => {
 
     const user = await User.findOne({ email: req.body.email });
 
-    if(!user){
+    if (!user) {
         return next(new ErrorHandler('User not found with this email', 404));
     }
 
     //get reset token
     const resetToken = user.getResetPasswordToken();
 
-    await user.save({ validateBeforeSave: false});
+    await user.save({ validateBeforeSave: false });
 
     //create reset url
     const resetUrl = `${req.protocol}://${req.get('host')}/api/password/reset/${resetToken}`;
 
     const message = `Your password reset token is as follows:\n\n${resetUrl}\n\nIf you have not requested this email, then ignore it`;
 
-    try{
+    try {
 
         await sendEmail({
             email: user.email,
@@ -184,7 +188,7 @@ exports.forgotPassword = catchAsyncErrors(async (req, res, next) =>{
             message: `Email send to: ${user.email}`
         })
 
-    }catch(err){
+    } catch (err) {
         user.resetPasswordToken = undefined;
         user.resetPasswordExpire = undefined;
 
@@ -204,11 +208,11 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
         resetPasswordExpire: { $gt: Date.now() }
     })
 
-    if(!user){
+    if (!user) {
         return next(new ErrorHandler('Password reset token is invalid or has been expired!', 400))
     }
 
-    if(req.body.password !== req.body.cpassword){
+    if (req.body.password !== req.body.cpassword) {
         return next(new ErrorHandler('Passwords does not match', 400))
     }
 
@@ -228,9 +232,9 @@ exports.resetPassword = catchAsyncErrors(async (req, res, next) => {
 
 
 // Logout user => api/authout
-exports.loginOut = catchAsyncErrors(async (req, res, next) =>{
+exports.loginOut = catchAsyncErrors(async (req, res, next) => {
 
-    res.cookie('token', null,{
+    res.cookie('token', null, {
         expires: new Date(Date.now()),
         httpOnly: true
     })
@@ -243,7 +247,7 @@ exports.loginOut = catchAsyncErrors(async (req, res, next) =>{
 });
 
 // get Signle user => /api/auth/:id
-exports.getSingleUser = catchAsyncErrors(async (req, res, next)=>{
+exports.getSingleUser = catchAsyncErrors(async (req, res, next) => {
 
     const suser = await User.findById(req.params.id);
 
@@ -262,27 +266,28 @@ exports.getSingleUser = catchAsyncErrors(async (req, res, next)=>{
 exports.updateUser = catchAsyncErrors(async (req, res, next) => {
     const id = req.params.id;
 
-    const { companyname,email,password, cpassword,entrynumber,role, date, businesslocation, department, roel,
-        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth,nationality,address,areacity,pincode,
-phonenum, otherphonenum, useractive,salescommission, maritalstatus, familydetails,profileimage,educationdetails,experiencedetails,jobdetails,
-languageknown, aadharnumber, accnumber, remarks, country, termscondition,state, assignbusinessid} = req.body;
+    const { companyname, email, password, cpassword, entrynumber, role, date, businesslocation, department, roel,
+        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, religion, nationality, address, areacity, pincode,
+        phonenum, otherphonenum, useractive, maritalstatus, familydetails, profileimage, educationdetails, experiencedetails, jobdetails,
+        languageknown, aadharnumber, accnumber, remarks, country, termscondition, state, assignbusinessid } = req.body;
 
-        
+
     // encrypt password before saving
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
-    const upuser = await User.findByIdAndUpdate(id, { companyname,email,password:hashPassword, cpassword,entrynumber,role, date, businesslocation, department, roel,
-        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, nationality,address,areacity,pincode,
-phonenum, otherphonenum, useractive,salescommission, maritalstatus, familydetails,profileimage,educationdetails,experiencedetails,jobdetails,
-languageknown, aadharnumber, accnumber, remarks, country, termscondition,state, assignbusinessid
-});
+    const upuser = await User.findByIdAndUpdate(id, {
+        companyname, email, password: hashPassword, cpassword, entrynumber, role, date, businesslocation, department, roel,
+        userid, dateofjoin, staffname, fathername, gender, bloodgroup, dateofbirth, religion, nationality, address, areacity, pincode,
+        phonenum, otherphonenum, useractive, maritalstatus, familydetails, profileimage, educationdetails, experiencedetails, jobdetails,
+        languageknown, aadharnumber, accnumber, remarks, country, termscondition, state, assignbusinessid
+    });
 
     if (!upuser) {
         return next(new ErrorHandler('User not found', 404));
     }
 
-    return res.status(200).json({ message: 'Updated successfully!'})
+    return res.status(200).json({ message: 'Updated successfully!' })
 })
 
 // update user by id => /api/auth/:id
@@ -295,11 +300,11 @@ exports.updateUserpw = catchAsyncErrors(async (req, res, next) => {
         return next(new ErrorHandler('User not found', 404));
     }
 
-    return res.status(200).json({ message: 'Updated successfully!'})
+    return res.status(200).json({ message: 'Updated successfully!' })
 })
 
 // delete user by id => /api/auth/:id
-exports.deleteUser = catchAsyncErrors(async (req, res, next)=>{
+exports.deleteUser = catchAsyncErrors(async (req, res, next) => {
     const id = req.params.id;
 
     const duser = await User.findByIdAndRemove(id);
@@ -308,6 +313,6 @@ exports.deleteUser = catchAsyncErrors(async (req, res, next)=>{
         return next(new ErrorHandler('User not found', 404));
     }
 
-    res.status(200).json({ message: 'Deleted successfully'})
+    res.status(200).json({ message: 'Deleted successfully' })
 })
 

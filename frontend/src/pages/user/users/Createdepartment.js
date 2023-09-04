@@ -25,32 +25,34 @@ function Createdepartmentmod({ setFetchsavedepartment }) {
   //  Fetch department Data
   const fetchDepartments = async () => {
     try {
-      let res = await axios.get(SERVICE.DEPARTMENT, {
+      let res = await axios.post(SERVICE.DEPARTMENT, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
-      });
-      let result = res.data.departments.filter((data, index) => {
-        return data.assignbusinessid == setngs.businessid
-      })
+        },
+        businessid: String(setngs.businessid)
 
-      let departmentcode = result.map((data,index)=>{
+      });
+      // let result = res.data.departments.filter((data, index) => {
+      //   return data.assignbusinessid == setngs.businessid
+      // })
+
+      let departmentcode = res?.data?.departments.map((data, index) => {
         return data.departmentid
       })
 
-      let departmentname = result.map((data,index)=>{
+      let departmentname = res?.data?.departments.map((data, index) => {
         return data.departmentname
       })
       setIsDepartmentCode(departmentcode);
       setIsDepartmentName(departmentname);
-      setIsDepartments(result);
+      setIsDepartments(res?.data?.departments);
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -73,32 +75,33 @@ function Createdepartmentmod({ setFetchsavedepartment }) {
         departmentid: String(newval),
         departmentname: String(department.departmentname),
         assignbusinessid: String(setngs.businessid),
+
       });
       setFetchsavedepartment("None")
       setDepartment(response.data);
       toast.success(response.data.message, {
         position: toast.POSITION.TOP_CENTER
       });
-      
+
       departmentModClose();
 
       await fetchDepartments();
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
   const addDepartmentSubmit = (e) => {
     e.preventDefault();
     if (department.departmentname == "") {
       setShowAlert("Please enter department name!");
-    }else if(isDepartmentCode.includes(newval)){
+    } else if (isDepartmentCode.includes(newval)) {
       setShowAlert("Code already exits!");
-    } else if(isDepartmentName.includes(department.departmentname)){
+    } else if (isDepartmentName.includes(department.departmentname)) {
       setShowAlert("Name already exits!");
     }
     else {
@@ -114,15 +117,17 @@ function Createdepartmentmod({ setFetchsavedepartment }) {
         onClose={departmentModClose}
         aria-labelledby="customized-dialog-title1"
         open={designationmodal}
+        maxWidth="md"
       >
         <form>
-          <DialogTitle id="customized-dialog-title1" onClose={departmentModClose} sx={{ fontWeight: "700px" }}>
+          <DialogTitle id="customized-dialog-title1" onClose={departmentModClose} sx={{ fontWeight: "700px" }} style={{ backgroundColor: '#e0e0e0', color: "#000", display: "flex" }}>
             Add Department
           </DialogTitle>
-          <DialogContent dividers>
+          <DialogContent dividers style={{
+            minWidth: '750px', height: '180px',
+          }}>
             <Grid container spacing={3} >
               <Grid item md={12} sm={12} xs={12}>
-                <p style={{ color: 'red' }}>{showAlert}</p> <br />
                 {isDepartment && (
                   isDepartment.map(
                     () => {
@@ -154,27 +159,26 @@ function Createdepartmentmod({ setFetchsavedepartment }) {
                         newval = strings + refNOINC;
                       }
                     }))}
+                <InputLabel htmlFor="component-outlined">Department ID <b style={{ color: 'red' }}>*</b></InputLabel>
                 <FormControl size="small" fullWidth>
-                  <InputLabel htmlFor="component-outlined">Department ID <b style={{ color: 'red' }}>*</b></InputLabel>
                   <OutlinedInput
                     sx={userStyle.alertOutline}
                     id="component-outlined"
                     value={newval}
-                    label="Department ID *"
                   />
                 </FormControl>
               </Grid>
               <Grid item md={12} sm={12} xs={12}>
+                <InputLabel htmlFor="component-outlined">Department Name</InputLabel>
                 <FormControl size="small" fullWidth>
-                  <InputLabel htmlFor="component-outlined">Department Name</InputLabel>
                   <OutlinedInput
                     sx={userStyle.alertOutline}
                     id="component-outlined"
                     value={department.departmentname}
                     onChange={(e) => { setDepartment({ ...department, departmentname: e.target.value }); setShowAlert(""); }}
-                    label="Department Name"
                   />
-                </FormControl>
+                </FormControl><br />
+                <p style={{ color: 'red' }}>{showAlert}</p>
               </Grid>
             </Grid>
           </DialogContent>

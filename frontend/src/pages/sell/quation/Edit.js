@@ -65,16 +65,16 @@ const Quotationedit = () => {
 
     // pos inside products array data
     const productInputs = {
-        companyrate:"",superstockrate:"",dealerrate:"",ratetype:"",sellingvalue:"", hsn:"", discountcheck:false, productid: "", productname: "", subtax: [], quantity: "", sellingpricetax: "", taxtareval: "", subtotal: "", applicabletax: "", discountamt: 0,
+        companyrate: "", superstockrate: "", dealerrate: "", ratetype: "", sellingvalue: "", hsn: "", discountcheck: false, productid: "", productname: "", subtax: [], quantity: "", sellingpricetax: "", taxtareval: "", subtotal: "", applicabletax: "", discountamt: 0,
         mrp: "", afterdiscount: 0, netrate: "", expirydate: "", category: "", subcategory: "",
     }
 
 
     // pos db store data 
     const [quotationEdit, setQuotationEdit] = useState({
-        company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-        salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-        accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+        company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+        salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+        accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", drivername: "", drivernumber: "", drivernphonenumber: "",
     });
 
     const [productsList, setProductsList] = useState([]);
@@ -122,7 +122,7 @@ const Quotationedit = () => {
             else if (quotationEdit.location == "") {
                 setShowAlert("Please select any one of location!");
                 alertOpen();
-            }else {
+            } else {
                 setIsPay(true);
             }
         };
@@ -172,11 +172,11 @@ const Quotationedit = () => {
             setTableData(res.data.squotation.goods);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -188,7 +188,7 @@ const Quotationedit = () => {
 
     //fetch settings company 
     const fetchCompany = () => {
-        setCompany(setngs.company.map((t) => ({
+        setCompany(setngs?.company?.map((t) => ({
             ...t,
             label: t.companyname,
             value: t.companyname
@@ -198,20 +198,23 @@ const Quotationedit = () => {
     // fetch all products for category/brand/sub category onclick with particular data
     const fetchProd = async (e) => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setMergeprod(result);
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setMergeprod(response?.data?.products);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -220,20 +223,23 @@ const Quotationedit = () => {
     // get taxvrate data for products
     const taxrateRequest = async () => {
         try {
-            let response = await axios.get(SERVICE.TAXRATE, {
+            let response = await axios.post(SERVICE.TAXRATE, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let taxRateData = response.data.taxrates.filter((data) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setTaxrates(taxRateData);
+            // let taxRateData = response.data.taxrates.filter((data) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setTaxrates(response?.data?.taxrates);
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -242,47 +248,53 @@ const Quotationedit = () => {
     // fetch all products for get particular product in product select give products
     const fetchProductsall = async () => {
         try {
-            let response = await axios.get(SERVICE.PRODUCT, {
+            let response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setProducts(result);
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setProducts(response?.data?.products);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
     // get all stock data
     const fetchHandleStock = async () => {
         try {
-            var response = await axios.get(SERVICE.PRODUCT, {
+            var response = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setProductsList(result.map((t) => ({
+            // let result = response.data.products.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setProductsList(response?.data?.products?.map((t) => ({
                 ...t,
                 label: t.productname,
                 value: t.productname
             })))
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 setShowAlert(messages);
                 alertOpen();
-            }else{
+            } else {
                 setShowAlert("Something went wrong!");
                 alertOpen();
             }
@@ -294,49 +306,55 @@ const Quotationedit = () => {
     // fetch categories
     const fetchcategory = async (e) => {
         try {
-            let response = await axios.get(SERVICE.CATEGORIES, {
+            let response = await axios.post(SERVICE.CATEGORIES, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = response.data.categories.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            setCategory(result);
+            // let result = response.data.categories.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            setCategory(response?.data?.categories);
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
     // fetch subcategory
     const fetchSubcategory = async (e) => {
         try {
-            let req = await axios.get(SERVICE.CATEGORIES, {
+            let req = await axios.post(SERVICE.CATEGORIES, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = req.data.categories.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let reqdata = result.filter(item => {
+            // let result = req.data.categories.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            let reqdata = req?.data?.categories?.filter(item => {
                 return item.subcategories
             })
             setSubCategory(reqdata);
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -365,9 +383,9 @@ const Quotationedit = () => {
             fetchtable(res.data.sproduct)
         } catch (err) {
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -375,23 +393,27 @@ const Quotationedit = () => {
 
     const fetchlocated = async () => {
         try {
-            var response = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            var response = await axios.post(SERVICE.BUSINESS_LOCATION, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                active: Boolean(true),
             });
 
-            let result = response.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate == true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate == true
-                    }
-                }
-            })
+            // let result = response.data.busilocations.filter((data, index) => {
+            //     if (isUserRoleAccess.role == 'Admin') {
+            //         return data.assignbusinessid == setngs.businessid && data.activate == true
+            //     } else {
+            //         if (isUserRoleAccess.businesslocation.includes(data.name)) {
+            //             return data.assignbusinessid == setngs.businessid && data.activate == true
+            //         }
+            //     }
+            // })
 
-            setBusiOptions(result?.map((data) => ({
+            setBusiOptions(response?.data?.busilocations?.map((data) => ({
                 ...data,
                 label: data.name,
                 value: data.name
@@ -399,26 +421,29 @@ const Quotationedit = () => {
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
     const fetchSalesman = async () => {
         try {
-            let res = await axios.get(`${SERVICE.USER_TERMSFALSE}`, {
+            let res = await axios.post(`${SERVICE.USER_TERMSFALSE}`, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
 
-            let result = res.data.usersterms.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let getresult = result?.filter((data) => {
+            // let result = res.data.usersterms.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            let getresult = res?.data?.usersterms?.filter((data) => {
                 return data.role == "Salesman"
             })
 
@@ -430,11 +455,11 @@ const Quotationedit = () => {
 
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -478,8 +503,8 @@ const Quotationedit = () => {
                     superstockrate: e.superstockrate,
                     dealerrate: e.dealerrate,
                     mrp: e.mrp,
-                    ratetype:"",
-                    sellingvalue:e.mrp,
+                    ratetype: "",
+                    sellingvalue: e.mrp,
                     category: e.category,
                     subcategory: e.subcategory,
                     productid: e.sku,
@@ -522,9 +547,9 @@ const Quotationedit = () => {
                 else if (reference == "percentage" && inputvalue == false) {
                     let afterdisval = Number(value?.netrate) - Number(value.discountamt)
                     return { ...value, [productInputName]: inputvalue, afterdiscount: afterdisval, subtotal: (Number(afterdisval) * Number(value.taxtareval) / 100 + Number(afterdisval)) }
-                   
-                }else if (reference == "rateamount"){
-                    if(inputvalue == "companyrate"){
+
+                } else if (reference == "rateamount") {
+                    if (inputvalue == "companyrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.companyrate);
                         //after discount rate
@@ -532,15 +557,15 @@ const Quotationedit = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
-                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost)); 
+                        //subtotal
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.companyrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
-                    }else  if(inputvalue == "superstockrate"){
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.companyrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
+                    } else if (inputvalue == "superstockrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.superstockrate);
                         //after discount rate
@@ -548,16 +573,16 @@ const Quotationedit = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));  
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.superstockrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.superstockrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
                     }
-                    else  if(inputvalue == "dealarrate"){
+                    else if (inputvalue == "dealarrate") {
                         //netrate
                         let netcost = Number(value.quantity) * Number(value.dealerrate);
                         //after discount rate
@@ -565,14 +590,14 @@ const Quotationedit = () => {
                         if (value.discountcheck == true) {
                             let afterdisval = Number(netcost) - (Number(netcost) * (Number(value.discountamt) / 100));
                             aftterdisccost = afterdisval;
-                        }else if (value.discountcheck == false) {
+                        } else if (value.discountcheck == false) {
                             let afterdisval = Number(netcost) - Number(value.discountamt);
                             aftterdisccost = afterdisval;
                         }
                         //subtotal
-                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost)); 
+                        let subcost = ((Number(aftterdisccost) * Number(value.taxtareval)) / 100 + Number(aftterdisccost));
 
-                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.dealerrate, subtotal:subcost, netrate: netcost, afterdiscount: aftterdisccost,  }
+                        return { ...value, [productInputName]: inputvalue, sellingvalue: value.dealerrate, subtotal: subcost, netrate: netcost, afterdiscount: aftterdisccost, }
                     }
                 }
                 else {
@@ -643,7 +668,7 @@ const Quotationedit = () => {
         let totaltaxvalue = 0;
         if (tableData?.length > 0) {
             tableData?.forEach((value) => {
-                totaltaxvalue += Math.abs((((value.taxtareval == "" || value.taxtareval == undefined ? 0 : value.taxtareval)/100) * (value.mrp == "" || value.mrp == undefined ? 0 : value.mrp))) * Number(value.quantity)
+                totaltaxvalue += Math.abs((((value.taxtareval == "" || value.taxtareval == undefined ? 0 : value.taxtareval) / 100) * (value.mrp == "" || value.mrp == undefined ? 0 : value.mrp))) * Number(value.quantity)
             })
             return totaltaxvalue;
         }
@@ -679,22 +704,25 @@ const Quotationedit = () => {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-            let result = req.data.pos1.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-            let posresult = result.map((data, index) => {
+            // let result = req.data.pos1.filter((data, index) => {
+            //     return data.assignbusinessid == setngs.businessid
+            // })
+            let posresult = req?.data?.pos1?.map((data, index) => {
                 return data.referenceno
             })
             setLocationData(posresult);
-            setPos(result);
+            setPos(req?.data?.pos1);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -770,21 +798,21 @@ const Quotationedit = () => {
                 companycontactpersonname: String(quotationEdit.companycontactpersonname == undefined || null ? "" : quotationEdit.companycontactpersonname),
                 companycontactpersonnumber: Number(quotationEdit.companycontactpersonnumber == undefined || null ? 0 : quotationEdit.companycontactpersonnumber),
                 location: String(quotationEdit.location),
-                deliveryaddress:String(quotationEdit.deliveryaddress == undefined || null ? "": quotationEdit.deliveryaddress),
-                deliverygstn:String(quotationEdit.deliverygstn == undefined | null ? "" : quotationEdit.deliverygstn),
-                deliverycontactpersonname:String(quotationEdit.deliverycontactpersonname == undefined || null ? "" : quotationEdit.deliverycontactpersonname),
-                deliverycontactpersonnumber:Number(quotationEdit.deliverycontactpersonnumber == undefined || null ? 0 : quotationEdit.deliverycontactpersonnumber),
-                drivernumber:String(quotationEdit.drivernumber == undefined || null ? "":quotationEdit.drivernumber),
-                drivername:String(quotationEdit.drivername == undefined || null ? "" : quotationEdit.drivername),
-                drivernphonenumber:Number(quotationEdit.drivernphonenumber == undefined || null ? 0 : quotationEdit.drivernphonenumber),
+                deliveryaddress: String(quotationEdit.deliveryaddress == undefined || null ? "" : quotationEdit.deliveryaddress),
+                deliverygstn: String(quotationEdit.deliverygstn == undefined | null ? "" : quotationEdit.deliverygstn),
+                deliverycontactpersonname: String(quotationEdit.deliverycontactpersonname == undefined || null ? "" : quotationEdit.deliverycontactpersonname),
+                deliverycontactpersonnumber: Number(quotationEdit.deliverycontactpersonnumber == undefined || null ? 0 : quotationEdit.deliverycontactpersonnumber),
+                drivernumber: String(quotationEdit.drivernumber == undefined || null ? "" : quotationEdit.drivernumber),
+                drivername: String(quotationEdit.drivername == undefined || null ? "" : quotationEdit.drivername),
+                drivernphonenumber: Number(quotationEdit.drivernphonenumber == undefined || null ? 0 : quotationEdit.drivernphonenumber),
                 salesman: String(quotationEdit.salesman == undefined || null ? "" : quotationEdit.salesman),
                 salesmannumber: Number(quotationEdit.salesmannumber == undefined || null ? 0 : quotationEdit.salesmannumber),
-                salescommission: Number(quotationEdit.salescommission == undefined ? 0 :  quotationEdit.salescommission),
+                salescommission: Number(quotationEdit.salescommission == undefined ? 0 : quotationEdit.salescommission),
                 date: String(quotationEdit.date),
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
-                totalnettax:Number(totalTaxValCal().toFixed(2)),
+                totalnettax: Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
@@ -803,13 +831,13 @@ const Quotationedit = () => {
             backLPage('/sell/pos/create');
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            setShowAlert(messages);
-            alertOpen();
-        }else{
-            setShowAlert("Something went wrong!");
-            alertOpen();
-        }
+            if (messages) {
+                setShowAlert(messages);
+                alertOpen();
+            } else {
+                setShowAlert("Something went wrong!");
+                alertOpen();
+            }
         }
     };
 
@@ -857,21 +885,21 @@ const Quotationedit = () => {
                 companycontactpersonname: String(quotationEdit.companycontactpersonname == undefined || null ? "" : quotationEdit.companycontactpersonname),
                 companycontactpersonnumber: Number(quotationEdit.companycontactpersonnumber == undefined || null ? 0 : quotationEdit.companycontactpersonnumber),
                 location: String(quotationEdit.location),
-                deliveryaddress:String(quotationEdit.deliveryaddress == undefined || null ? "": quotationEdit.deliveryaddress),
-                deliverygstn:String(quotationEdit.deliverygstn == undefined | null ? "" : quotationEdit.deliverygstn),
-                deliverycontactpersonname:String(quotationEdit.deliverycontactpersonname == undefined || null ? "" : quotationEdit.deliverycontactpersonname),
-                deliverycontactpersonnumber:Number(quotationEdit.deliverycontactpersonnumber == undefined || null ? 0 : quotationEdit.deliverycontactpersonnumber),
-                drivernumber:String(quotationEdit.drivernumber == undefined || null ? "":quotationEdit.drivernumber),
-                drivername:String(quotationEdit.drivername == undefined || null ? "" : quotationEdit.drivername),
-                drivernphonenumber:Number(quotationEdit.drivernphonenumber == undefined || null ? 0 : quotationEdit.drivernphonenumber),
+                deliveryaddress: String(quotationEdit.deliveryaddress == undefined || null ? "" : quotationEdit.deliveryaddress),
+                deliverygstn: String(quotationEdit.deliverygstn == undefined | null ? "" : quotationEdit.deliverygstn),
+                deliverycontactpersonname: String(quotationEdit.deliverycontactpersonname == undefined || null ? "" : quotationEdit.deliverycontactpersonname),
+                deliverycontactpersonnumber: Number(quotationEdit.deliverycontactpersonnumber == undefined || null ? 0 : quotationEdit.deliverycontactpersonnumber),
+                drivernumber: String(quotationEdit.drivernumber == undefined || null ? "" : quotationEdit.drivernumber),
+                drivername: String(quotationEdit.drivername == undefined || null ? "" : quotationEdit.drivername),
+                drivernphonenumber: Number(quotationEdit.drivernphonenumber == undefined || null ? 0 : quotationEdit.drivernphonenumber),
                 salesman: String(quotationEdit.salesman == undefined || null ? "" : quotationEdit.salesman),
                 salesmannumber: Number(quotationEdit.salesmannumber == undefined || null ? 0 : quotationEdit.salesmannumber),
-                salescommission: Number(quotationEdit.salescommission == undefined ? 0 :  quotationEdit.salescommission),
+                salescommission: Number(quotationEdit.salescommission == undefined ? 0 : quotationEdit.salescommission),
                 date: String(quotationEdit.date),
                 goods: [...tableData],
                 totalitems: Number(tableData.length),
                 totalproducts: Number(totalQuantityCalc()),
-                totalnettax:Number(totalTaxValCal().toFixed(2)),
+                totalnettax: Number(totalTaxValCal().toFixed(2)),
                 taxcgst: Number(CGST ? CGST : 0),
                 taxigst: Number(IGST ? IGST : 0),
                 taxsgst: Number(GST ? GST : 0),
@@ -887,11 +915,11 @@ const Quotationedit = () => {
             backLPage('/sell/quotation/list');
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
 
@@ -910,9 +938,9 @@ const Quotationedit = () => {
 
     const handleSubmitclear = (e) => {
         setQuotationEdit({
-            company: "", companyaddress: "",companycontactpersonname:"",companycontactpersonnumber:"", referenceno: "", location: "", date: "",
-            salesman: "", salescommission: "",salesmannumber:"", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
-            accountnumber: "", ifsccode: "",deliveryaddress:"",deliverygstn:"",deliverycontactpersonname:"",deliverycontactpersonnumber:"",drivername:"",drivernumber:"",drivernphonenumber:"",
+            company: "", companyaddress: "", companycontactpersonname: "", companycontactpersonnumber: "", referenceno: "", location: "", date: "",
+            salesman: "", salescommission: "", salesmannumber: "", totalitems: "", totalproducts: 0, grandtotal: 0, totalbillamt: 0, userbyadd: "", gstno: "", bankname: "",
+            accountnumber: "", ifsccode: "", deliveryaddress: "", deliverygstn: "", deliverycontactpersonname: "", deliverycontactpersonnumber: "", drivername: "", drivernumber: "", drivernphonenumber: "",
         });
         setTableData(clearvalall);
     };
@@ -946,8 +974,8 @@ const Quotationedit = () => {
                     superstockrate: e.superstockrate,
                     dealerrate: e.dealerrate,
                     mrp: e.mrp,
-                    ratetype:"",
-                    sellingvalue:e.mrp,
+                    ratetype: "",
+                    sellingvalue: e.mrp,
                     category: e.category,
                     subcategory: e.subcategory,
                     productid: e.sku,
@@ -977,8 +1005,8 @@ const Quotationedit = () => {
 
     useEffect(
         () => {
-        fetchPos();
-    }, [])
+            fetchPos();
+        }, [])
 
     // Number field
     const exceptThisSymbols = ["e", "E", "+", "-", "."];
@@ -998,14 +1026,14 @@ const Quotationedit = () => {
                     <Grid container spacing={1} >
                         <Grid item lg={2} md={2} sm={6} xs={12}>
                             <Box sx={{ float: "left" }}>
-                            {setngs.businesslogo ? (
-                                        <>
-                                       <Link to="/">
+                                {setngs.businesslogo ? (
+                                    <>
+                                        <Link to="/">
                                             <img src={setngs?.businesslogo} alt="logo" style={{ width: '150px', height: '70px', paddingLeft: 'px' }}></img>
                                         </Link>
-                                        </>
-                                    ) : (
-                                        <></>
+                                    </>
+                                ) : (
+                                    <></>
                                 )}
                             </Box>
                         </Grid>
@@ -1039,7 +1067,7 @@ const Quotationedit = () => {
                                         options={busioptions}
                                         value={{ value: quotationEdit.location, label: quotationEdit.location }}
                                         placeholder="Business Location"
-                                        onChange={(e) => { setQuotationEdit({ ...quotationEdit, location: e.value,  deliveryaddress:e.address, deliverygstn:e.gstnno, deliverycontactpersonname:e.contactpersonname, deliverycontactpersonnumber:e.contactpersonnum }); }}
+                                        onChange={(e) => { setQuotationEdit({ ...quotationEdit, location: e.value, deliveryaddress: e.address, deliverygstn: e.gstnno, deliverycontactpersonname: e.contactpersonname, deliverycontactpersonnumber: e.contactpersonnum }); }}
                                     />
                                 </FormControl>
                             </Grid>
@@ -1055,7 +1083,7 @@ const Quotationedit = () => {
                                         options={salesmans}
                                         value={{ value: quotationEdit.salesman, label: quotationEdit.salesman }}
                                         placeholder="Salesman"
-                                        onChange={(e) => { setQuotationEdit({ ...quotationEdit, salesman: e.value, salescommission: e.salescommission, salesmannumber:e.phonenum }); }}
+                                        onChange={(e) => { setQuotationEdit({ ...quotationEdit, salesman: e.value, salescommission: e.salescommission, salesmannumber: e.phonenum }); }}
                                     />
                                 </FormControl>
                             </Grid>
@@ -1108,7 +1136,7 @@ const Quotationedit = () => {
                                                 <TableCell style={{ width: '155px' }}>After Discount </TableCell>
                                                 <TableCell style={{ width: '55px' }}>GST</TableCell>
                                                 <TableCell style={{ width: '155px' }}>Subtotal</TableCell>
-                                                <TableCell sx={{ paddingTop: "5px", width: '55px' }} ><DeleteOutlineOutlinedIcon style={{fontSize: 'large'}}/></TableCell>
+                                                <TableCell sx={{ paddingTop: "5px", width: '55px' }} ><DeleteOutlineOutlinedIcon style={{ fontSize: 'large' }} /></TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -1118,12 +1146,12 @@ const Quotationedit = () => {
                                                         <>
                                                             <TableRow >
                                                                 <TableCell sx={{ fontSize: '12px', }} key={i}>{data?.productname}</TableCell>
-                                                                <TableCell sx={{ fontSize: '12px'}}>
+                                                                <TableCell sx={{ fontSize: '12px' }}>
                                                                     <Select
-                                                                     isClearable
-                                                                     labelId="demo-select-small"
-                                                                     variant="standard"
-                                                                     id="demo-select-small"
+                                                                        isClearable
+                                                                        labelId="demo-select-small"
+                                                                        variant="standard"
+                                                                        id="demo-select-small"
                                                                         value={data?.ratetype}
                                                                         sx={{ fontSize: '12px', }}
                                                                         onChange={(e) => handleProductchange(i, 'rateamount', 'ratetype', e.target.value)}
@@ -1422,29 +1450,29 @@ const Quotationedit = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography ><b>Company Name:</b> {quotationEdit.company}</Typography><br />
-                                    <Grid sx={{display:'flex'}}>
-                                    <Grid>
-                                    <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
-                                    <FormControl size="small" sx={{ display: "flex"}} >
-                                        <OutlinedInput
-                                            id="component-outlined"
-                                            type="text"
-                                            value={quotationEdit.companycontactpersonname}
-                                            onChange={(e) => { setQuotationEdit({ ...quotationEdit, companycontactpersonname: e.target.value}) }}
-                                        />
-                                    </FormControl>
-                                    </Grid>
-                                    <Grid>
-                                    <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
-                                    <FormControl size="small"  sx={{ display: "flex"}} >
-                                        <OutlinedInput
-                                            id="component-outlined"
-                                            type="number"
-                                            value={quotationEdit.companycontactpersonnumber}
-                                            onChange={(e) => { setQuotationEdit({ ...quotationEdit, companycontactpersonnumber: e.target.value}) }}
-                                        />
-                                    </FormControl>
-                                    </Grid>
+                                    <Grid sx={{ display: 'flex' }}>
+                                        <Grid>
+                                            <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="text"
+                                                    value={quotationEdit.companycontactpersonname}
+                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, companycontactpersonname: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
+                                        <Grid>
+                                            <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
+                                            <FormControl size="small" sx={{ display: "flex" }} >
+                                                <OutlinedInput
+                                                    id="component-outlined"
+                                                    type="number"
+                                                    value={quotationEdit.companycontactpersonnumber}
+                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, companycontactpersonnumber: e.target.value }) }}
+                                                />
+                                            </FormControl>
+                                        </Grid>
                                     </Grid>
                                 </Box>
                             </Card>
@@ -1456,26 +1484,26 @@ const Quotationedit = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography ><b>Delivery Name:</b> {quotationEdit.location}</Typography><br />
-                                    <Grid sx={{display:'flex'}}>
+                                    <Grid sx={{ display: 'flex' }}>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Contact person name</b></InputLabel>
-                                            <FormControl size="small" sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={quotationEdit.deliverycontactpersonname}
-                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, deliverycontactpersonname: e.target.value}) }}
+                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, deliverycontactpersonname: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Contact person number</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="number"
                                                     value={quotationEdit.deliverycontactpersonnumber}
-                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, deliverycontactpersonnumber: e.target.value}) }}
+                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, deliverycontactpersonnumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -1490,37 +1518,37 @@ const Quotationedit = () => {
                             <Card sx={{ padding: '30px', boxShadow: '0 0 10px -2px #444444', }}>
                                 <Box>
                                     <Typography><b>Transport Details</b></Typography><br />
-                                    <Grid sx={{display:'flex'}}>
+                                    <Grid sx={{ display: 'flex' }}>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Driver Name</b></InputLabel>
-                                            <FormControl size="small" sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={quotationEdit.drivername}
-                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, drivername: e.target.value}) }}
+                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, drivername: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Driver Number</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="text"
                                                     value={quotationEdit.drivernumber}
-                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, drivernumber: e.target.value}) }}
+                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, drivernumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
                                         <Grid>
                                             <InputLabel id="demo-select-small"><b>Driver Contact No</b></InputLabel>
-                                            <FormControl size="small"  sx={{ display: "flex"}} >
+                                            <FormControl size="small" sx={{ display: "flex" }} >
                                                 <OutlinedInput
                                                     id="component-outlined"
                                                     type="number"
                                                     value={quotationEdit.drivernphonenumber}
-                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, drivernphonenumber: e.target.value}) }}
+                                                    onChange={(e) => { setQuotationEdit({ ...quotationEdit, drivernphonenumber: e.target.value }) }}
                                                 />
                                             </FormControl>
                                         </Grid>
@@ -1556,16 +1584,16 @@ const Quotationedit = () => {
             <>
                 <Box sx={userStyle.printcls} ref={componentRef}>
                     <Box sx={{ padding: '20px' }}>
-                    {setngs.businesslogo ? (
-                        <>
-                        <img src={setngs?.businesslogo} alt="Aranya Herbals" width="150px" height="70px" /><br />
-                        </>
-                    ) : (
-                        <></>
-                    )}
+                        {setngs.businesslogo ? (
+                            <>
+                                <img src={setngs?.businesslogo} alt="Aranya Herbals" width="150px" height="70px" /><br />
+                            </>
+                        ) : (
+                            <></>
+                        )}
                         <Grid container >
                             <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'left', }}>
-                                <Typography><b>COMPANY DETAILS</b><br/></Typography>
+                                <Typography><b>COMPANY DETAILS</b><br /></Typography>
                                 <Grid container>
                                     <Grid item md={4} sm={4} xs={4}>
                                         <Typography><b>Name:</b></Typography>
@@ -1573,11 +1601,11 @@ const Quotationedit = () => {
                                         <Typography><b>GSTN:</b></Typography>
                                         <Typography><b>Contact person:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{quotationEdit.company}</Typography>
                                         <Typography>{quotationEdit.companyaddress}</Typography>
                                         <Typography>{quotationEdit.gstno}</Typography>
-                                        <Typography>{quotationEdit.companycontactpersonname+'/'+quotationEdit.companycontactpersonnumber}</Typography>
+                                        <Typography>{quotationEdit.companycontactpersonname + '/' + quotationEdit.companycontactpersonnumber}</Typography>
                                     </Grid>
                                 </Grid><br /><br /><br /><br />
                                 <Grid container>
@@ -1586,15 +1614,15 @@ const Quotationedit = () => {
                                         <Typography><b>Order Date:</b></Typography>
                                         <Typography><b>Salesman:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{newvalpos}</Typography>
                                         <Typography>{moment(quotationEdit.date).format('DD-MM-YYYY')}</Typography>
-                                        <Typography>{quotationEdit.salesman+'/'+quotationEdit.salesmannumber}</Typography>
+                                        <Typography>{quotationEdit.salesman + '/' + quotationEdit.salesmannumber}</Typography>
                                     </Grid>
                                 </Grid>
                             </Grid>
                             <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right', }}>
-                            <Typography><b>DELIVERY DETAILS:</b> <br /></Typography>
+                                <Typography><b>DELIVERY DETAILS:</b> <br /></Typography>
                                 <Grid container>
                                     <Grid item md={4} sm={4} xs={4}>
                                         <Typography><b>Name:</b></Typography>
@@ -1602,11 +1630,11 @@ const Quotationedit = () => {
                                         <Typography><b>GSTN:</b></Typography>
                                         <Typography><b>Contact person:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{quotationEdit.location}</Typography>
                                         <Typography>{quotationEdit.deliveryaddress}</Typography>
                                         <Typography>{quotationEdit.deliverygstn}</Typography>
-                                        <Typography>{quotationEdit.deliverycontactpersonname+'/'+quotationEdit.deliverycontactpersonnumber}</Typography>
+                                        <Typography>{quotationEdit.deliverycontactpersonname + '/' + quotationEdit.deliverycontactpersonnumber}</Typography>
                                     </Grid>
                                 </Grid><br /><br />
                                 <Typography><b>TRANSPORT DETAILS:</b> <br /></Typography>
@@ -1616,7 +1644,7 @@ const Quotationedit = () => {
                                         <Typography><b>No:</b></Typography>
                                         <Typography><b>Contact No:</b></Typography>
                                     </Grid>
-                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item md={8} sm={8} xs={8} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{quotationEdit.drivername}</Typography>
                                         <Typography>{quotationEdit.drivernumber}</Typography>
                                         <Typography>{quotationEdit.drivernphonenumber}</Typography>
@@ -1627,7 +1655,7 @@ const Quotationedit = () => {
                                         <Typography><b>Invoice Number:</b></Typography>
                                         <Typography><b>Invoice Date:</b></Typography>
                                     </Grid>
-                                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft:'10px'}}>
+                                    <Grid item lg={6} md={6} sm={6} xs={6} sx={{ textAlign: 'left', paddingLeft: '10px' }}>
                                         <Typography>{newvalpos}</Typography>
                                         <Typography>{moment(quotationEdit.date).format('DD-MM-YYYY')}</Typography>
                                     </Grid>
@@ -1707,11 +1735,11 @@ const Quotationedit = () => {
                             <Grid item md={6} sm={6} xs={6} sx={{ textAlign: 'right' }}>
                                 <br /><br /><br /><br /><br /><br /><br />
                                 {setngs.signature ? (
-                                        <>
+                                    <>
                                         <Typography align='right'><img src={setngs.signature} width="80px" height="45px" /></Typography>
-                                        </>
-                                    ) : (
-                                        <></>
+                                    </>
+                                ) : (
+                                    <></>
                                 )}
                                 <Typography align='right'><b>Authorized Signatory</b></Typography>
                             </Grid>

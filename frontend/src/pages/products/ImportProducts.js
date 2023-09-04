@@ -11,8 +11,10 @@ import { CsvBuilder } from 'filefy';
 import SendToServer from './SendToServer';
 import Headtitle from '../../components/header/Headtitle';
 import { SERVICE } from '../../services/Baseservice';
+import { UserRoleAccessContext } from '../../context/Appcontext';
 import { AuthContext } from '../../context/Appcontext';
 import { toast } from 'react-toastify';
+
 
 function Importproduct() {
 
@@ -67,35 +69,42 @@ function Importproduct() {
         promise.then((d) => {
             setItems(d);
         });
+
     };
+    const { isUserRoleCompare, isUserRoleAccess, allProducts } = useContext(UserRoleAccessContext);
+
 
     // get all products
     const fetchProduct = async () => {
         try {
-            let res_product = await axios.get(SERVICE.PRODUCT, {
+            let res_product = await axios.post(SERVICE.PRODUCT, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+
             });
 
-            setProducts(res_product.data.products);
+            setProducts(res_product?.data?.products);
         } catch (err) {
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
     useEffect(() => {
         fetchProduct();
-    }, [])
+    },)
 
     const ExportsHead = () => {
         new CsvBuilder("products")
-            .setColumns(["sku", "productname", "category", "subcategory", "companyrate","superstockrate","dealerrate","mrp", "labeltype", "expirydate", "unit", "currentstock", "minquantity", "maxquantity","hsn", "applicabletax", "sellingpricetax", "productdescription","assignbusinessid",])
+            .setColumns(["sku", "productname", "category", "subcategory", "companyrate", "superstockrate", "dealerrate", "mrp", "labeltype", "expirydate", "unit", "currentstock", "managestock", "minquantity", "maxquantity", "hsn", "applicabletax", "sellingpricetax", "productdescription", "assignbusinessid",])
             .exportFile();
     }
 
@@ -248,7 +257,7 @@ function Importproduct() {
                                 <StyledTableCell align="left"><Box sx={{ display: 'flex', gap: '2px' }}><Typography sx={userStyle.importTabledata}>Mininmum quantity </Typography> <Typography>(Optional)</Typography>	</Box></StyledTableCell>
                                 <StyledTableCell align="left">Should be number</StyledTableCell>
                             </StyledTableRow>
-                            
+
                             <StyledTableRow>
                                 <StyledTableCell component="th" scope="row">14</StyledTableCell>
                                 <StyledTableCell align="left"><Box sx={{ display: 'flex', gap: '2px' }}><Typography sx={userStyle.importTabledata}>Maximum quantity</Typography> <Typography>(Optional)</Typography></Box>	</StyledTableCell>
@@ -265,7 +274,7 @@ function Importproduct() {
                                 <StyledTableCell align="left"> <Typography sx={userStyle.importTabledata}><b>Inclusive</b> or <b>Exclusive</b></Typography></StyledTableCell>
                             </StyledTableRow>
                             <StyledTableRow>
-                            <StyledTableCell component="th" scope="row">17</StyledTableCell>
+                                <StyledTableCell component="th" scope="row">17</StyledTableCell>
                                 <StyledTableCell align="left"><Box sx={{ display: 'flex', gap: '2px' }}><Typography sx={userStyle.importTabledata}>Product Description</Typography> <Typography>(Optional)</Typography></Box>	</StyledTableCell>
                                 <StyledTableCell align="left"></StyledTableCell>
                             </StyledTableRow>

@@ -22,8 +22,11 @@ import DoneOutlineOutlinedIcon from '@mui/icons-material/DoneOutlineOutlined';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
 import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
 import { Link } from 'react-router-dom';
+import { ThreeDots } from 'react-loader-spinner';
 
 function StocktransferandAdjustlist() {
+
+    const [isLoader, setIsLoader] = useState(false);
 
     const { auth, setngs } = useContext(AuthContext);
     const [exceldata, setExceldata] = useState([]);
@@ -37,6 +40,7 @@ function StocktransferandAdjustlist() {
     // Datatable Transfer
     const [pageTfr, setPageTfr] = useState(1);
     const [pageSizeTfr, setPageSizeTfr] = useState(1);
+
     const [sortingTfr, setSortingTfr] = useState({ column: '', direction: '' });
     const [searchQueryTfr, setSearchQueryTfr] = useState("");
 
@@ -47,7 +51,7 @@ function StocktransferandAdjustlist() {
     const [searchQueryAdj, setSearchQueryAdj] = useState("");
 
     // Access
-    const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
+    const { isUserRoleCompare, isUserRoleAccess, allLocations } = useContext(UserRoleAccessContext);
 
     // Accept model
     const [isAcceptOpen, setIsAcceptOpen] = useState(false);
@@ -63,24 +67,22 @@ function StocktransferandAdjustlist() {
     let newval = setngs ? setngs.skuprefix == undefined ? "SK0000" : setngs.skuprefix + "0001" : "SK0000";
 
     //fetch all products
-    const fetchAllProducts = async () =>{
-        try{
-            let resproduct = await axios.get(SERVICE.PRODUCT, {
+    const fetchAllProducts = async () => {
+        try {
+            let resproduct = await axios.post(SERVICE.PRODUCT_ID_FILTER, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                },
+                }, businessid: String(setngs.businessid),
             });
-
-            let productresult = resproduct.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-
-            setAllProducts(productresult);
+            setAllProducts(resproduct.data.products);
+            setProducts(resproduct.data.products);
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            } else {
                 toast.error("Something went wrong!")
             }
         }
@@ -116,115 +118,83 @@ function StocktransferandAdjustlist() {
                 refNOINC = (refLstDigit);
                 newval = strings + refNOINC;
             }
-        }); 
+        });
 
     // transfereditem
-    const fetchTransfers = async () => {
+    // const fetchTransfers = async () => {
+    //     try {
+    //         let resproduct = await axios.get(SERVICE.PRODUCT, {
+    //             headers: {
+    //                 'Authorization': `Bearer ${auth.APIToken}`
+    //             },
+    //         });
+    //         setProducts(resproduct.data.products);
+    //         setIsLoader(true)
+    //     } catch (err) {
+    //         setIsLoader(true)
+    //         const messages = err?.response?.data?.message;
+    //         if (messages) {
+    //             toast.error(messages);
+    //         } else {
+    //             toast.error("Something went wrong!")
+    //         }
+    //     }
+    // };
+
+
+    // transfereditem
+
+    const fetchTransfersitem = async () => {
         try {
-            let response = await axios.get(`${SERVICE.TRANSFERS}`, {
+            let res = await axios.post(`${SERVICE.ALLTRANSFERS}`, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
                 },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
             });
-
-            let resproduct = await axios.get(SERVICE.PRODUCT, {
-                headers: {
-                    'Authorization': `Bearer ${auth.APIToken}`
-                },
-            });
-
-            let productresult = resproduct.data.products.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid
-            })
-
-            //stock transfer data
-            //admin
-            let transferresult = response.data.transfers.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid && data.status == false && data.reject == false
-
-            })
-            //other user  
-            let transferDatatransfer = response.data.transfers.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid && data.status == false && data.reject == false
-            })
-            // let transferData = response.data.transfers
-            let userLocations = isUserRoleAccess.businesslocation
-            let filteredDataTransfer = []
-            transferDatatransfer.forEach((data, index) => {
-                let products = []
-                // let actualProducts = data.products[0]
-                data.products.forEach((product) => {
-                    let quantity = {}
-                    for (let key in product.quantity) {
-                        if (userLocations.includes(key)) {
-                            quantity[key] = product.quantity[key]
-                        }
-                    }
-                    let locations = product.locations.filter((data, index) => {
-                        if (userLocations.includes(data)) {
-                            return true;
-                        }
-                    })
-                    if (locations.length != 0) {
-                        products.push({ ...product, quantity, locations })
-
-                    }
-
-                })
-                if (products.length != 0) {
-                    filteredDataTransfer.push({ ...data, products })
-
-                }
-            })
-
-            //stock adjust data
-            //admin
-            let adjustresult = response.data.transfers.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid && data.status == true && data.reject == false
-            })
-            // other user
-            let transferData = response.data.transfers.filter((data, index) => {
-                return data.assignbusinessid == setngs.businessid && data.status == true && data.reject == false
-            })
-            let filteredData = []
-            transferData.forEach((data, index) => {
-                let products = []
-                // let actualProducts = data.products[0]
-                data.products.forEach((product) => {
-                    let quantity = {}
-                    for (let key in product.quantity) {
-                        if (userLocations.includes(key)) {
-                            quantity[key] = product.quantity[key]
-                        }
-                    }
-                    let locations = product.locations.filter((data, index) => {
-                        if (userLocations.includes(data)) {
-                            return true;
-                        }
-                    })
-                    if (locations.length != 0) {
-                        products.push({ ...product, quantity, locations })
-
-                    }
-
-                })
-                if (products.length != 0) {
-                    filteredData.push({ ...data, products })
-
-                }
-            })
-            setProducts(productresult);
-            setAdjustitem(isUserRoleAccess.role == 'Admin' ? adjustresult : filteredData)
-            setTransfereditem(isUserRoleAccess.role == 'Admin' ? transferresult : filteredDataTransfer)
+            // setAllLocations(allLocations);
+            setTransfereditem(res?.data?.allresult)
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     };
+
+    //all adjustitem
+    const fetchAdjust = async () => {
+        try {
+            let res = await axios.post(`${SERVICE.ALLADJUSTS}`, {
+                headers: {
+                    'Authorization': `Bearer ${auth.APIToken}`
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation]
+            });
+            setProducts(allProducts);
+            // setAllLocations(allLocations);
+            setAdjustitem(res?.data?.allresult);
+            setIsLoader(true)
+        } catch (err) {
+            setIsLoader(true)
+            const messages = err?.response?.data?.message;
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
+        }
+    };
+
+    useEffect(() => { fetchTransfersitem(); fetchAdjust() }, [])
 
     const handleCancel = async () => {
 
@@ -242,13 +212,15 @@ function StocktransferandAdjustlist() {
                 position: toast.POSITION.TOP_CENTER
             });
 
+            setIsLoader(true)
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            } else {
+                toast.error("Something went wrong!")
+            }
         }
     }
 
@@ -271,14 +243,14 @@ function StocktransferandAdjustlist() {
             }
             if (updateProduct) {
                 //update call
-                await axios.put(`${SERVICE.PRODUCT_SINGLE}/${updateProduct._id}`,{
+                await axios.put(`${SERVICE.PRODUCT_SINGLE}/${updateProduct._id}`, {
                     headers: {
                         'Authorization': `Bearer ${auth.APIToken}`
                     },
                     currentstock: Number(updateProduct.currentstock) + Number(acceptProduct.quantity[acceptProduct.locations])
                 })
                 acceptIndex++
-                
+
             } else {
                 // store call
                 await axios.post(SERVICE.PRODUCT_CREATE, {
@@ -324,11 +296,6 @@ function StocktransferandAdjustlist() {
 
     }
 
-    useEffect(
-        () => {
-            fetchTransfers();
-        }, [isRejectOpen, isAcceptOpen])
-
     // Excel
     const fileName = 'Stock Transfer'
     //  get particular columns for export excel
@@ -340,9 +307,9 @@ function StocktransferandAdjustlist() {
     }
 
     useEffect(
-        ()=>{
+        () => {
             fetchAllProducts();
-        },[]
+        }, []
     )
 
     useEffect(() => {
@@ -369,6 +336,14 @@ function StocktransferandAdjustlist() {
         const direction = sortingTfr.column === column && sortingTfr.direction === 'asc' ? 'desc' : 'asc';
         setSortingTfr({ column, direction });
     };
+    const sortedDataTfr = transfereditem.sort((a, b) => {
+        if (sortingTfr.direction === 'asc') {
+            return a[sortingTfr.column] > b[sortingTfr.column] ? 1 : -1;
+        } else if (sortingTfr.direction === 'desc') {
+            return a[sortingTfr.column] < b[sortingTfr.column] ? 1 : -1;
+        }
+        return 0;
+    });
 
     const renderSortingIconTfr = (column) => {
         if (sortingTfr.column !== column) {
@@ -446,6 +421,15 @@ function StocktransferandAdjustlist() {
         const direction = sortingAdj.column === column && sortingAdj.direction === 'asc' ? 'desc' : 'asc';
         setSortingAdj({ column, direction });
     };
+
+    const sortedDataAdj = Adjustitem.sort((a, b) => {
+        if (sortingAdj.direction === 'asc') {
+            return a[sortingAdj.column] > b[sortingAdj.column] ? 1 : -1;
+        } else if (sortingAdj.direction === 'desc') {
+            return a[sortingAdj.column] < b[sortingAdj.column] ? 1 : -1;
+        }
+        return 0;
+    });
 
     const renderSortingIconAdj = (column) => {
         if (sortingAdj.column !== column) {
@@ -558,38 +542,48 @@ function StocktransferandAdjustlist() {
                             </Grid><br /><br />
                             <Box>
                                 { /* ****** Table start ****** */}
-                                <TableContainer component={Paper} >
-                                    <Table aria-label="simple table" id="tableRef1" >
-                                        <TableHead sx={{ fontWeight: "600" }} >
-                                            <StyledTableRow>
-                                                <StyledTableCell onClick={() => handleSortingTfr('createdAt')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('createdAt')}</Box></Box></StyledTableCell>
-                                                <StyledTableCell onClick={() => handleSortingTfr('fromlocation')}><Box sx={userStyle.tableheadstyle}><Box>From Company</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('fromlocation')}</Box></Box></StyledTableCell>
-                                                <StyledTableCell onClick={() => handleSortingTfr('products')}><Box sx={userStyle.tableheadstyle}><Box>Product</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('products')}</Box></Box></StyledTableCell>
-                                                <StyledTableCell onClick={() => handleSortingTfr('products')}><Box sx={userStyle.tableheadstyle}><Box>Product Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('products')}</Box></Box></StyledTableCell>
-                                                <StyledTableCell>Action</StyledTableCell>
-                                            </StyledTableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {filteredDataTfr.length > 0 ?
-                                                filteredDataTfr.map((row, index) => {
-                                                    return (
-                                                        <StyledTableRow key={index}>
-                                                            <StyledTableCell>{row.date}</StyledTableCell>
-                                                            <StyledTableCell>{row.fromlocation}</StyledTableCell>
-                                                            <StyledTableCell>{row.products.map((value) => value.productname + ", ")}</StyledTableCell>
-                                                            <StyledTableCell>{row.products.map((value) => value.locations.map((data, liindec) => value.quantity[data] + ', '))}</StyledTableCell>
-                                                            <StyledTableCell>
-                                                                <Button variant="contained" color="success" size="small" onClick={(e) => { handleAcceptOpen(); setIsAccept({ ...isAccept, transferid: row._id, tolocation: row.tobusinesslocations, product: row.products }) }}><DoneOutlineOutlinedIcon /></Button>&emsp;
-                                                                <Button variant="contained" color="error" size="small" onClick={(e) => { handleRejectOpen(); setIsReject(row._id) }} ><CancelOutlinedIcon /></Button>
-                                                            </StyledTableCell>
-                                                        </StyledTableRow>
-                                                    )
-                                                })
-                                                : <StyledTableRow><StyledTableCell colSpan={6} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                            }
-                                        </TableBody>
-                                    </Table>
-                                </TableContainer><br /><br />
+                                {isLoader ? (
+                                    <>
+                                        <TableContainer component={Paper} >
+                                            <Table aria-label="simple table" id="tableRef1" >
+                                                <TableHead sx={{ fontWeight: "600" }} >
+                                                    <StyledTableRow>
+                                                        <StyledTableCell onClick={() => handleSortingTfr('date')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('date')}</Box></Box></StyledTableCell>
+                                                        <StyledTableCell onClick={() => handleSortingTfr('fromlocation')}><Box sx={userStyle.tableheadstyle}><Box>From Company</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('fromlocation')}</Box></Box></StyledTableCell>
+                                                        <StyledTableCell onClick={() => handleSortingTfr('productstra')}><Box sx={userStyle.tableheadstyle}><Box>Product</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('productstra')}</Box></Box></StyledTableCell>
+                                                        <StyledTableCell onClick={() => handleSortingTfr('quantity')}><Box sx={userStyle.tableheadstyle}><Box>Product Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconTfr('quantity')}</Box></Box></StyledTableCell>
+                                                        <StyledTableCell>Action</StyledTableCell>
+                                                    </StyledTableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {filteredDataTfr.length > 0 ?
+                                                        filteredDataTfr.map((row, index) => {
+                                                            return (
+                                                                <StyledTableRow key={index}>
+                                                                    <StyledTableCell>{row.date}</StyledTableCell>
+                                                                    <StyledTableCell>{row.fromlocation}</StyledTableCell>
+                                                                    <StyledTableCell>{row.products.map((value) => value.productname + ", ")}</StyledTableCell>
+                                                                    <StyledTableCell>{row.products.map((value) => value.locations.map((data, liindec) => value.quantity[data] + ', '))}</StyledTableCell>
+                                                                    <StyledTableCell>
+                                                                        <Button variant="contained" color="success" size="small" onClick={(e) => { handleAcceptOpen(); setIsAccept({ ...isAccept, transferid: row._id, tolocation: row.tobusinesslocations, product: row.products }) }}><DoneOutlineOutlinedIcon /></Button>&emsp;
+                                                                        <Button variant="contained" color="error" size="small" onClick={(e) => { handleRejectOpen(); setIsReject(row._id) }} ><CancelOutlinedIcon /></Button>
+                                                                    </StyledTableCell>
+                                                                </StyledTableRow>
+                                                            )
+                                                        })
+                                                        : <StyledTableRow><StyledTableCell colSpan={6} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                                    }
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer><br /><br />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                            <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                                        </Box>
+                                    </>
+                                )}
                                 <Box style={userStyle.dataTablestyle}>
                                     <Box>
                                         Showing {((pageTfr - 1) * pageSizeTfr) + 1} to {Math.min(pageTfr * pageSizeTfr, transfereditem.length)} of {transfereditem.length} entries
@@ -676,35 +670,45 @@ function StocktransferandAdjustlist() {
                                 </Grid>
                             </Grid><br /><br />
                             { /* ****** Table start ****** */}
-                            <TableContainer component={Paper} >
-                                <Table aria-label="simple table" id="tableRefone2" >
-                                    <TableHead sx={{ fontWeight: "600" }} >
-                                        <StyledTableRow>
-                                            <StyledTableCell>Action</StyledTableCell>
-                                            <StyledTableCell onClick={() => handleSortingAdj('tobusinesslocation')}><Box sx={userStyle.tableheadstyle}><Box>Transfered Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconAdj('tobusinesslocation')}</Box></Box></StyledTableCell>
-                                            <StyledTableCell onClick={() => handleSortingAdj('products')}><Box sx={userStyle.tableheadstyle}><Box>Product</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconAdj('products')}</Box></Box></StyledTableCell>
-                                        </StyledTableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filteredDataAdj.length > 0 ?
-                                            filteredDataAdj.map((row, index) => {
-                                                return (
-                                                    <StyledTableRow key={index}>
-                                                        <StyledTableCell>
-                                                            {isUserRoleCompare[0].vstockadjust &&
-                                                                <Link to={`/stockadjust/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview} variant="contained"><VisibilityOutlinedIcon /></Button></Link>
-                                                            }
-                                                        </StyledTableCell>
-                                                        <StyledTableCell sx={{ fontSize: "15px" }}>{row.tobusinesslocations}</StyledTableCell>
-                                                        <StyledTableCell sx={{ fontSize: "15px" }}>{row.products.map((value) => value.productname + ", ")}</StyledTableCell>
-                                                    </StyledTableRow>
-                                                )
-                                            })
-                                            : <StyledTableRow><StyledTableCell colSpan={3} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                        }
-                                    </TableBody>
-                                </Table>
-                            </TableContainer><br /><br />
+                            {isLoader ? (
+                                <>
+                                    <TableContainer component={Paper} >
+                                        <Table aria-label="simple table" id="tableRefone2" >
+                                            <TableHead sx={{ fontWeight: "600" }} >
+                                                <StyledTableRow>
+                                                    <StyledTableCell>Action</StyledTableCell>
+                                                    <StyledTableCell onClick={() => handleSortingAdj('tobusinesslocations')}><Box sx={userStyle.tableheadstyle}><Box>Transfered Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconAdj('tobusinesslocations')}</Box></Box></StyledTableCell>
+                                                    <StyledTableCell onClick={() => handleSortingAdj('products')}><Box sx={userStyle.tableheadstyle}><Box>Product</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIconAdj('products')}</Box></Box></StyledTableCell>
+                                                </StyledTableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {filteredDataAdj.length > 0 ?
+                                                    filteredDataAdj.map((row, index) => {
+                                                        return (
+                                                            <StyledTableRow key={index}>
+                                                                <StyledTableCell>
+                                                                    {isUserRoleCompare[0].vstockadjust &&
+                                                                        <Link to={`/stockadjust/view/${row._id}`} style={{ textDecoration: 'none', color: 'white', }}><Button sx={userStyle.buttonview} variant="contained"><VisibilityOutlinedIcon /></Button></Link>
+                                                                    }
+                                                                </StyledTableCell>
+                                                                <StyledTableCell sx={{ fontSize: "15px" }}>{row.tobusinesslocations}</StyledTableCell>
+                                                                <StyledTableCell sx={{ fontSize: "15px" }}>{(row.products.map((value) => value.productname + ", "))}</StyledTableCell>
+                                                            </StyledTableRow>
+                                                        )
+                                                    })
+                                                    : <StyledTableRow><StyledTableCell colSpan={3} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                                }
+                                            </TableBody>
+                                        </Table>
+                                    </TableContainer><br /><br />
+                                </>
+                            ) : (
+                                <>
+                                    <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                        <ThreeDots height="80" width="80" radius="9" color="#1976d2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                                    </Box>
+                                </>
+                            )}
                             <Box style={userStyle.dataTablestyle}>
                                 <Box>
                                     Showing {((pageAdj - 1) * pageSizeAdj) + 1} to {Math.min(pageAdj * pageSizeAdj, Adjustitem.length)} of {Adjustitem.length} entries
@@ -792,7 +796,7 @@ function StocktransferandAdjustlist() {
                     </DialogActions>
                 </Dialog>
             </Box>
-        </Box>
+        </Box >
 
     );
 }

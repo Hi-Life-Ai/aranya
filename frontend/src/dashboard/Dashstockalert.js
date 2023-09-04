@@ -6,7 +6,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import { SERVICE } from '../services/Baseservice';
 import { userStyle } from '../pages/PageStyle';
-import { AuthContext } from '../context/Appcontext';
+import { AuthContext, UserRoleAccessContext } from '../context/Appcontext';
 import { ExportXL, ExportCSV } from '../pages/Export';
 import { FaPrint, FaFilePdf } from 'react-icons/fa';
 import { useReactToPrint } from "react-to-print";
@@ -15,12 +15,21 @@ import autoTable from 'jspdf-autotable';
 import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 
-function Dashstockalert() {
+function Dashstockalert({ isLocations, isLocationChange }) {
 
   const [quantity, setQuantity] = useState([]);
 
   const { auth, setngs } = useContext(AuthContext);
+
+  const { allProducts, allLocations } = useContext(UserRoleAccessContext);
+
+
+  const [allLoc, setIsLoc] = useState([]);
+
+
   const [exceldata, setExceldata] = useState([]);
+
+
 
   // Datatable 
   const [page, setPage] = useState(1);
@@ -31,27 +40,31 @@ function Dashstockalert() {
   // Products
   const fetchProducts = async () => {
     try {
-      let response = await axios.get(SERVICE.PRODUCT, {
-        headers: {
-          'Authorization': `Bearer ${auth.APIToken}`
-        },
-      });
-      let result = response.data.products.filter((data, index)=>{
-          return data.assignbusinessid == setngs.businessid
-    })
-      let prodData = result.filter((data) => {
-        return data.currentstock <= data.minquantity
+      // let response = await axios.post(SERVICE.PRODUCT, {
+      //   headers: {
+      //     'Authorization': `Bearer ${auth.APIToken}`
+      //   },
+      //   businessid: String(setngs.businessid),
+      // });
+      let prodData = allProducts?.filter((data) => {
+        if (isLocationChange) {
+          return data.businesslocation == isLocations && data.currentstock <= data.minquantity
+        } else {
+          return data.currentstock <= data.minquantity
+        }
       })
+      setIsLoc(allLocations);
+
 
       setQuantity(prodData)
 
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -135,8 +148,8 @@ function Dashstockalert() {
 
   useEffect(
     () => {
-    fetchProducts();
-  }, [])
+      fetchProducts();
+    }, [isLocations, isLocationChange])
 
 
   // Print

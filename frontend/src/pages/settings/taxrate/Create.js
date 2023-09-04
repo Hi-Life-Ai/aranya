@@ -16,7 +16,8 @@ function TaxrateCreatelist() {
   const { auth, setngs } = useContext(AuthContext);
 
   const [taxRate, setTaxRate] = useState({
-    taxname: "", taxrategst: "", taxratecgst: "", taxrateigst: "", taxtotal: "" });
+    taxname: "", taxrategst: "", taxratecgst: "", taxrateigst: "", taxtotal: ""
+  });
 
   // Location's same condition
   const [locationData, setLocationData] = useState([]);
@@ -30,24 +31,20 @@ function TaxrateCreatelist() {
   // check same dame condition
   const fetchData = async () => {
     try {
-      let res = await axios.get(SERVICE.TAXRATE, {
+      let res = await axios.post(SERVICE.TAXRATE, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
         },
+        businessid: String(setngs.businessid),
       });
-      let result = res.data.taxrates.map((data, index) => {
-        if (data.assignbusinessid == setngs.businessid) {
-          return data.taxname
-        }
-      })
-      setLocationData(result);
+      setLocationData(res.data.taxrates);
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   };
 
@@ -79,13 +76,13 @@ function TaxrateCreatelist() {
       backLPage('/settings/taxrate/list');
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            setShowAlert(messages);
-            handleClickOpenalert();
-        }else{
-            setShowAlert("Something went wrong!");
-            handleClickOpenalert();
-        }
+      if (messages) {
+        setShowAlert(messages);
+        handleClickOpenalert();
+      } else {
+        setShowAlert("Something went wrong!");
+        handleClickOpenalert();
+      }
 
     }
   };
@@ -114,13 +111,13 @@ function TaxrateCreatelist() {
 
     } catch (err) {
       const messages = err?.response?.data?.message;
-        if(messages) {
-            setShowAlert(messages);
-            handleClickOpenalert();
-        }else{
-            setShowAlert("Something went wrong!");
-            handleClickOpenalert();
-        }
+      if (messages) {
+        setShowAlert(messages);
+        handleClickOpenalert();
+      } else {
+        setShowAlert("Something went wrong!");
+        handleClickOpenalert();
+      }
     }
   };
 

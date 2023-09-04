@@ -19,6 +19,7 @@ import ArrowDropUpOutlinedIcon from '@mui/icons-material/ArrowDropUpOutlined';
 import ArrowDropDownOutlinedIcon from '@mui/icons-material/ArrowDropDownOutlined';
 import ErrorOutlineOutlinedIcon from '@mui/icons-material/ErrorOutlineOutlined';
 import Selects from 'react-select';
+import { ThreeDots } from 'react-loader-spinner';
 
 function StocktransferreportList() {
 
@@ -26,6 +27,7 @@ function StocktransferreportList() {
     const [locations, setLocations] = useState([]);
     const [exceldata, setExceldata] = useState([]);
     const { auth, setngs } = useContext(AuthContext);
+    const [isLoader, setIsLoader] = useState(false);
 
     //popup model
     const [isErrorOpen, setIsErrorOpen] = useState(false);
@@ -46,134 +48,86 @@ function StocktransferreportList() {
     var yyyy = today.getFullYear();
     today = yyyy + '-' + mm + '-' + dd;
     const [dateFilter, setDateFilter] = useState({
-        startdate: today, enddate: today, location: ""
+        startdate: "", enddate: "", location: ""
     })
 
     // Access
     const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
 
-    const fetchLocation = async () => {
+
+    useEffect(() => {
+        setLocations(setngs.company.map((d) => ({
+            ...d,
+            label: d.companyname,
+            value: d.companyname
+        })))
+    }, [])
+
+    const fetchDatalocation = async () => {
+
         try {
-            let req = await axios.get(SERVICE.BUSINESS_LOCATION, {
+            let req = await axios.post(SERVICE.TRANSFER_REPORTS, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+                role: String(isUserRoleAccess.role),
+                userassignedlocation: [isUserRoleAccess.businesslocation],
+                location: String(dateFilter.location),
+                startdate: String(dateFilter.startdate),
+                enddate: String(dateFilter.enddate)
             });
-            let result = req.data.busilocations.filter((data, index) => {
-                if (isUserRoleAccess.role == 'Admin') {
-                    return data.assignbusinessid == setngs.businessid && data.activate ==true
-                } else {
-                    if (isUserRoleAccess.businesslocation.includes(data.name)) {
-                        return data.assignbusinessid == setngs.businessid && data.activate ==true
-                    }
-                }
-            })
-            setLocations(
-                result?.map((d) => ({
-                    ...d,
-                    label: d.name,
-                    value: d.name,
-                }))
-            );
+            let result = req.data.result
+            setStockTransfer(result);
+
+            setIsLoader(true)
+
 
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-            if(messages) {
+            if (messages) {
                 toast.error(messages);
-            }else{
+            }
+            else {
                 toast.error("Something went wrong!")
             }
         }
     }
 
-    useEffect(() => {
-        fetchLocation();
-    }, []);
 
 
-    const fetchTransfer = async () => {
+    const fetchTodayTransfers = async () => {
 
         try {
-            let response = await axios.get(SERVICE.TRANSFERS, {
+            let req = await axios.post(SERVICE.TODAY_TRANSFERS, {
                 headers: {
                     'Authorization': `Bearer ${auth.APIToken}`
-                }
+                },
+                businessid: String(setngs.businessid),
+
             });
+            let result = req.data.todayadjusts
+            setStockTransfer(result);
 
-            //get all transfer data date filter function
-            let alldataresult = response.data.transfers.filter((data, index)=>{
-                // convert string ('dd-mm-yyyy') to date format ('yyyy-mm-dd')
-                const dateString = data.date;
-                const parts = dateString.split('-');
-                const date = new Date(parts[2], parts[1] - 1, parts[0]); // month is 0-indexed in Date constructor      
-                let dateTrim = moment(date).format('YYYY-MM-DD')
-
-                if (dateFilter.startdate == today && dateFilter.enddate == today) {
-                    return data
-                } else if (dateFilter.startdate <= dateTrim && dateFilter.enddate + 1 >= dateTrim) {
-                    return data
-                }
-                else if (dateFilter.startdate <= dateTrim && dateFilter.enddate == "") {
-                    return data
-                }
-                else if (dateFilter.startdate == "" && dateFilter.enddate + 1 >= dateTrim) {
-                    return data
-                }
-            })
-
-            //stock transfer data
-            //admin
-            let transferresult = alldataresult.filter((data, index)=>{
-                if (data.tobusinesslocations.includes(dateFilter.location)) {
-                    return data.assignbusinessid == setngs.businessid;
-                }
-                
-            })  
-            //other user  
-            let transferDatatransfer = alldataresult.filter((data, index)=>{
-                return data.assignbusinessid == setngs.businessid 
-            })
-            // let transferData = response.data.transfers
-            let userLocations = isUserRoleAccess.businesslocation
-            let filteredDataTransfer = []
-            transferDatatransfer.forEach((data, index)=> {
-                let products = []
-                // let actualProducts = data.products[0]
-                data.products.forEach((product)=> {
-                    let quantity = {}
-                    for (let key in product.quantity) {
-                        if (userLocations.includes(key)) {
-                            quantity[key] = product.quantity[key]
-                        }
-                    }
-                    let locations = product.locations.filter((data, index)=> {
-                        if (userLocations.includes(data) && dateFilter.location == data) {
-                            return true;
-                        }
-                    })
-                    if (locations.length != 0) {
-                        products.push({...product, quantity, locations})
-
-                    }
-                    
-                })
-                if (products.length != 0) {
-                filteredDataTransfer.push({...data, products})
-
-                }
-            })
-
-            setStockTransfer(isUserRoleAccess.role == 'Admin' ? transferresult : filteredDataTransfer);
+            setIsLoader(true)
 
         } catch (err) {
+            setIsLoader(true)
             const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+            if (messages) {
+                toast.error(messages);
+            }
+            else {
+                toast.error("Something went wrong!")
+            }
         }
     }
+
+
+    useEffect(() => {
+        fetchTodayTransfers()
+    }, [])
 
     const handleSubmit = () => {
         if (dateFilter.location == "") {
@@ -204,8 +158,10 @@ function StocktransferreportList() {
             handleClickOpenalert()
         }
         else {
-            fetchTransfer()
+            fetchDatalocation()
         }
+
+
     }
 
     // Excel
@@ -341,12 +297,12 @@ function StocktransferreportList() {
             <>
                 <Box sx={userStyle.container} >
                     <Grid container sx={{ justifyContent: "center" }} spacing={2}>
-                    <Grid item lg={1} md={1}></Grid>
+                        <Grid item lg={1} md={1}></Grid>
                         <Grid item lg={3} md={3}>
                             <FormControl size="small" fullWidth >
                                 <Selects
                                     onChange={(e) => {
-                                        setDateFilter({ ...dateFilter, location: e.name });
+                                        setDateFilter({ ...dateFilter, location: e.value });
                                     }}
                                     placeholder={"Select Location"}
                                     styles={colourStyles}
@@ -380,16 +336,16 @@ function StocktransferreportList() {
                         </Grid>
                         <Grid item lg={1} md={1}>
                             <Button onClick={handleSubmit} variant='outlined' sx={{
-                                 backgroundColor: '#339d3a !important',
-                                 border: '1px solid #339d3a',
-                                 height: '35px !important',
-                                 borderRadius: '5px !important',
-                                 color: 'white',
-                                 '&:hover': {
-                                     backgroundColor: 'white !important',
-                                     border: '1px solid #339d3a',
-                                     color: '#339d3a',
-                                 }
+                                backgroundColor: '#339d3a !important',
+                                border: '1px solid #339d3a',
+                                height: '35px !important',
+                                borderRadius: '5px !important',
+                                color: 'white',
+                                '&:hover': {
+                                    backgroundColor: 'white !important',
+                                    border: '1px solid #339d3a',
+                                    color: '#339d3a',
+                                }
                             }} >Generate</Button>
                         </Grid>
                         <Grid item lg={1} md={1}></Grid>
@@ -442,33 +398,44 @@ function StocktransferreportList() {
                     </Grid><br /><br></br>
                     { /* ****** Table start ****** */}
                     <Box>
-                        <TableContainer component={Paper} >
-                            <Table aria-label="simple table">
-                                <TableHead sx={{ fontWeight: "600" }} >
-                                    <StyledTableRow >
-                                        <StyledTableCell onClick={() => handleSorting('date')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('date')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('fromlocation')}><Box sx={userStyle.tableheadstyle}><Box>From-Company</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('fromlocation')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>To-Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
-                                        <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
-                                    </StyledTableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {filteredData.length > 0 ?
-                                        (filteredData.map((row, index) => (
-                                            <StyledTableRow key={index}>
-                                                <StyledTableCell align="left">{row.date}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.fromlocation + ", "}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.products.map((value) => value.locations + ", ")}</StyledTableCell>
-                                                <StyledTableCell align="left">{row.products.map((value) => value.productname + ",")}</StyledTableCell >
-                                                <StyledTableCell align="left">{row.products.map((value) => row.tobusinesslocations.map((data, liindec) => value.quantity[data] + ','))}</StyledTableCell>
+                        {isLoader ? (
+                            <>
+                                <TableContainer component={Paper} >
+                                    <Table aria-label="simple table">
+                                        <TableHead sx={{ fontWeight: "600" }} >
+                                            <StyledTableRow >
+                                                <StyledTableCell onClick={() => handleSorting('date')}><Box sx={userStyle.tableheadstyle}><Box>Date</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('date')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('fromlocation')}><Box sx={userStyle.tableheadstyle}><Box>From-Company</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('fromlocation')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>To-Location</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>Product Name</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
+                                                <StyledTableCell onClick={() => handleSorting('products')}><Box sx={userStyle.tableheadstyle}><Box>Quantity</Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('products')}</Box></Box></StyledTableCell>
                                             </StyledTableRow>
-                                        )))
-                                        : <StyledTableRow><StyledTableCell colSpan={7} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                                    }
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filteredData.length > 0 ?
+                                                (filteredData.map((row, index) => (
+                                                    <StyledTableRow key={index}>
+                                                        <StyledTableCell align="left">{row.date}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.fromlocation + ", "}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.products.map((value) => value.locations + ", ")}</StyledTableCell>
+                                                        <StyledTableCell align="left">{row.products.map((value) => value.productname + ",")}</StyledTableCell >
+                                                        <StyledTableCell align="left">{row.products.map((value) => row.tobusinesslocations.map((data, liindec) => value.quantity[data] + ','))}</StyledTableCell>
+                                                    </StyledTableRow>
+                                                )))
+                                                : <StyledTableRow><StyledTableCell colSpan={7} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                                            }
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            </>
+                        ) : (
+                            <>
+                                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                    <ThreeDots height="80" width="80" radius="9" color="#1976D2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+                                </Box>
+                            </>
+                        )}
+
                         <br /><br />
                         <Box style={userStyle.dataTablestyle}>
                             <Box>

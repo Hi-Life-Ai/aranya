@@ -20,12 +20,15 @@ import Selects from 'react-select';
 import { useReactToPrint } from "react-to-print";
 import { FcInfo } from "react-icons/fc";
 import { toast } from 'react-toastify';
+import { Login } from '@mui/icons-material';
+import { ThreeDots } from 'react-loader-spinner';
 
 function Items() {
 
   const [exceldata, setExceldata] = useState([]);
   const { auth, setngs } = useContext(AuthContext);
   const [products, setProducts] = useState([])
+  const [isLoader, setIsLoader] = useState(false);
 
   // Datatable 
   const [page, setPage] = useState(1);
@@ -34,7 +37,7 @@ function Items() {
   const [searchQuery, setSearchQuery] = useState("");
   const [salesData, setSalesData] = useState([])
   const currentDate = new Date();
-  let startdate = moment(currentDate).utc().format('YYYY-MM-DD')
+  let startdate = moment(currentDate).utc().format('DD-MM-YYYY')
 
   let tableDatas = [];
   let locations = [];
@@ -53,37 +56,37 @@ function Items() {
   for (let i = 1; i <= 7; i++) {
     const previousDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7 + i);
     previousWeekDates.push(moment(previousDate).utc().format('DD-MM-YYYY'));
-
   }
+
   // Acces
-  const { isUserRoleCompare } = useContext(UserRoleAccessContext);
+  const { isUserRoleCompare, isUserRoleAccess } = useContext(UserRoleAccessContext);
 
   // Products
   const fetchProducts = async () => {
     try {
-      let request = await axios.get(SERVICE.PRODUCT, {
+      let request = await axios.post(SERVICE.PRODUCTS_ALL, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation]
       });
-      let req_data = request.data.products.map((data) => {
-        if (data.assignbusinessid == setngs.businessid) {
-          return data
-        }
-      })
+      let req_data = request.data.products
       setProducts(req_data.map((data) => ({
         ...data,
         label: data.productname,
         value: data.productname
       })))
-
+      setIsLoader(true)
     } catch (err) {
+      setIsLoader(true)
       const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
+      if (messages) {
+        toast.error(messages);
+      } else {
+        toast.error("Something went wrong!")
+      }
     }
   }
 
@@ -92,35 +95,34 @@ function Items() {
   }, [])
 
 
-  const previousWeekStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 6);
-  let startweekdate = moment(previousWeekStart).utc().format('YYYY-MM-DD')
-  const previousWeekEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 0);
-  let endweekdate = moment(previousWeekEnd).utc().format('YYYY-MM-DD')
 
-  // fetching datas for table function
-  const fetchProfit = async (e) => {
+
+
+
+
+
+  const fetchDatalocation = async (e) => {
+
+
     try {
-      let req_data = await axios.get(SERVICE.POS, {
+      let req = await axios.post(SERVICE.ITEM_SEARCH, {
         headers: {
           'Authorization': `Bearer ${auth.APIToken}`
-        }
+        },
+        businessid: String(setngs.businessid),
+        role: String(isUserRoleAccess.role),
+        userassignedlocation: [isUserRoleAccess.businesslocation],
+        product: String(e.productname)
       });
+      let result = req.data.filterpos.filter((data) => {
+        let dateTrim = moment(data.formatedate).format('DD-MM-YYYY')
+        if (dateTrim == startdate) {
+          todaysales.push(data.subtotal)
+        } else if (dateTrim != startdate) {
+          todaysales.push(0)
+        }
 
-
-      let todaydata = req_data.data.pos1.filter((item) => {
-        item.goods.forEach((data) => {
-          if (data.productname == e.productname) {
-            let dateTrim = moment(item.date).format('YYYY-MM-DD')
-            if (dateTrim == startdate) {
-              todaysales.push(data.subtotal)
-            } else if (dateTrim != startdate) {
-              todaysales.push(0)
-            }
-          }
-
-        })
       })
-
 
 
       let todaysum = todaysales.reduce((accumulator, currentValue) => {
@@ -128,17 +130,45 @@ function Items() {
       });
 
 
-
-      let yeardata = req_data.data.pos1.filter((item) => {
-        item.goods.forEach((data) => {
-          if (data.productname == e.productname) {
-            if (new Date(item.date).getFullYear() == new Date().getFullYear()) {
-              yearlysale.push(data.subtotal)
-            }
-          }
-        })
+      let weeklydata = req.data.filterpos.map((data) => {
+        let dateTrim = moment(data.formatedate).format('DD-MM-YYYY')
+        if (previousWeekDates.includes(dateTrim)) {
+          weeksal.push(data.subtotal);
+        } else {
+          weeksal.push(0)
+        }
       })
 
+      let sum = weeksal.reduce((accumulator, currentValue) => {
+        return accumulator + currentValue;
+      });
+
+
+
+
+      let monthdata = req.data.filterpos.filter((data) => {
+
+        if (new Date().getMonth() == new Date(data.formatedate).getMonth() + 1) {
+          monthlysale.push(data.subtotal)
+        } else {
+          monthlysale.push(0)
+        }
+      })
+
+      let monthsum = monthlysale.reduce((accumulator, currentValue) => {
+        return accumulator + currentValue;
+      });
+
+
+
+
+
+
+      let yearly = req.data.filterpos.filter((data) => {
+        if (new Date(data.formatedate).getFullYear() == new Date().getFullYear()) {
+          yearlysale.push(data.subtotal)
+        }
+      })
 
 
       let yearlysum = yearlysale.reduce((accumulator, currentValue) => {
@@ -146,62 +176,22 @@ function Items() {
       });
 
 
+      req.data.filterpos.filter((value) => {
+        locations.push(value.businesslocation)
+        prodname.push(value.productname)
+        mrprate.push(value.sellingvalue)
+        quantity.push(value.quantity)
+        profit.push(Number(value.subtotal) - Number(value.netrate))
 
-      let monthdata = req_data.data.pos1.filter((item) => {
-        item.goods.forEach((data) => {
-          if (data.productname == e.productname) {
-            if (new Date().getMonth() == new Date(item.date).getMonth()) {
-              monthlysale.push(data.subtotal)
-            }
-          }
-        })
       })
 
 
-      let monthsum = monthlysale.reduce((accumulator, currentValue) => {
-        return accumulator + currentValue;
-      });
-
-      let weeklydata = req_data.data.pos1.filter((item) => {
-        let dateTrim = moment(item.date).utc().format('YYYY-MM-DD')
-        return startweekdate <= dateTrim && endweekdate + 1 >= dateTrim
-      })
-
-      weeklydata.map((dat) => {
-        dat.goods.map((item) => {
-          if (item.productname == e.productname) {
-            weeksal.push(item.subtotal);
-          } else {
-            setSalesData([])
-          }
-        })
-      })
-
-      let sum = weeksal.reduce((accumulator, currentValue) => {
-        return accumulator + currentValue;
-      });
-      req_data.data.pos1.filter((data) => {
-        data.goods.forEach((value) => {
-          if (value.productname == e.productname) {
-
-            locations.push(data.location)
-            prodname.push(value.productname)
-            mrprate.push(value.sellingvalue)
-            quantity.push(value.quantity)
-            profit.push(Number(value.subtotal) - Number(value.netrate))
-          } else {
-            setSalesData([])
-          }
-        })
-      })
-
-
-      //create new array for table datas and passing to a setstate
       tableDatas = prodname.map(function (data, i) {
-        return { productnames: data, locations: locations[i], mrprate: mrprate[i], sales: todaysum, quantity: quantity[i], weeklysale: sum, monthlysales: monthsum, yearlysales: yearlysum }
+        return { productnames: data, locations: locations[i], mrprate: mrprate[i], todaysales: todaysum, quantity: quantity[i], weeklysale: sum, monthlysales: monthsum, yearlysales: yearlysum }
       })
 
-      const result = [...tableDatas.reduce((r, o) => {
+
+      const final = [...tableDatas.reduce((r, o) => {
         const key = o.productnames;
         const items = r.get(key) || Object.assign({}, o, {
         });
@@ -209,17 +199,21 @@ function Items() {
       }, new Map).values()];
 
 
-      setSalesData(result);
-    } catch (err) {
-      const messages = err?.response?.data?.message;
-        if(messages) {
-            toast.error(messages);
-        }else{
-            toast.error("Something went wrong!")
-        }
-    }
+      setSalesData(final);
 
+      setIsLoader(true)
+    } catch (err) {
+      setIsLoader(true)
+      const messages = err?.response?.data?.message;
+      if (messages) {
+        toast.error(messages);
+      }
+      else {
+        toast.error("Something went wrong!")
+      }
+    }
   }
+
 
   // Export Excel
   const fileName = 'Item Search'
@@ -228,11 +222,11 @@ function Items() {
     let data = salesData.map(t => ({
       "Productname": t.productnames,
       "Location": t.locations,
-      "Mrp rate":Number(t.mrprate).toFixed(2),
+      "Mrp rate": Number(t.mrprate).toFixed(2),
       "Today Sales ": Number(t.sales).toFixed(2),
       "Weekly Sales": Number(t.weeklysale).toFixed(2),
-      "Montly Sales":Number( t.monthlysales).toFixed(2),
-      "Yearly Sales":Number( t.yearlysales).toFixed(2)
+      "Montly Sales": Number(t.monthlysales).toFixed(2),
+      "Yearly Sales": Number(t.yearlysales).toFixed(2)
 
     }));
     setExceldata(data);
@@ -363,7 +357,7 @@ function Items() {
             <InputLabel htmlFor="component-outlined" >Product Name <b style={{ color: "red" }}> *</b></InputLabel>
             <FormControl size="small" fullWidth >
               <Selects
-                onChange={(e) => { fetchProfit(e) }}
+                onChange={(e) => { fetchDatalocation(e) }}
                 styles={colourStyles}
                 options={products}
               />
@@ -430,38 +424,50 @@ function Items() {
           </Grid>
         </Grid><br /><br />
         <Box>
-          <TableContainer component={Paper} >
-            <Table sx={{ minWidth: 700 }}>
-              <TableHead>
-                <StyledTableRow>
-                  <StyledTableCell onClick={() => handleSorting('productnames')}><Box sx={userStyle.tableheadstyle}><Box>Product  Name </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productnames')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('locations')}><Box sx={userStyle.tableheadstyle}><Box>Locations </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('locations')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('mrprate')}><Box sx={userStyle.tableheadstyle}><Box>MRP rate </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrprate')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('sales')}><Box sx={userStyle.tableheadstyle}><Box>Today Sales  </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sales')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('weeklysale')}><Box sx={userStyle.tableheadstyle}><Box>Weekly Sales </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('weeklysale')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('monthlysales')}><Box sx={userStyle.tableheadstyle}><Box>Monthly Report </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('monthlysales')}</Box></Box></StyledTableCell>
-                  <StyledTableCell onClick={() => handleSorting('yearlysales')}><Box sx={userStyle.tableheadstyle}><Box>Yearly Report </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('yearlysales')}</Box></Box></StyledTableCell>
-                </StyledTableRow>
-              </TableHead>
-              <TableBody align="left">
-                {filteredData.length > 0 ?
-                  (filteredData.map((row, index) => (
-                    <StyledTableRow key={index}>
-                      <StyledTableCell >{row.productnames}</StyledTableCell>
-                      <StyledTableCell >{row.locations}</StyledTableCell>
-                      <StyledTableCell >{Number(row.mrprate).toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{Number(row.sales).toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{Number(row.weeklysale ).toFixed(2) }</StyledTableCell>
-                      <StyledTableCell >{Number(row.monthlysales).toFixed(2)}</StyledTableCell>
-                      <StyledTableCell >{Number(row.yearlysales).toFixed(2)}</StyledTableCell>
+          {isLoader ? (
+            <>
+              <TableContainer component={Paper} >
+                <Table sx={{ minWidth: 700 }}>
+                  <TableHead>
+                    <StyledTableRow>
+                      <StyledTableCell onClick={() => handleSorting('productnames')}><Box sx={userStyle.tableheadstyle}><Box>Product  Name </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('productnames')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('locations')}><Box sx={userStyle.tableheadstyle}><Box>Locations </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('locations')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('mrprate')}><Box sx={userStyle.tableheadstyle}><Box>MRP rate </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('mrprate')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('sales')}><Box sx={userStyle.tableheadstyle}><Box>Today Sales  </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('sales')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('weeklysale')}><Box sx={userStyle.tableheadstyle}><Box>Weekly Sales </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('weeklysale')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('monthlysales')}><Box sx={userStyle.tableheadstyle}><Box>Monthly Report </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('monthlysales')}</Box></Box></StyledTableCell>
+                      <StyledTableCell onClick={() => handleSorting('yearlysales')}><Box sx={userStyle.tableheadstyle}><Box>Yearly Report </Box><Box sx={{ marginTop: '-6PX' }}>{renderSortingIcon('yearlysales')}</Box></Box></StyledTableCell>
                     </StyledTableRow>
-                  )))
-                  : <StyledTableRow><StyledTableCell colSpan={13} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
-                }
-              </TableBody>
-            </Table>
+                  </TableHead>
+                  <TableBody align="left">
+                    {filteredData.length > 0 ?
+                      (filteredData.map((row, index) => (
+                        <StyledTableRow key={index}>
+                          <StyledTableCell >{row.productnames}</StyledTableCell>
+                          <StyledTableCell >{row.locations}</StyledTableCell>
+                          <StyledTableCell >{Number(row.mrprate).toFixed(2)}</StyledTableCell>
+                          <StyledTableCell >{Number(row.todaysales).toFixed(2)}</StyledTableCell>
+                          <StyledTableCell >{Number(row.weeklysale).toFixed(2)}</StyledTableCell>
+                          <StyledTableCell >{Number(row.monthlysales).toFixed(2)}</StyledTableCell>
+                          <StyledTableCell >{Number(row.yearlysales).toFixed(2)}</StyledTableCell>
+                        </StyledTableRow>
+                      )))
+                      : <StyledTableRow><StyledTableCell colSpan={13} sx={{ textAlign: "center" }}>No data Available</StyledTableCell></StyledTableRow>
+                    }
+                  </TableBody>
+                </Table>
 
-          </TableContainer>
+              </TableContainer>
+
+            </>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <ThreeDots height="80" width="80" radius="9" color="#1976D2" ariaLabel="three-dots-loading" wrapperStyle={{}} wrapperClassName="" visible={true} />
+              </Box>
+            </>
+          )}
+
           <br /><br />
           <Box style={userStyle.dataTablestyle}>
             <Box>
